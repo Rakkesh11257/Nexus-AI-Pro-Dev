@@ -575,7 +575,10 @@ app.post('/api/replicate/upload', requirePaid, async (req, res) => {
 
     console.log('>>> Uploading to Replicate Files:', uploadFilename, mime, buffer.length, 'bytes');
 
-    // Build multipart/form-data with the file as 'content' field
+    // Try multipart/form-data first (current Replicate API), fallback to raw binary
+    let createRes;
+
+    // Method 1: multipart/form-data with 'content' field
     const boundary = `----ReplicateUpload${Date.now()}`;
     const CRLF = '\r\n';
     const headerPart = `--${boundary}${CRLF}Content-Disposition: form-data; name="content"; filename="${uploadFilename}"${CRLF}Content-Type: ${mime}${CRLF}${CRLF}`;
@@ -584,7 +587,7 @@ app.post('/api/replicate/upload', requirePaid, async (req, res) => {
     const footerBuf = Buffer.from(footerPart, 'utf-8');
     const multipartBody = Buffer.concat([headerBuf, buffer, footerBuf]);
 
-    const createRes = await fetch('https://api.replicate.com/v1/files', {
+    createRes = await fetch('https://api.replicate.com/v1/files', {
       method: 'POST',
       headers: {
         'Authorization': apiKey,
@@ -592,6 +595,20 @@ app.post('/api/replicate/upload', requirePaid, async (req, res) => {
       },
       body: multipartBody,
     });
+
+    // Fallback: raw binary with Content-Disposition (older API format)
+    if (!createRes.ok) {
+      console.log('>>> Multipart upload failed, trying raw binary fallback...');
+      createRes = await fetch('https://api.replicate.com/v1/files', {
+        method: 'POST',
+        headers: {
+          'Authorization': apiKey,
+          'Content-Type': mime,
+          'Content-Disposition': `inline; filename="${uploadFilename}"`,
+        },
+        body: buffer,
+      });
+    }
 
     if (!createRes.ok) {
       const errData = await createRes.json().catch(() => ({}));
