@@ -573,23 +573,15 @@ app.post('/api/replicate/upload', requirePaid, async (req, res) => {
     const uploadFilename = filename || `upload_${Date.now()}${ext}`;
     const mime = content_type || 'application/octet-stream';
 
-    // Build multipart/form-data manually (Replicate Files API requires it)
-    const boundary = `----ReplicateUpload${Date.now()}`;
-    const parts = [];
-    // content field with file data, type, and filename
-    parts.push(`--${boundary}\r\nContent-Disposition: form-data; name="content"; filename="${uploadFilename}"\r\nContent-Type: ${mime}\r\n\r\n`);
-    const header = Buffer.from(parts[0]);
-    const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
-    const multipartBody = Buffer.concat([header, buffer, footer]);
-
     console.log('>>> Uploading to Replicate Files:', uploadFilename, mime, buffer.length, 'bytes');
     const createRes = await fetch('https://api.replicate.com/v1/files', {
       method: 'POST',
       headers: {
         'Authorization': apiKey,
-        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Type': mime,
+        'Content-Disposition': `inline; filename="${uploadFilename}"`,
       },
-      body: multipartBody,
+      body: buffer,
     });
 
     if (!createRes.ok) {

@@ -1278,7 +1278,7 @@ function App() {
         input.temperature = transcribeOpts.temperature ?? 0;
         input.condition_on_previous_text = transcribeOpts.condition_on_previous_text !== false;
       } else if (isGemini) {
-        // Upload audio to get a URL (Gemini on Replicate needs URL, not base64)
+        // Gemini needs a URL with correct content-type (data URIs fail with octet-stream)
         let audioMime = transcribeAudioMime || 'audio/mpeg';
         if (audioMime.startsWith('video/')) audioMime = audioMime.replace('video/', 'audio/');
         if (audioMime === 'application/octet-stream' || !audioMime.startsWith('audio/')) audioMime = 'audio/mpeg';
