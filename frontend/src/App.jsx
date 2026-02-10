@@ -482,23 +482,33 @@ function App() {
   const [transcribeOpts, setTranscribeOpts] = useState({});
   const [transcribeResult, setTranscribeResult] = useState('');
 
-  // UI — per-tab loading for concurrent generation
-  const [loadingTabs, setLoadingTabs] = useState({});
-  const loading = !!loadingTabs[tab]; // current tab loading state
-  const [loadingStatuses, setLoadingStatuses] = useState({});
-  const loadingStatus = loadingStatuses[tab] || '';
+  // UI — concurrent jobs system: multiple generations can run simultaneously
+  const [jobs, setJobs] = useState([]); // [{ id, tab, model, prompt, status, error, ts }]
   const [errors, setErrors] = useState({});
   const error = errors[tab] || '';
-  // Tab-aware setters — read current tab, set per-tab state
-  const setLoading = (v) => setLoadingTabs(prev => ({ ...prev, [tab]: v }));
-  const setLoadingStatus = (v) => setLoadingStatuses(prev => ({ ...prev, [tab]: v }));
   const setError = (v) => setErrors(prev => ({ ...prev, [tab]: v }));
-  // For async functions: bind tab name at call start so it persists across awaits
-  const bindTab = (t) => ({
-    setLoading: v => setLoadingTabs(p => ({...p, [t]: v})),
-    setStatus: v => setLoadingStatuses(p => ({...p, [t]: v})),
-    setErr: v => setErrors(p => ({...p, [t]: v})),
-  });
+  // Derived: active jobs for current tab
+  const tabJobs = jobs.filter(j => j.tab === tab && !j.done);
+  const loading = tabJobs.length > 0;
+  const loadingStatus = tabJobs.length > 0 ? tabJobs.map(j => j.status).join(' | ') : '';
+  // Total active jobs across all tabs (for badge on tab bar)
+  const totalActiveJobs = jobs.filter(j => !j.done).length;
+  // Job helpers
+  const addJob = (tabName, modelName, promptText) => {
+    const id = `job_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const job = { id, tab: tabName, model: modelName, prompt: promptText || '', status: 'Starting...', done: false, ts: Date.now() };
+    setJobs(prev => [job, ...prev]);
+    return id;
+  };
+  const updateJob = (id, updates) => setJobs(prev => prev.map(j => j.id === id ? { ...j, ...updates } : j));
+  const finishJob = (id, errorMsg) => setJobs(prev => prev.map(j => j.id === id ? { ...j, done: true, status: errorMsg ? 'Failed' : 'Done', error: errorMsg || null } : j));
+  // Auto-clean finished jobs after 8 seconds
+  useEffect(() => {
+    const done = jobs.filter(j => j.done);
+    if (done.length === 0) return;
+    const timer = setTimeout(() => setJobs(prev => prev.filter(j => !j.done || Date.now() - j.ts < 8000)), 8000);
+    return () => clearTimeout(timer);
+  }, [jobs]);
   const [results, setResults] = useState([]);
   const [viewerItem, setViewerItem] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -561,7 +571,8 @@ function App() {
   const generateImage = async () => {
     if (!prompt.trim()) return setError('Enter a prompt');
     if (!canGenerate()) return;
-    setError(''); setLoading(true); setLoadingStatus('Starting...');
+    const jobId = addJob('image', model, prompt.trim());
+    setError('');
     try {
       const asp = ASPECTS.find(a => a.id === aspect);
       const input = { prompt: prompt.trim(), width: asp.w, height: asp.h, num_outputs: 1 };
@@ -600,12 +611,12 @@ function App() {
         headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify(reqBody),
       });
-      if (res.status === 403) { setShowPaywall(true); return; }
+      if (res.status === 403) { setShowPaywall(true); finishJob(jobId); return; }
       if (!res.ok) throw new Error(await parseApiError(res));
       let pred = await res.json();
 
       while (pred.status !== 'succeeded' && pred.status !== 'failed') {
-        setLoadingStatus(`${pred.status}...`);
+        updateJob(jobId, { status: `${pred.status}...` });
         await new Promise(r => setTimeout(r, 2000));
         const poll = await fetch(`${API_BASE}/api/replicate/predictions/${pred.id}`, { headers: { 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` } });
         pred = await poll.json();
@@ -616,8 +627,8 @@ function App() {
       const items = output.filter(Boolean).map(url => ({ type: 'image', url, prompt: prompt.trim(), model, ts: Date.now() }));
       setResults(prev => [...items, ...prev]);
       setHistory(prev => ({ ...prev, images: [...items, ...prev.images].slice(0, 50) }));
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); setLoadingStatus(''); }
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
   // ─── Generate Image to Image ───
@@ -625,10 +636,11 @@ function App() {
     if (!i2iPrompt.trim()) return setError('Enter a prompt');
     if (!i2iImage) return setError('Upload a source image');
     if (!canGenerate()) return;
-    setError(''); setLoading(true); setLoadingStatus('Starting image-to-image...');
+    const jobId = addJob('i2i', i2iModel, i2iPrompt.trim());
+    setError('');
     try {
       // Convert image to data URI
-      setLoadingStatus('Preparing image...');
+      updateJob(jobId, { status: 'Preparing image...' });
       const resp = await fetch(i2iImage);
       const blob = await resp.blob();
       const dataUri = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
@@ -683,18 +695,18 @@ function App() {
         body = { input };
       }
 
-      setLoadingStatus('Generating...');
+      updateJob(jobId, { status: 'Generating...' });
       const res = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({ ...body, _model: i2iModel }),
       });
-      if (res.status === 403) { setShowPaywall(true); return; }
+      if (res.status === 403) { setShowPaywall(true); finishJob(jobId); return; }
       if (!res.ok) throw new Error(await parseApiError(res));
       let pred = await res.json();
 
       while (pred.status !== 'succeeded' && pred.status !== 'failed') {
-        setLoadingStatus(`${pred.status}...`);
+        updateJob(jobId, { status: `${pred.status}...` });
         await new Promise(r => setTimeout(r, 2000));
         const poll = await fetch(`${API_BASE}/api/replicate/predictions/${pred.id}`, { headers: { 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` } });
         pred = await poll.json();
@@ -706,8 +718,8 @@ function App() {
       const item = { type: 'image', url: imgUrl, prompt: i2iPrompt.trim(), model: i2iModel, ts: Date.now() };
       setResults(prev => [item, ...prev]);
       setHistory(prev => ({ ...prev, images: [item, ...prev.images].slice(0, 50) }));
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); setLoadingStatus(''); }
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
   const handleI2IFile = (e) => {
@@ -724,20 +736,20 @@ function App() {
   };
 
   // ─── Helper: build video input from model config ───
-  const buildVideoInput = async (modelCfg, opts, prompt, negPrompt, image, lastFrame) => {
+  const buildVideoInput = async (modelCfg, opts, prompt, negPrompt, image, lastFrame, jobId) => {
     const p = modelCfg.params || {};
     const input = {};
     if (prompt?.trim()) input.prompt = prompt.trim();
 
     // Image inputs
     if (image) {
-      setLoadingStatus('Preparing image...');
+      if (jobId) updateJob(jobId, { status: 'Preparing image...' });
       const imgData = image.startsWith('blob:') ? await toDataUri(image) : image;
       // Veo/Sora use 'image' for first_frame param name, Kling uses 'image'
       input.image = imgData;
     }
     if (lastFrame && p.last_frame) {
-      setLoadingStatus('Preparing end frame...');
+      if (jobId) updateJob(jobId, { status: 'Preparing end frame...' });
       input.last_frame = lastFrame.startsWith('blob:') ? await toDataUri(lastFrame) : lastFrame;
     }
 
@@ -792,22 +804,23 @@ function App() {
     if (!i2vImage) return setError('Upload a source image');
     if (!canGenerate()) return;
     const modelCfg = I2V_MODELS.find(m => m.id === i2vModel);
-    setError(''); setLoading(true); setLoadingStatus('Starting image-to-video...');
+    const jobId = addJob('i2v', i2vModel, i2vPrompt.trim());
+    setError('');
     try {
-      const input = await buildVideoInput(modelCfg, i2vOpts, i2vPrompt, i2vOpts.negative_prompt, i2vImage, i2vLastFrame);
-      setLoadingStatus('Generating video...');
+      const input = await buildVideoInput(modelCfg, i2vOpts, i2vPrompt, i2vOpts.negative_prompt, i2vImage, i2vLastFrame, jobId);
+      updateJob(jobId, { status: 'Generating video...' });
 
       const res = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({ model: i2vModel, input }),
       });
-      if (res.status === 403) { setShowPaywall(true); return; }
+      if (res.status === 403) { setShowPaywall(true); finishJob(jobId); return; }
       if (!res.ok) throw new Error(await parseApiError(res));
       let pred = await res.json();
 
       while (pred.status !== 'succeeded' && pred.status !== 'failed') {
-        setLoadingStatus(`${pred.status}...`);
+        updateJob(jobId, { status: `${pred.status}...` });
         await new Promise(r => setTimeout(r, 3000));
         const poll = await fetch(`${API_BASE}/api/replicate/predictions/${pred.id}`, { headers: { 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` } });
         pred = await poll.json();
@@ -818,8 +831,8 @@ function App() {
       const item = { type: 'video', url, prompt: i2vPrompt.trim(), model: i2vModel, ts: Date.now() };
       setResults(prev => [item, ...prev]);
       setHistory(prev => ({ ...prev, videos: [item, ...prev.videos].slice(0, 50) }));
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); setLoadingStatus(''); }
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
   // ─── Generate T2V ───
@@ -827,22 +840,23 @@ function App() {
     if (!t2vPrompt.trim()) return setError('Enter a prompt');
     if (!canGenerate()) return;
     const modelCfg = T2V_MODELS.find(m => m.id === t2vModel);
-    setError(''); setLoading(true); setLoadingStatus('Starting text-to-video...');
+    const jobId = addJob('t2v', t2vModel, t2vPrompt.trim());
+    setError('');
     try {
-      const input = await buildVideoInput(modelCfg, t2vOpts, t2vPrompt, t2vNegPrompt);
-      setLoadingStatus('Generating video...');
+      const input = await buildVideoInput(modelCfg, t2vOpts, t2vPrompt, t2vNegPrompt, null, null, jobId);
+      updateJob(jobId, { status: 'Generating video...' });
 
       const res = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({ model: t2vModel, input }),
       });
-      if (res.status === 403) { setShowPaywall(true); return; }
+      if (res.status === 403) { setShowPaywall(true); finishJob(jobId); return; }
       if (!res.ok) throw new Error(await parseApiError(res));
       let pred = await res.json();
 
       while (pred.status !== 'succeeded' && pred.status !== 'failed') {
-        setLoadingStatus(`${pred.status}...`);
+        updateJob(jobId, { status: `${pred.status}...` });
         await new Promise(r => setTimeout(r, 3000));
         const poll = await fetch(`${API_BASE}/api/replicate/predictions/${pred.id}`, { headers: { 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` } });
         pred = await poll.json();
@@ -853,8 +867,8 @@ function App() {
       const item = { type: 'video', url, prompt: t2vPrompt.trim(), model: t2vModel, ts: Date.now() };
       setResults(prev => [item, ...prev]);
       setHistory(prev => ({ ...prev, videos: [item, ...prev.videos].slice(0, 50) }));
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); setLoadingStatus(''); }
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
   // ─── Generate Chat ───
@@ -870,7 +884,8 @@ function App() {
     setChatMessages(prev => [...prev, userMsg]);
     setChatInput('');
     setChatImage(null); // Clear image after capturing
-    setError(''); setLoading(true); setChatStreaming(true);
+    const jobId = addJob('chat', chatModel, msgText);
+    setError(''); setChatStreaming(true);
     try {
       const input = {};
       input.prompt = msgText || 'Describe this image';
@@ -905,11 +920,12 @@ function App() {
         headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({ model: chatModel, input }),
       });
-      if (res.status === 403) { setShowPaywall(true); return; }
+      if (res.status === 403) { setShowPaywall(true); finishJob(jobId); return; }
       if (!res.ok) throw new Error(await parseApiError(res));
       let pred = await res.json();
 
       while (pred.status !== 'succeeded' && pred.status !== 'failed') {
+        updateJob(jobId, { status: `${pred.status}...` });
         await new Promise(r => setTimeout(r, 2000));
         const poll = await fetch(`${API_BASE}/api/replicate/predictions/${pred.id}`, { headers: { 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` } });
         pred = await poll.json();
@@ -922,8 +938,9 @@ function App() {
       else if (typeof output === 'object' && output !== null) output = JSON.stringify(output, null, 2);
 
       setChatMessages(prev => [...prev, { role: 'assistant', content: output, model: chatModel }]);
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); setChatStreaming(false); }
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
+    finally { setChatStreaming(false); }
   };
 
   const handleChatImage = (e) => {
@@ -1109,17 +1126,18 @@ function App() {
     if (isKling && !motionVideo) return setError('Upload a reference video');
     if (isAnimate && !motionVideo) return setError('Upload an input video');
     if (isAnimate && !motionImage) return setError('Upload a character image');
-    setError(''); setLoading(true); setLoadingStatus('Starting motion control...');
+    const jobId = addJob('motion', motionModel, motionPrompt.trim());
+    setError('');
     try {
       const input = {};
       if (motionPrompt.trim()) input.prompt = motionPrompt.trim();
       // Image
-      setLoadingStatus('Preparing image...');
+      updateJob(jobId, { status: 'Preparing image...' });
       const imgData = motionImage.startsWith('blob:') ? await toDataUri(motionImage) : motionImage;
       if (isKling) input.image = imgData;
       else input.character_image = imgData;
       // Video
-      setLoadingStatus('Preparing video...');
+      updateJob(jobId, { status: 'Preparing video...' });
       const vidData = motionVideo.startsWith('blob:') ? await toDataUri(motionVideo) : motionVideo;
       input.video = vidData;
       // Model-specific params
@@ -1135,16 +1153,16 @@ function App() {
         input.merge_audio = motionOpts.merge_audio !== false;
         if (motionOpts.seed) input.seed = parseInt(motionOpts.seed);
       }
-      setLoadingStatus('Generating...');
+      updateJob(jobId, { status: 'Generating...' });
       const res = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({ model: motionModel, input }),
       });
-      if (res.status === 403) { setShowPaywall(true); return; }
+      if (res.status === 403) { setShowPaywall(true); finishJob(jobId); return; }
       if (!res.ok) throw new Error(await parseApiError(res));
       let pred = await res.json();
       while (pred.status !== 'succeeded' && pred.status !== 'failed') {
-        setLoadingStatus(`${pred.status}...`); await new Promise(r => setTimeout(r, 3000));
+        updateJob(jobId, { status: `${pred.status}...` }); await new Promise(r => setTimeout(r, 3000));
         const poll = await fetch(`${API_BASE}/api/replicate/predictions/${pred.id}`, { headers: { 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` } });
         pred = await poll.json();
       }
@@ -1153,8 +1171,8 @@ function App() {
       const item = { type: 'video', url, prompt: motionPrompt.trim() || 'Motion control', model: motionModel, ts: Date.now() };
       setResults(prev => [item, ...prev]);
       setHistory(prev => ({ ...prev, videos: [item, ...prev.videos].slice(0, 50) }));
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); setLoadingStatus(''); }
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
   // ─── Generate Lip Sync ───
@@ -1167,7 +1185,8 @@ function App() {
     if ((isSync || isPix) && !lipsyncAudio) return setError('Upload an audio file');
     if (isKling && !lipsyncVideo && !lipsyncOpts.video_url?.trim()) return setError('Upload a video or enter video URL');
     if (isKling && !lipsyncAudio && !lipsyncText.trim()) return setError('Enter text or upload audio');
-    setError(''); setLoading(true); setLoadingStatus('Starting lip sync...');
+    const jobId = addJob('lipsync', lipsyncModel, 'Lip sync');
+    setError('');
     try {
       const input = {};
       if (isKling) {
@@ -1180,7 +1199,7 @@ function App() {
           input.voice_speed = lipsyncOpts.voice_speed || 1;
         }
       } else {
-        setLoadingStatus('Preparing files...');
+        updateJob(jobId, { status: 'Preparing files...' });
         input.video = lipsyncVideo.startsWith('blob:') ? await toDataUri(lipsyncVideo) : lipsyncVideo;
         input.audio = lipsyncAudio.startsWith('blob:') ? await toDataUri(lipsyncAudio) : lipsyncAudio;
         if (isSync) {
@@ -1189,16 +1208,16 @@ function App() {
           input.active_speaker = !!lipsyncOpts.active_speaker;
         }
       }
-      setLoadingStatus('Generating...');
+      updateJob(jobId, { status: 'Generating...' });
       const res = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({ model: lipsyncModel, input }),
       });
-      if (res.status === 403) { setShowPaywall(true); return; }
+      if (res.status === 403) { setShowPaywall(true); finishJob(jobId); return; }
       if (!res.ok) throw new Error(await parseApiError(res));
       let pred = await res.json();
       while (pred.status !== 'succeeded' && pred.status !== 'failed') {
-        setLoadingStatus(`${pred.status}...`); await new Promise(r => setTimeout(r, 3000));
+        updateJob(jobId, { status: `${pred.status}...` }); await new Promise(r => setTimeout(r, 3000));
         const poll = await fetch(`${API_BASE}/api/replicate/predictions/${pred.id}`, { headers: { 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` } });
         pred = await poll.json();
       }
@@ -1207,18 +1226,19 @@ function App() {
       const item = { type: 'video', url, prompt: 'Lip sync', model: lipsyncModel, ts: Date.now() };
       setResults(prev => [item, ...prev]);
       setHistory(prev => ({ ...prev, videos: [item, ...prev.videos].slice(0, 50) }));
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); setLoadingStatus(''); }
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
   // ─── Generate Transcription ───
   const generateTranscribe = async () => {
     if (!transcribeAudio) return setError('Upload an audio file');
     if (!canGenerate()) return;
-    setError(''); setLoading(true); setLoadingStatus('Starting transcription...');
+    const jobId = addJob('transcribe', transcribeModel, 'Transcription');
+    setError('');
     try {
       const input = {};
-      setLoadingStatus('Preparing audio...');
+      updateJob(jobId, { status: 'Preparing audio...' });
       const audioData = transcribeAudio.startsWith('blob:') ? await toDataUri(transcribeAudio) : transcribeAudio;
       const isGPT4o = transcribeModel.includes('gpt-4o');
       const isWhisper = transcribeModel.includes('whisper');
@@ -1244,16 +1264,16 @@ function App() {
         input.temperature = transcribeOpts.temperature ?? 1;
         input.max_output_tokens = transcribeOpts.max_output_tokens || 65535;
       }
-      setLoadingStatus('Transcribing...');
+      updateJob(jobId, { status: 'Transcribing...' });
       const res = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({ model: transcribeModel, input }),
       });
-      if (res.status === 403) { setShowPaywall(true); return; }
+      if (res.status === 403) { setShowPaywall(true); finishJob(jobId); return; }
       if (!res.ok) throw new Error(await parseApiError(res));
       let pred = await res.json();
       while (pred.status !== 'succeeded' && pred.status !== 'failed') {
-        setLoadingStatus(`${pred.status}...`); await new Promise(r => setTimeout(r, 2000));
+        updateJob(jobId, { status: `${pred.status}...` }); await new Promise(r => setTimeout(r, 2000));
         const poll = await fetch(`${API_BASE}/api/replicate/predictions/${pred.id}`, { headers: { 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` } });
         pred = await poll.json();
       }
@@ -1264,8 +1284,8 @@ function App() {
       if (Array.isArray(output)) output = output.join('');
       if (typeof output === 'object') output = JSON.stringify(output, null, 2);
       setTranscribeResult(output);
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); setLoadingStatus(''); }
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
   const deleteHistoryItem = (type, idx) => setHistory(prev => ({ ...prev, [type]: prev[type].filter((_, i) => i !== idx) }));
@@ -1298,7 +1318,7 @@ function App() {
           {[{id:'image',icon:'🎨',label:'Text to Image'},{id:'i2i',icon:'🔄',label:'Img to Img'},{id:'i2v',icon:'🖼️',label:'Img to Video'},{id:'t2v',icon:'🎬',label:'Text to Video'},{id:'motion',icon:'🎭',label:'Motion'},{id:'lipsync',icon:'👄',label:'Lip Sync'},{id:'transcribe',icon:'🎙️',label:'Transcribe'},{id:'chat',icon:'💬',label:'AI Chat'},{id:'history',icon:'📂',label:'History'}].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: '8px 12px', background: tab === t.id ? 'rgba(102,126,234,0.15)' : 'none', border: tab === t.id ? '1px solid rgba(102,126,234,0.3)' : '1px solid transparent', borderRadius: 8, color: tab === t.id ? '#fff' : '#888', fontWeight: tab === t.id ? 600 : 400, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0, position: 'relative' }}>
               {t.icon} {t.label}
-              {loadingTabs[t.id] && t.id !== tab && <span style={{ position: 'absolute', top: 2, right: 2, width: 7, height: 7, borderRadius: '50%', background: '#667eea', animation: 'spin 1s linear infinite', border: '1.5px solid transparent', borderTopColor: '#fff' }} />}
+              {jobs.some(j => j.tab === t.id && !j.done) && t.id !== tab && <span style={{ position: 'absolute', top: 2, right: 2, width: 7, height: 7, borderRadius: '50%', background: '#667eea', animation: 'spin 1s linear infinite', border: '1.5px solid transparent', borderTopColor: '#fff' }} />}
             </button>
           ))}
         </div>
