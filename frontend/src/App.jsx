@@ -14,11 +14,13 @@ const IMAGE_MODELS = [
   { id: 'ideogram-ai/ideogram-v3-quality', name: 'Ideogram V3 Quality', desc: 'Best text rendering', maxSteps: 50, nsfw: false },
   { id: 'stability-ai/stable-diffusion-3.5-large', name: 'SD 3.5 Large', desc: 'Stability AI latest', maxSteps: 50, nsfw: false },
   { id: 'bytedance/sdxl-lightning-4step', name: 'SDXL Lightning 4-Step', desc: 'Ultra fast SDXL (~2s)', maxSteps: 10, nsfw: true },
+  { id: 'stability-ai/sdxl', name: 'SDXL 1.0', desc: 'Stable Diffusion XL', maxSteps: 50, nsfw: true },
 ];
 const I2I_MODELS = [
   { id: 'qwen/qwen-image', name: 'Qwen Image', desc: 'LoRA + img2img', nsfw: false },
   { id: 'google/nano-banana-pro', name: 'Google Nano Banana Pro', desc: 'Google img2img', nsfw: false },
   { id: 'stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4', name: 'Stable Diffusion 1.5', desc: 'Classic img2img', nsfw: false, useVersion: true },
+  { id: 'stability-ai/sdxl', name: 'SDXL 1.0', desc: 'SDXL img2img', nsfw: true },
 ];
 // I2V models with per-model config
 const I2V_MODELS = [
@@ -542,6 +544,15 @@ function App() {
         input.scheduler = 'K_EULER';
         input.disable_safety_checker = true;
       }
+      else if (model === 'stability-ai/sdxl') {
+        input.num_inference_steps = steps;
+        input.guidance_scale = guidance;
+        input.scheduler = 'K_EULER';
+        input.refine = 'expert_ensemble_refiner';
+        input.high_noise_frac = 0.8;
+        input.apply_watermark = false;
+        input.disable_safety_checker = true;
+      }
       else { input.num_inference_steps = steps; input.guidance_scale = guidance; }
       if (seed) input.seed = parseInt(seed);
 
@@ -598,6 +609,19 @@ function App() {
         input.aspect_ratio = aspect;
         input.output_format = 'webp';
         input.num_inference_steps = steps;
+        if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
+      } else if (i2iModel === 'stability-ai/sdxl') {
+        input.prompt_strength = i2iStrength;
+        input.width = ASPECTS.find(a => a.id === aspect)?.w || 1024;
+        input.height = ASPECTS.find(a => a.id === aspect)?.h || 1024;
+        input.num_outputs = 1;
+        input.guidance_scale = guidance;
+        input.num_inference_steps = steps;
+        input.scheduler = 'K_EULER';
+        input.refine = 'expert_ensemble_refiner';
+        input.high_noise_frac = 0.8;
+        input.apply_watermark = false;
+        input.disable_safety_checker = true;
         if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
       } else if (i2iModel.includes('stable-diffusion')) {
         input.prompt_strength = i2iStrength;
