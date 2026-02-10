@@ -13,14 +13,14 @@ const IMAGE_MODELS = [
   { id: 'prunaai/wan-2.2-image', name: 'Wan 2.2 Image', desc: 'Wan T2I model', maxSteps: 50, nsfw: true },
   { id: 'ideogram-ai/ideogram-v3-quality', name: 'Ideogram V3 Quality', desc: 'Best text rendering', maxSteps: 50, nsfw: false },
   { id: 'stability-ai/stable-diffusion-3.5-large', name: 'SD 3.5 Large', desc: 'Stability AI latest', maxSteps: 50, nsfw: false },
-  { id: 'bytedance/sdxl-lightning-4step', name: 'SDXL Lightning 4-Step', desc: 'Ultra fast SDXL (~2s)', maxSteps: 10, nsfw: true },
-  { id: 'stability-ai/sdxl', name: 'SDXL 1.0', desc: 'Stable Diffusion XL', maxSteps: 50, nsfw: true },
+  { id: 'bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe', name: 'SDXL Lightning 4-Step', desc: 'Ultra fast SDXL (~2s)', maxSteps: 10, nsfw: true, useVersion: true },
+  { id: 'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc', name: 'SDXL 1.0', desc: 'Stable Diffusion XL', maxSteps: 50, nsfw: true, useVersion: true },
 ];
 const I2I_MODELS = [
   { id: 'qwen/qwen-image', name: 'Qwen Image', desc: 'LoRA + img2img', nsfw: false },
   { id: 'google/nano-banana-pro', name: 'Google Nano Banana Pro', desc: 'Google img2img', nsfw: false },
   { id: 'stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4', name: 'Stable Diffusion 1.5', desc: 'Classic img2img', nsfw: false, useVersion: true },
-  { id: 'stability-ai/sdxl', name: 'SDXL 1.0', desc: 'SDXL img2img', nsfw: true },
+  { id: 'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc', name: 'SDXL 1.0', desc: 'SDXL img2img', nsfw: true, useVersion: true },
 ];
 // I2V models with per-model config
 const I2V_MODELS = [
@@ -544,7 +544,7 @@ function App() {
         input.scheduler = 'K_EULER';
         input.disable_safety_checker = true;
       }
-      else if (model === 'stability-ai/sdxl') {
+      else if (model.includes('stability-ai/sdxl')) {
         input.num_inference_steps = steps;
         input.guidance_scale = guidance;
         input.scheduler = 'K_EULER';
@@ -556,10 +556,20 @@ function App() {
       else { input.num_inference_steps = steps; input.guidance_scale = guidance; }
       if (seed) input.seed = parseInt(seed);
 
+      // Version-based models (SDXL, SD 1.5 etc) need version field
+      const curModel = IMAGE_MODELS.find(m => m.id === model);
+      let reqBody;
+      if (curModel?.useVersion && model.includes(':')) {
+        const version = model.split(':')[1];
+        reqBody = { version, input };
+      } else {
+        reqBody = { model, input };
+      }
+
       const res = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: model, input }),
+        body: JSON.stringify(reqBody),
       });
       if (res.status === 403) { setShowPaywall(true); return; }
       if (!res.ok) throw new Error((await res.json()).error || 'API request failed');
@@ -610,7 +620,7 @@ function App() {
         input.output_format = 'webp';
         input.num_inference_steps = steps;
         if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
-      } else if (i2iModel === 'stability-ai/sdxl') {
+      } else if (i2iModel.includes('stability-ai/sdxl')) {
         input.prompt_strength = i2iStrength;
         input.width = ASPECTS.find(a => a.id === aspect)?.w || 1024;
         input.height = ASPECTS.find(a => a.id === aspect)?.h || 1024;
