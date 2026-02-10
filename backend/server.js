@@ -662,7 +662,10 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+// Increase max header size for Node HTTP server (Cognito JWTs + Chrome headers can exceed 16KB default)
+const http = require('http');
+const server = http.createServer({ maxHeaderSize: 65536 }, app);
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`
 ======================================================
   NEXUS AI Pro v4.0 (SaaS Mode)
