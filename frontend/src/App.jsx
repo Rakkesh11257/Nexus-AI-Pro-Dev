@@ -1343,13 +1343,16 @@ function App() {
 
       <div style={S.container}>
         {/* Tabs */}
-        <div style={S.tabs}>
-          {[{id:'image',icon:'🎨',label:'Text to Image'},{id:'i2i',icon:'🔄',label:'Img to Img'},{id:'i2v',icon:'🖼️',label:'Img to Video'},{id:'t2v',icon:'🎬',label:'Text to Video'},{id:'motion',icon:'🎭',label:'Motion'},{id:'audio',icon:'🔊',label:'Audio Gen'},{id:'transcribe',icon:'🎙️',label:'Transcribe'},{id:'chat',icon:'💬',label:'AI Chat'},{id:'history',icon:'📂',label:'History'}].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: '8px 12px', background: tab === t.id ? 'rgba(102,126,234,0.15)' : 'none', border: tab === t.id ? '1px solid rgba(102,126,234,0.3)' : '1px solid transparent', borderRadius: 8, color: tab === t.id ? '#fff' : '#888', fontWeight: tab === t.id ? 600 : 400, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0, position: 'relative' }}>
-              {t.icon} {t.label}
-              {jobs.some(j => j.tab === t.id && !j.done) && t.id !== tab && <span style={{ position: 'absolute', top: 2, right: 2, width: 7, height: 7, borderRadius: '50%', background: '#667eea', animation: 'spin 1s linear infinite', border: '1.5px solid transparent', borderTopColor: '#fff' }} />}
-            </button>
-          ))}
+        <div style={{ position: 'relative', marginBottom: 16 }}>
+          <div style={S.tabs} className="hide-scrollbar">
+            {[{id:'image',icon:'🎨',label:'Txt2Img'},{id:'i2i',icon:'🔄',label:'Img2Img'},{id:'i2v',icon:'🖼️',label:'Img2Vid'},{id:'t2v',icon:'🎬',label:'Txt2Vid'},{id:'motion',icon:'🎭',label:'Motion'},{id:'audio',icon:'🔊',label:'Audio'},{id:'transcribe',icon:'🎙️',label:'Transcribe'},{id:'chat',icon:'💬',label:'Chat'},{id:'history',icon:'📂',label:'History'}].map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: '7px 10px', background: tab === t.id ? 'rgba(102,126,234,0.15)' : 'none', border: tab === t.id ? '1px solid rgba(102,126,234,0.3)' : '1px solid transparent', borderRadius: 8, color: tab === t.id ? '#fff' : '#888', fontWeight: tab === t.id ? 600 : 400, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0, position: 'relative' }}>
+                {t.icon} {t.label}
+                {jobs.some(j => j.tab === t.id && !j.done) && t.id !== tab && <span style={{ position: 'absolute', top: 2, right: 2, width: 7, height: 7, borderRadius: '50%', background: '#667eea', animation: 'spin 1s linear infinite', border: '1.5px solid transparent', borderTopColor: '#fff' }} />}
+              </button>
+            ))}
+          </div>
+          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40, background: 'linear-gradient(to right, transparent, #0a0a18)', pointerEvents: 'none', borderRadius: '0 8px 8px 0' }} className="scroll-fade" />
         </div>
 
         {/* Error */}
@@ -2079,7 +2082,7 @@ const S = {
   gradientText: { fontSize: 26, fontWeight: 700, background: 'linear-gradient(135deg, #667eea, #764ba2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginTop: 12 },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #1f2937', background: 'rgba(13,13,26,0.95)', position: 'sticky', top: 0, zIndex: 50, gap: 8 },
   container: { maxWidth: 900, margin: '0 auto', padding: '16px 10px' },
-  tabs: { display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' },
+  tabs: { display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 4, paddingRight: 30, WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' },
   card: { maxWidth: 420, margin: '16px auto', padding: '24px 18px', background: '#111827', borderRadius: 14, border: '1px solid #1f2937', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', boxSizing: 'border-box' },
   field: { marginBottom: 14 },
   label: { display: 'block', fontSize: 13, color: '#9ca3af', marginBottom: 5, fontWeight: 500 },
