@@ -561,7 +561,7 @@ app.post('/api/replicate/upload', requirePaid, async (req, res) => {
     const base64 = data.includes(',') ? data.split(',')[1] : data;
     const buffer = Buffer.from(base64, 'base64');
 
-    // Determine filename with correct extension for content-type detection
+    // Determine filename with correct extension
     const extMap = {
       'video/mp4': '.mp4', 'video/webm': '.webm', 'audio/mpeg': '.mp3',
       'audio/mp3': '.mp3', 'audio/wav': '.wav', 'audio/ogg': '.ogg',
@@ -571,19 +571,25 @@ app.post('/api/replicate/upload', requirePaid, async (req, res) => {
     };
     const ext = extMap[content_type] || '';
     const uploadFilename = filename || `upload_${Date.now()}${ext}`;
+    const mime = content_type || 'application/octet-stream';
 
-    // Upload to Replicate Files API with filename
-    const headers = {
-      'Authorization': apiKey,
-      'Content-Type': content_type || 'application/octet-stream',
-    };
-    if (uploadFilename) {
-      headers['Content-Disposition'] = `attachment; filename="${uploadFilename}"`;
-    }
+    // Build multipart/form-data manually (Replicate Files API requires it)
+    const boundary = `----ReplicateUpload${Date.now()}`;
+    const parts = [];
+    // content field with file data, type, and filename
+    parts.push(`--${boundary}\r\nContent-Disposition: form-data; name="content"; filename="${uploadFilename}"\r\nContent-Type: ${mime}\r\n\r\n`);
+    const header = Buffer.from(parts[0]);
+    const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
+    const multipartBody = Buffer.concat([header, buffer, footer]);
+
+    console.log('>>> Uploading to Replicate Files:', uploadFilename, mime, buffer.length, 'bytes');
     const createRes = await fetch('https://api.replicate.com/v1/files', {
       method: 'POST',
-      headers,
-      body: buffer,
+      headers: {
+        'Authorization': apiKey,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      },
+      body: multipartBody,
     });
 
     if (!createRes.ok) {
