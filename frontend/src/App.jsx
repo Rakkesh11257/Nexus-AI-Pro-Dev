@@ -371,7 +371,7 @@ function PaywallModal({ onClose, accessToken, user, onPaymentSuccess }) {
 function SettingsModal({ apiKey, onSave, onClose }) {
   const [key, setKey] = useState(apiKey);
   const trimmed = key.trim();
-  const valid = trimmed.length > 10;
+  const valid = trimmed.startsWith('r8_') && trimmed.length > 20;
   return (
     <div style={S.overlay} onClick={onClose}>
       <div style={{ ...S.card, maxWidth: 460, position: 'relative', margin: 0 }} onClick={e => e.stopPropagation()}>
@@ -544,7 +544,7 @@ function App() {
   const handleAuth = (u, t) => { setUser(u); setAccessToken(t); setAuthState('app'); };
   const handleLogout = () => { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); setUser(null); setAccessToken(''); setAuthState('auth'); };
   const saveApiKey = (key) => { localStorage.setItem('replicate_api_key', key); setApiKey(key); setShowSettings(false); };
-  const keyValid = apiKey.trim().length > 10;
+  const keyValid = apiKey.trim().startsWith('r8_') && apiKey.trim().length > 20;
 
   // ─── Pre-generate Check ───
   const canGenerate = () => {
