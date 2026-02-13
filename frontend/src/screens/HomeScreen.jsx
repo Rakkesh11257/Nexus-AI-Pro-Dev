@@ -60,6 +60,17 @@ const CATEGORIES = [
       { id: 'train-model', label: 'Train Model', desc: 'Create a custom AI model', media: '/samples/train.mp4', tab: 'train' },
     ],
   },
+  {
+    id: 'chat',
+    label: 'AI Chat',
+    desc: 'Chat with the smartest AI models.',
+    icon: '💬',
+    color: '#8b5cf6',
+    cover: '/samples/chat-cover.mp4',
+    subTools: [
+      { id: 'ai-chat', label: 'AI Chat', desc: 'GPT-5, Gemini, Claude & more', media: '/samples/chat-cover.mp4', tab: 'chat' },
+    ],
+  },
 ];
 
 // ─── Media cover: supports image or video, with gradient fallback ───

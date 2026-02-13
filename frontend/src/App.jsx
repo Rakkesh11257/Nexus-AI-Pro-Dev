@@ -1722,7 +1722,7 @@ function App() {
             onSelectTool={(tabId) => navigateToTool(tabId)}
             onSelectCategory={(catId) => {
               // Map category to first sub-tool tab
-              const catMap = { image: 'image', video: 't2v', audio: 'audio', transcribe: 'transcribe', character: 'train' };
+              const catMap = { image: 'image', video: 't2v', audio: 'audio', transcribe: 'transcribe', character: 'train', chat: 'chat' };
               navigateToTool(catMap[catId] || catId);
             }}
           />
