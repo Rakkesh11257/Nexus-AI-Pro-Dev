@@ -65,7 +65,7 @@ const CATEGORIES = [
 
 // ─── Placeholder image (gradient fallback when no sample image) ───
 function PlaceholderImage({ src, color, icon, style }) {
-  const [failed, setFailed] = useState(true);
+  const [failed, setFailed] = useState(false);
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', ...style }}>
       {!failed && (
