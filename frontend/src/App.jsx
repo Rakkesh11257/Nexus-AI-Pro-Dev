@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HomeScreen from './screens/HomeScreen.jsx';
+import CategoryScreen from './screens/CategoryScreen.jsx';
 
 const API_BASE = window.location.origin;
 
@@ -579,6 +580,7 @@ function App() {
 
   // Navigation helpers
   const navigateToTool = (tabId) => { setTab(tabId); setScreen(tabId); };
+  const navigateToCategory = (catId) => { setScreen('category:' + catId); };
   const navigateHome = () => { setScreen('home'); };
 
   // Image
@@ -1715,21 +1717,26 @@ function App() {
         </div>
       </header>
 
-      <div style={screen === 'home' ? { ...S.container, maxWidth: '100%', padding: '0' } : S.container}>
+      <div style={screen === 'home' || screen.startsWith('category:') ? { ...S.container, maxWidth: '100%', padding: '0' } : S.container}>
         {/* Home Screen */}
         {screen === 'home' && (
           <HomeScreen
             onSelectTool={(tabId) => navigateToTool(tabId)}
-            onSelectCategory={(catId) => {
-              // Map category to first sub-tool tab
-              const catMap = { image: 'image', video: 't2v', audio: 'audio', transcribe: 'transcribe', character: 'train', chat: 'chat' };
-              navigateToTool(catMap[catId] || catId);
-            }}
+            onSelectCategory={(catId) => navigateToCategory(catId)}
+          />
+        )}
+
+        {/* Category Screen */}
+        {screen.startsWith('category:') && (
+          <CategoryScreen
+            categoryId={screen.replace('category:', '')}
+            onSelectTool={(tabId) => navigateToTool(tabId)}
+            onBack={navigateHome}
           />
         )}
 
         {/* Tool Screen — Back button + sub-tab bar */}
-        {screen !== 'home' && (
+        {screen !== 'home' && !screen.startsWith('category:') && (
           <div>
             {/* Back + Sub-tabs */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
