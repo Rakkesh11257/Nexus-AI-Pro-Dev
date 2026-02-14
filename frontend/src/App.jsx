@@ -1284,7 +1284,7 @@ function App() {
         {p.disable_safety_checker && (
           <label style={checkStyle}>
             <input type="checkbox" checked={!!opts.disable_safety_checker} onChange={e => setOpts(o => ({ ...o, disable_safety_checker: e.target.checked }))} />
-            🔞 Disable Safety Checker (NSFW)
+            Disable Safety Checker
           </label>
         )}
         {/* Negative Prompt */}
