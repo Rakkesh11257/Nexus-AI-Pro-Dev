@@ -290,15 +290,7 @@ export default function HomeScreen({ onSelectTool, onSelectCategory }) {
                       display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                     }}>{tool.desc}</div>
                   </div>
-                  {/* Right thumbnail on mobile (like OpenArt) */}
-                  {isMobile && (
-                    <div style={{
-                      width: 64, height: 64, borderRadius: 12, overflow: 'hidden', flexShrink: 0,
-                      background: '#0a0a12', border: '1px solid rgba(255,255,255,0.04)',
-                    }}>
-                      <CoverMedia src={tool.media} color={cat.color} icon={cat.icon} />
-                    </div>
-                  )}
+
                 </div>
               );
             })
