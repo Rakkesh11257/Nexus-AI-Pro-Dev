@@ -2547,7 +2547,6 @@ function App() {
                 ))}
               </div>
             )}
-          </div>
           </ToolScreen>
         )}
       </div>
