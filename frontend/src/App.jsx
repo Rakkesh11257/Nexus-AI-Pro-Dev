@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HomeScreen from './screens/HomeScreen.jsx';
 import CategoryScreen from './screens/CategoryScreen.jsx';
+import ToolScreen from './screens/ToolScreen.jsx';
 
 const API_BASE = window.location.origin;
 
@@ -1717,7 +1718,7 @@ function App() {
         </div>
       </header>
 
-      <div style={screen === 'home' || screen.startsWith('category:') ? { ...S.container, maxWidth: '100%', padding: '0' } : S.container}>
+      <div style={{ ...S.container, maxWidth: '100%', padding: '0' }}>
         {/* Home Screen */}
         {screen === 'home' && (
           <HomeScreen
@@ -1735,23 +1736,23 @@ function App() {
           />
         )}
 
-        {/* Tool Screen — Back button + sub-tab bar */}
+        {/* Tool Screen */}
         {screen !== 'home' && !screen.startsWith('category:') && (
-          <div>
-            {/* Back + Sub-tabs */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <button onClick={navigateHome} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#999', cursor: 'pointer', padding: '7px 10px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                ← Home
-              </button>
-              <div style={{ ...S.tabs, flex: 1 }} className="hide-scrollbar">
-                {[{id:'image',icon:'🎨',label:'Create Image'},{id:'i2i',icon:'🔄',label:'Edit Image'},{id:'i2v',icon:'🖼️',label:'Animate Image'},{id:'t2v',icon:'🎬',label:'Create Video'},{id:'motion',icon:'🎭',label:'Motion Sync'},{id:'audio',icon:'🔊',label:'Audio'},{id:'transcribe',icon:'🎙️',label:'Transcribe'},{id:'chat',icon:'💬',label:'Chat'},{id:'train',icon:'🧪',label:'Train'},{id:'history',icon:'📂',label:'History'}].map(t => (
-                  <button key={t.id} onClick={() => { setTab(t.id); setScreen(t.id); }} style={{ padding: '7px 12px', background: tab === t.id ? 'rgba(34,212,123,0.12)' : 'none', border: tab === t.id ? '1px solid rgba(34,212,123,0.25)' : '1px solid transparent', borderRadius: 8, color: tab === t.id ? '#22d47b' : '#777', fontWeight: tab === t.id ? 600 : 400, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0, position: 'relative' }}>
-                    {t.icon} {t.label}
-                    {jobs.some(j => j.tab === t.id && !j.done) && t.id !== tab && <span style={{ position: 'absolute', top: 2, right: 2, width: 7, height: 7, borderRadius: '50%', background: '#22d47b', animation: 'spin 1s linear infinite', border: '1.5px solid transparent', borderTopColor: '#fff' }} />}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <ToolScreen
+            tabId={tab}
+            onBack={() => {
+              const categoryToolTabs = { image: 'image', i2i: 'image', i2v: 'image', t2v: 'video', motion: 'video', audio: 'audio', transcribe: 'transcribe', train: 'character', chat: 'chat' };
+              const catId = categoryToolTabs[tab];
+              if (catId) { setScreen('category:' + catId); } else { navigateHome(); }
+            }}
+            onSwitchTool={(newTab) => { setTab(newTab); setScreen(newTab); }}
+            results={results.filter(r => {
+              const tabTypes = { image: ['image'], i2i: ['image'], i2v: ['video'], t2v: ['video'], motion: ['video'], audio: ['audio'], transcribe: ['transcription'] };
+              const types = tabTypes[tab] || [];
+              return types.includes(r.type);
+            })}
+            onViewItem={(item) => setViewerItem(item)}
+          >
 
         {/* Error */}
         {error && <div style={S.errorBox}><span>⚠ {error}</span><span onClick={() => setError('')} style={{ cursor: 'pointer', opacity: 0.7 }}>✕</span></div>}
@@ -2547,8 +2548,7 @@ function App() {
               </div>
             )}
           </div>
-        )}
-          </div>
+          </ToolScreen>
         )}
       </div>
 
