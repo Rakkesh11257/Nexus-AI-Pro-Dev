@@ -22,6 +22,7 @@ const CATEGORY_TOOLS = {
       { id: 'edit-image', label: 'Edit Image', media: '/samples/edit-image.gif', tab: 'i2i' },
       { id: 'animate-image', label: 'Animate Image', media: '/samples/animate-image.gif', tab: 'i2v' },
       { id: 'face-swap', label: 'Face Swap', media: null, tab: null, comingSoon: true },
+      { id: 'image-upscale', label: 'Image Upscale', media: null, tab: null, comingSoon: true },
     ],
   },
   video: {
