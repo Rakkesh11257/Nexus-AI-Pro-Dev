@@ -1777,23 +1777,27 @@ function App() {
         {/* ══ IMAGE TAB ══ */}
         {tab === 'image' && (
           <div>
-            <textarea style={{ ...S.input, minHeight: 80 }} placeholder="Describe the image you want to create..." value={prompt} onChange={e => setPrompt(e.target.value)} />
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-              <select value={model} onChange={e => { setModel(e.target.value); if (e.target.value.includes('schnell')) setSteps(4); else setSteps(20); }} style={{ ...S.select, flex: '1 1 auto', minWidth: 0, width: '100%' }}>
+            <select value={model} onChange={e => { setModel(e.target.value); if (e.target.value.includes('schnell')) setSteps(4); else setSteps(20); }} style={{ ...S.select, width: '100%', marginBottom: 14 }}>
                 {IMAGE_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
                 {trainHistory.length > 0 && <option disabled>── Your Trained Models ──</option>}
                 {trainHistory.map(m => <option key={m.name} value={m.name}>🧪 {m.name} — Trigger: {m.trigger}</option>)}
               </select>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                {ASPECTS.map(a => (
-                  <button key={a.id} onClick={() => setAspect(a.id)} style={{ padding: '7px 10px', background: aspect === a.id ? 'rgba(34,212,123,0.2)' : '#111827', border: aspect === a.id ? '1px solid rgba(34,212,123,0.4)' : '1px solid #333', borderRadius: 6, color: aspect === a.id ? '#fff' : '#888', cursor: 'pointer', fontSize: 12 }}>{a.id}</button>
-                ))}
-              </div>
+
+            {/* Prompt */}
+            <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Describe your image</label>
+            <textarea style={{ ...S.input, minHeight: 100, marginBottom: 14 }} placeholder="What do you want to see? Example: 'A cat sitting on a table, warm morning light.'" value={prompt} onChange={e => setPrompt(e.target.value)} />
+
+            {/* Aspect Ratio */}
+            <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Aspect Ratio</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+              {ASPECTS.map(a => (
+                <button key={a.id} onClick={() => setAspect(a.id)} style={{ padding: '7px 12px', background: aspect === a.id ? 'rgba(34,212,123,0.15)' : 'rgba(255,255,255,0.03)', border: aspect === a.id ? '1px solid rgba(34,212,123,0.4)' : '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: aspect === a.id ? '#22d47b' : '#888', cursor: 'pointer', fontSize: 13, fontWeight: aspect === a.id ? 600 : 400, transition: 'all 0.2s ease' }}>{a.id}</button>
+              ))}
             </div>
 
             {/* Advanced */}
             <div style={{ marginBottom: 12 }}>
-              <span onClick={() => setShowAdvanced(!showAdvanced)} style={{ color: '#888', fontSize: 13, cursor: 'pointer' }}>{showAdvanced ? '▼' : '▶'} Advanced Settings</span>
+              <span onClick={() => setShowAdvanced(!showAdvanced)} style={{ color: '#888', fontSize: 13, cursor: 'pointer' }}>{showAdvanced ? '▼' : '▶'} Adjust Settings</span>
               {showAdvanced && (
                 <div style={{ marginTop: 8, padding: 16, background: '#111827', borderRadius: 8, border: '1px solid #1f2937', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div><label style={S.label}>Negative Prompt</label><input style={S.input} placeholder="What to avoid..." value={negPrompt} onChange={e => setNegPrompt(e.target.value)} /></div>
@@ -1806,21 +1810,10 @@ function App() {
               )}
             </div>
 
-            <button onClick={generateImage} style={S.btn}>
+            <button onClick={generateImage} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>
               ✨ Generate Image
             </button>
 
-            {/* Results */}
-            {results.filter(r => r.type === 'image').length > 0 && (
-              <div style={S.grid}>
-                {results.filter(r => r.type === 'image').map((item, i) => (
-                  <div key={i} style={S.gridCard} onClick={() => setViewerItem(item)}>
-                    <MediaImg src={item.url} style={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', display: 'block', minHeight: 120 }} />
-                    <div style={{ padding: '8px 10px' }}><p style={{ fontSize: 12, color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{item.prompt}</p></div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
