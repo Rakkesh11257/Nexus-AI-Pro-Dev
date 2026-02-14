@@ -5,6 +5,79 @@ import ToolScreen from './screens/ToolScreen.jsx';
 
 const API_BASE = window.location.origin;
 
+// ??? Model Logo Helper ???
+const getModelLogo = (modelId) => {
+  const baseId = modelId.split(':')[0];
+  const filename = baseId.replace('/', ':');
+  return `/samples/models/${filename}.png`;
+};
+
+// ??? Custom Model Selector with Logos ???
+const ModelSelector = ({ models, value, onChange, extraOptions, style }) => {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  const selected = models.find(m => m.id === value);
+  const isTrainedModel = !selected && value;
+
+  React.useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', width: '100%', marginBottom: 14, ...style }}>
+      <div onClick={() => setOpen(!open)} style={{
+        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: 10, cursor: 'pointer', transition: 'border-color 0.2s',
+        borderColor: open ? 'rgba(34,212,123,0.5)' : 'rgba(255,255,255,0.12)'
+      }}>
+        {selected && <img src={getModelLogo(selected.id)} alt='' style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />}
+        {isTrainedModel && <span style={{ fontSize: 20, flexShrink: 0 }}>?</span>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: '#fff', fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {selected ? selected.name : value}
+          </div>
+          {selected && <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, marginTop: 1 }}>{selected.desc}</div>}
+        </div>
+        <svg width='12' height='12' viewBox='0 0 12 12' fill='none' style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+          <path d='M2 4L6 8L10 4' stroke='rgba(255,255,255,0.4)' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round'/>
+        </svg>
+      </div>
+      {open && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 1000,
+          background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)', maxHeight: 320, overflowY: 'auto',
+          scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent'
+        }}>
+          {models.map(m => (
+            <div key={m.id} onClick={() => { onChange(m.id); setOpen(false); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                cursor: 'pointer', transition: 'background 0.15s',
+                background: m.id === value ? 'rgba(34,212,123,0.1)' : 'transparent',
+                borderLeft: m.id === value ? '3px solid #22d47b' : '3px solid transparent',
+              }}
+              onMouseEnter={e => { if (m.id !== value) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              onMouseLeave={e => { if (m.id !== value) e.currentTarget.style.background = 'transparent'; }}
+            >
+              <img src={getModelLogo(m.id)} alt='' style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: '#fff', fontSize: 13, fontWeight: 500 }}>{m.name}</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{m.desc}</div>
+              </div>
+              {m.id === value && <span style={{ color: '#22d47b', fontSize: 14 }}>?</span>}
+            </div>
+          ))}
+          {extraOptions}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Model Configs ───
 const IMAGE_MODELS = [
   { id: 'prunaai/wan-2.2-image', name: 'Wan 2.2 Image', desc: 'Wan Text to Image', maxSteps: 50, nsfw: true },
@@ -1777,11 +1850,23 @@ function App() {
         {/* ══ IMAGE TAB ══ */}
         {tab === 'image' && (
           <div>
-            <select value={model} onChange={e => { setModel(e.target.value); if (e.target.value.includes('schnell')) setSteps(4); else setSteps(20); }} style={{ ...S.select, width: '100%', marginBottom: 14 }}>
-                {IMAGE_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
-                {trainHistory.length > 0 && <option disabled>── Your Trained Models ──</option>}
-                {trainHistory.map(m => <option key={m.name} value={m.name}>🧪 {m.name} — Trigger: {m.trigger}</option>)}
-              </select>
+            <ModelSelector models={IMAGE_MODELS} value={model} onChange={v => { setModel(v); if (v.includes('schnell')) setSteps(4); else setSteps(20); }}
+              extraOptions={trainHistory.length > 0 ? (<>
+                <div style={{ padding: '8px 14px', color: 'rgba(255,255,255,0.3)', fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', borderTop: '1px solid rgba(255,255,255,0.08)' }}>Your Trained Models</div>
+                {trainHistory.map(m => (
+                  <div key={m.name} onClick={() => { setModel(m.name); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: 'pointer', background: m.name === model ? 'rgba(34,212,123,0.1)' : 'transparent', borderLeft: m.name === model ? '3px solid #22d47b' : '3px solid transparent' }}
+                    onMouseEnter={e => { if (m.name !== model) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                    onMouseLeave={e => { if (m.name !== model) e.currentTarget.style.background = 'transparent'; }}>
+                    <span style={{ fontSize: 20, flexShrink: 0 }}>🧪</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ color: '#fff', fontSize: 13, fontWeight: 500 }}>{m.name}</div>
+                      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>Trigger: {m.trigger}</div>
+                    </div>
+                    {m.name === model && <span style={{ color: '#22d47b', fontSize: 14 }}>✓</span>}
+                  </div>
+                ))}
+              </>) : null}
+            />
 
             {/* Prompt */}
             <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Describe your image</label>
@@ -1820,9 +1905,7 @@ function App() {
         {/* ══ IMAGE TO IMAGE TAB ══ */}
         {tab === 'i2i' && (
           <div>
-            <select value={i2iModel} onChange={e => setI2iModel(e.target.value)} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {I2I_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
-            </select>
+            <ModelSelector models={I2I_MODELS} value={i2iModel} onChange={v => setI2iModel(v)} />
 
             <div style={{ marginBottom: 12 }}>
               <label style={S.label}>Source Image</label>
@@ -1878,9 +1961,7 @@ function App() {
         {/* ══ IMAGE TO VIDEO TAB ══ */}
         {tab === 'i2v' && (
           <div>
-            <select value={i2vModel} onChange={e => { setI2vModel(e.target.value); setI2vOpts({}); }} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {I2V_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
-            </select>
+            <ModelSelector models={I2V_MODELS} value={i2vModel} onChange={v => { setI2vModel(v); setI2vOpts({}); }} />
 
             <div style={{ marginBottom: 12 }}>
               <label style={S.label}>Source Image (Start Frame)</label>
@@ -1939,9 +2020,7 @@ function App() {
         {/* ══ TEXT TO VIDEO TAB ══ */}
         {tab === 't2v' && (
           <div>
-            <select value={t2vModel} onChange={e => { setT2vModel(e.target.value); setT2vOpts({}); }} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {T2V_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
-            </select>
+            <ModelSelector models={T2V_MODELS} value={t2vModel} onChange={v => { setT2vModel(v); setT2vOpts({}); }} />
 
             <textarea style={{ ...S.input, minHeight: 80, marginBottom: 12 }} placeholder="Describe the video you want to create..." value={t2vPrompt} onChange={e => setT2vPrompt(e.target.value)} />
 
@@ -1973,9 +2052,7 @@ function App() {
           const checkSt = { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#aaa', fontSize: 13 };
           return (
           <div>
-            <select value={motionModel} onChange={e => { setMotionModel(e.target.value); setMotionOpts({}); }} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {MOTION_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
-            </select>
+            <ModelSelector models={MOTION_MODELS} value={motionModel} onChange={v => { setMotionModel(v); setMotionOpts({}); }} />
 
             {/* Reference Image */}
             <div style={{ marginBottom: 12 }}>
@@ -2084,9 +2161,7 @@ function App() {
           const btnSt = (sel) => ({ padding: '6px 12px', background: sel ? 'rgba(34,212,123,0.2)' : '#111827', border: sel ? '1px solid rgba(34,212,123,0.4)' : '1px solid #333', borderRadius: 6, color: sel ? '#fff' : '#888', cursor: 'pointer', fontSize: 12 });
           return (
           <div>
-            <select value={audioModel} onChange={e => { setAudioModel(e.target.value); setAudioOpts({}); setAudioNegPrompt(''); setAudioVideo(null); setAudioImage(null); }} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {AUDIO_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
-            </select>
+            <ModelSelector models={AUDIO_MODELS} value={audioModel} onChange={v => { setAudioModel(v); setAudioOpts({}); setAudioNegPrompt(''); setAudioVideo(null); setAudioImage(null); }} />
 
             {/* Prompt */}
             <textarea style={{ ...S.input, minHeight: isEL ? 80 : 60 }} placeholder={isEL ? 'Enter text to speak...' : isLyria ? 'Describe the music you want...' : 'Describe the audio/sound...'} value={audioPrompt} onChange={e => setAudioPrompt(e.target.value)} />
@@ -2219,9 +2294,7 @@ function App() {
           const checkSt = { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#aaa', fontSize: 13 };
           return (
           <div>
-            <select value={transcribeModel} onChange={e => { setTranscribeModel(e.target.value); setTranscribeOpts({}); }} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {TRANSCRIBE_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
-            </select>
+            <ModelSelector models={TRANSCRIBE_MODELS} value={transcribeModel} onChange={v => { setTranscribeModel(v); setTranscribeOpts({}); }} />
 
             {/* Audio upload */}
             <div style={{ marginBottom: 12 }}>
@@ -2302,9 +2375,7 @@ function App() {
           <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 220px)', minHeight: 400 }}>
             {/* Model selector + settings */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <select value={chatModel} onChange={e => { setChatModel(e.target.value); setChatOpts({}); }} style={{ ...S.select, flex: 1, minWidth: 180 }}>
-                {TEXT_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
-              </select>
+              <ModelSelector models={TEXT_MODELS} value={chatModel} onChange={v => { setChatModel(v); setChatOpts({}); }} style={{ flex: 1, minWidth: 180, marginBottom: 0 }} />
               <button onClick={() => { setChatMessages([]); setChatImage(null); }} style={{ ...S.btnSm, color: '#ef4444', borderColor: '#ef4444' }}>Clear Chat</button>
             </div>
 
