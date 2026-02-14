@@ -27,7 +27,7 @@ const I2I_MODELS = [
 const I2V_MODELS = [
   { id: 'wan-video/wan-2.2-i2v-fast', name: 'Wan 2.2 I2V Fast', desc: '$0.05-0.145/vid', nsfw: true, price: '$0.05-0.145',
     params: { prompt: true, last_frame: true, num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true } },
-  { id: 'wavespeedai/wan-2.1-i2v-720p', name: 'Wan 2.1 I2V 720p', desc: 'Wavespeed NSFW', nsfw: true,
+  { id: 'wavespeedai/wan-2.1-i2v-720p', name: 'Wan 2.1 I2V 720p', desc: 'Wavespeed 720p', nsfw: true,
     params: { prompt: true, last_frame: true, num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true } },
   { id: 'wan-video/wan-2.5-i2v', name: 'Wan 2.5 I2V', desc: 'HD + audio', nsfw: false,
     params: { prompt: true, duration: [5,10], resolution: ['720p','1080p'], negative_prompt: true, enable_prompt_expansion: true, seed: true } },
@@ -42,7 +42,7 @@ const I2V_MODELS = [
 const T2V_MODELS = [
   { id: 'wan-video/wan-2.2-t2v-fast', name: 'Wan 2.2 T2V Fast', desc: '$0.05-0.145/vid', nsfw: true, price: '$0.05-0.145',
     params: { num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], aspect_ratio: ['16:9','9:16'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true, optimize_prompt: true } },
-  { id: 'wavespeedai/wan-2.1-t2v-720p', name: 'Wan 2.1 T2V 720p', desc: 'Wavespeed NSFW', nsfw: true,
+  { id: 'wavespeedai/wan-2.1-t2v-720p', name: 'Wan 2.1 T2V 720p', desc: 'Wavespeed 720p', nsfw: true,
     params: { num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], aspect_ratio: ['16:9','9:16'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true, optimize_prompt: true } },
   { id: 'wan-video/wan-2.5-t2v', name: 'Wan 2.5 T2V', desc: 'HD + audio', nsfw: false,
     params: { size: ['1280*720','720*1280','1920*1080','1080*1920'], duration: [5,10], negative_prompt: true, enable_prompt_expansion: true, seed: true } },
@@ -1772,7 +1772,7 @@ function App() {
             <textarea style={{ ...S.input, minHeight: 80 }} placeholder="Describe the image you want to create..." value={prompt} onChange={e => setPrompt(e.target.value)} />
             <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
               <select value={model} onChange={e => { setModel(e.target.value); if (e.target.value.includes('schnell')) setSteps(4); else setSteps(20); }} style={{ ...S.select, flex: '1 1 auto', minWidth: 0, width: '100%' }}>
-                {IMAGE_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}{m.nsfw ? ' 🔞 NSFW' : ''}</option>)}
+                {IMAGE_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
                 {trainHistory.length > 0 && <option disabled>── Your Trained Models ──</option>}
                 {trainHistory.map(m => <option key={m.name} value={m.name}>🧪 {m.name} — Trigger: {m.trigger}</option>)}
               </select>
@@ -1820,7 +1820,7 @@ function App() {
         {tab === 'i2i' && (
           <div>
             <select value={i2iModel} onChange={e => setI2iModel(e.target.value)} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {I2I_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}{m.nsfw ? ' 🔞 NSFW' : ''}</option>)}
+              {I2I_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
             </select>
 
             <div style={{ marginBottom: 12 }}>
@@ -1878,7 +1878,7 @@ function App() {
         {tab === 'i2v' && (
           <div>
             <select value={i2vModel} onChange={e => { setI2vModel(e.target.value); setI2vOpts({}); }} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {I2V_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}{m.nsfw ? ' 🔞 NSFW' : ''}</option>)}
+              {I2V_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
             </select>
 
             <div style={{ marginBottom: 12 }}>
@@ -1939,7 +1939,7 @@ function App() {
         {tab === 't2v' && (
           <div>
             <select value={t2vModel} onChange={e => { setT2vModel(e.target.value); setT2vOpts({}); }} style={{ ...S.select, width: '100%', marginBottom: 12 }}>
-              {T2V_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}{m.nsfw ? ' 🔞 NSFW' : ''}</option>)}
+              {T2V_MODELS.map(m => <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>)}
             </select>
 
             <textarea style={{ ...S.input, minHeight: 80, marginBottom: 12 }} placeholder="Describe the video you want to create..." value={t2vPrompt} onChange={e => setT2vPrompt(e.target.value)} />
