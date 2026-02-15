@@ -31,9 +31,23 @@ function getSiblingTools(tabId) {
   return info.category.tools.filter(t => !t.comingSoon && t.tab);
 }
 
+// ─── Tool icon map (SVG-style emoji icons per tool) ───
+const TOOL_ICONS = {
+  'create-image': '🖼️',
+  'edit-image': '✏️',
+  'animate-image': '🎞️',
+  'animate-image-v': '🎞️',
+  'create-video': '🎬',
+  'motion-sync': '🎭',
+  'music-gen': '🎵',
+  'transcribe-audio': '🎙️',
+  'train-model': '🧪',
+  'ai-chat': '💬',
+};
+
 // ─── History Panel ───
 function HistoryPanel({ results, onViewItem, isMobile }) {
-  const imageResults = results || [];
+  const items = results || [];
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -51,13 +65,13 @@ function HistoryPanel({ results, onViewItem, isMobile }) {
             fontFamily: "'Outfit', sans-serif",
           }}>Generation History</span>
         </div>
-        {imageResults.length > 0 && (
-          <span style={{ fontSize: 12, color: '#555' }}>{imageResults.length} results</span>
+        {items.length > 0 && (
+          <span style={{ fontSize: 12, color: '#555' }}>{items.length} results</span>
         )}
       </div>
 
       {/* Results grid or empty state */}
-      {imageResults.length > 0 ? (
+      {items.length > 0 ? (
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))',
@@ -65,7 +79,7 @@ function HistoryPanel({ results, onViewItem, isMobile }) {
           overflowY: 'auto',
           flex: 1,
         }}>
-          {imageResults.map((item, i) => (
+          {items.map((item, i) => (
             <div
               key={i}
               onClick={() => onViewItem && onViewItem(item)}
@@ -78,12 +92,28 @@ function HistoryPanel({ results, onViewItem, isMobile }) {
                 transition: 'border-color 0.2s',
               }}
             >
-              <img
-                src={item.url}
-                alt=""
-                style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
-                onError={e => { e.target.style.display = 'none'; }}
-              />
+              {item.type === 'video' ? (
+                <video
+                  src={item.url}
+                  muted
+                  playsInline
+                  onMouseEnter={e => e.target?.play?.()}
+                  onMouseLeave={e => { if(e.target?.pause) { e.target.pause(); e.target.currentTime = 0; }}}
+                  style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }}
+                />
+              ) : item.type === 'audio' ? (
+                <div style={{ padding: '12px 10px 6px' }}>
+                  <div style={{ fontSize: 22, textAlign: 'center', marginBottom: 6 }}>🎵</div>
+                  <audio src={item.url} controls style={{ width: '100%', height: 32 }} onClick={e => e.stopPropagation()} />
+                </div>
+              ) : (
+                <img
+                  src={item.url}
+                  alt=''
+                  style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
+                  onError={e => { e.target.style.display = 'none'; }}
+                />
+              )}
               <div style={{ padding: '6px 8px' }}>
                 <p style={{
                   fontSize: 11, color: '#777', margin: 0,
@@ -108,93 +138,128 @@ function HistoryPanel({ results, onViewItem, isMobile }) {
   );
 }
 
+// ─── Sub-Tool Card (OpenArt style) ───
+function ToolCard({ tool, isActive, onClick, isMobile }) {
+  const icon = TOOL_ICONS[tool.id] || '⚡';
+  
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        flex: isMobile ? '1 1 0' : 'none',
+        width: isMobile ? 'auto' : 160,
+        padding: isMobile ? '12px 8px' : '14px 16px',
+        borderRadius: 12,
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 6,
+        transition: 'all 0.25s ease',
+        background: isActive
+          ? 'linear-gradient(135deg, rgba(34,212,123,0.2) 0%, rgba(34,212,123,0.05) 100%)'
+          : 'rgba(255,255,255,0.02)',
+        border: isActive
+          ? '1px solid rgba(34,212,123,0.35)'
+          : '1px solid rgba(255,255,255,0.06)',
+        boxShadow: isActive ? '0 0 20px rgba(34,212,123,0.08)' : 'none',
+      }}
+    >
+      <span style={{
+        fontSize: isMobile ? 22 : 26,
+        filter: isActive ? 'none' : 'grayscale(0.5)',
+        transition: 'filter 0.2s',
+      }}>{icon}</span>
+      <span style={{
+        fontSize: isMobile ? 11 : 12,
+        fontWeight: isActive ? 600 : 400,
+        color: isActive ? '#fff' : '#888',
+        textAlign: 'center',
+        whiteSpace: 'nowrap',
+        fontFamily: "'Outfit', sans-serif",
+      }}>{tool.label}</span>
+    </div>
+  );
+}
+
 // ─── Tool Screen Layout ───
 export default function ToolScreen({
   tabId,
-  onBack,         // Go back to category screen
-  onSwitchTool,   // Switch to sibling tool
-  results,        // Generation results for history
-  onViewItem,     // Open viewer for a result
-  children,       // The actual form content from App.jsx
+  onBack,
+  onSwitchTool,
+  results,
+  onViewItem,
+  children,
 }) {
   const isMobile = useIsMobile();
   const toolInfo = getToolInfo(tabId);
   const siblings = getSiblingTools(tabId);
 
   if (!toolInfo) {
-    // Fallback for tabs not in category system (like train, chat etc)
     return <>{children}</>;
   }
 
   const { category, tool } = toolInfo;
-  const color = category.color;
+
+  // Shared header
+  const Header = ({ padding }) => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: padding || '18px 20px 0',
+    }}>
+      <div
+        onClick={onBack}
+        style={{
+          width: 32, height: 32, borderRadius: 8,
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', fontSize: 16, color: '#999',
+          transition: 'all 0.2s ease',
+        }}
+      >←</div>
+      <span style={{
+        fontSize: isMobile ? 18 : 20, fontWeight: 700, color: '#f0f0f5',
+        fontFamily: "'Outfit', sans-serif",
+      }}>{tool.label}</span>
+    </div>
+  );
+
+  // Shared sub-tool cards (OpenArt style)
+  const SubToolCards = ({ padding }) => {
+    if (siblings.length <= 1) return null;
+    return (
+      <div style={{
+        display: 'flex',
+        gap: 8,
+        padding: padding || '14px 20px',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+      }}>
+        {siblings.map(t => (
+          <ToolCard
+            key={t.id}
+            tool={t}
+            isActive={t.tab === tabId}
+            onClick={() => onSwitchTool(t.tab)}
+            isMobile={isMobile}
+          />
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div style={{ width: '100%', height: '100%', overflowX: 'hidden' }}>
       {isMobile ? (
         /* ── Mobile: stacked layout ── */
         <div style={{ padding: '0' }}>
-          {/* Header */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '14px 14px 0',
-          }}>
-            <div
-              onClick={onBack}
-              style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', fontSize: 16, color: '#999',
-              }}
-            >←</div>
-            <span style={{
-              fontSize: 18, fontWeight: 700, color: '#f0f0f5',
-              fontFamily: "'Outfit', sans-serif",
-            }}>{tool.label}</span>
-          </div>
-
-          {/* Sub-tool tabs */}
-          {siblings.length > 1 && (
-            <div style={{
-              display: 'flex', gap: 0, padding: '12px 14px 0',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-            }}>
-              {siblings.map(t => {
-                const isActive = t.tab === tabId;
-                return (
-                  <div
-                    key={t.id}
-                    onClick={() => onSwitchTool(t.tab)}
-                    style={{
-                      padding: '10px 16px',
-                      fontSize: 13, fontWeight: isActive ? 600 : 400,
-                      color: isActive ? color : '#777',
-                      cursor: 'pointer',
-                      borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
-                      transition: 'all 0.2s ease',
-                      display: 'flex', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    {t.media && (
-                      <img src={t.media} alt="" style={{
-                        width: 20, height: 20, borderRadius: 4, objectFit: 'cover',
-                      }} />
-                    )}
-                    {t.label}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Form content */}
-          <div style={{ padding: '16px 14px' }}>
+          <Header padding='14px 14px 0' />
+          <SubToolCards padding='12px 14px' />
+          <div style={{ padding: '0 14px 16px' }}>
             {children}
           </div>
-
-          {/* History below */}
           <div style={{ padding: '0 14px 20px' }}>
             <HistoryPanel results={results} onViewItem={onViewItem} isMobile={isMobile} />
           </div>
@@ -205,7 +270,7 @@ export default function ToolScreen({
           display: 'flex', gap: 0, height: '100%',
           minHeight: 'calc(100vh - 120px)',
         }}>
-          {/* Left panel: form */}
+          {/* Left panel */}
           <div style={{
             width: 520, minWidth: 420, maxWidth: 560,
             display: 'flex', flexDirection: 'column',
@@ -213,73 +278,14 @@ export default function ToolScreen({
             flexShrink: 0,
             overflowY: 'auto',
           }}>
-            {/* Header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '18px 20px 0',
-            }}>
-              <div
-                onClick={onBack}
-                style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', fontSize: 16, color: '#999',
-                  transition: 'all 0.2s ease',
-                }}
-              >←</div>
-              <span style={{
-                fontSize: 20, fontWeight: 700, color: '#f0f0f5',
-                fontFamily: "'Outfit', sans-serif",
-              }}>{tool.label}</span>
-            </div>
-
-            {/* Sub-tool tabs */}
-            {siblings.length > 1 && (
-              <div style={{
-                display: 'flex', gap: 0, padding: '12px 20px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                {siblings.map(t => {
-                  const isActive = t.tab === tabId;
-                  return (
-                    <div
-                      key={t.id}
-                      onClick={() => onSwitchTool(t.tab)}
-                      style={{
-                        padding: '10px 18px',
-                        fontSize: 13, fontWeight: isActive ? 600 : 400,
-                        color: isActive ? color : '#777',
-                        cursor: 'pointer',
-                        borderBottom: isActive ? `2px solid ${color}` : '2px solid transparent',
-                        transition: 'all 0.2s ease',
-                        display: 'flex', alignItems: 'center', gap: 8,
-                      }}
-                    >
-                      {t.media && (
-                        <img src={t.media} alt="" style={{
-                          width: 22, height: 22, borderRadius: 5, objectFit: 'cover',
-                        }} />
-                      )}
-                      {t.label}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Form content */}
-            <div style={{ padding: '18px 20px', flex: 1, overflowY: 'auto' }}>
+            <Header />
+            <SubToolCards />
+            <div style={{ padding: '4px 20px 18px', flex: 1, overflowY: 'auto' }}>
               {children}
             </div>
           </div>
-
           {/* Right panel: history */}
-          <div style={{
-            flex: 1, padding: '18px 24px',
-            overflowY: 'auto',
-          }}>
+          <div style={{ flex: 1, padding: '18px 24px', overflowY: 'auto' }}>
             <HistoryPanel results={results} onViewItem={onViewItem} isMobile={isMobile} />
           </div>
         </div>

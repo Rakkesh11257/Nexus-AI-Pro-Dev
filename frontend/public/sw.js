@@ -1,5 +1,5 @@
 // NEXUS AI Pro - Service Worker
-const CACHE_NAME = 'nexus-ai-v3';
+const CACHE_NAME = 'nexus-ai-v4';
 
 // Cache the app shell on install
 self.addEventListener('install', (event) => {
