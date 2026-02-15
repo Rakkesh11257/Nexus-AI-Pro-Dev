@@ -647,9 +647,11 @@ function App() {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState('');
 
-  // Tab & Category
-  const [tab, setTab] = useState('image');
-  const [screen, setScreen] = useState('home'); // 'home' or a tab id
+  // Tab & Category (persist across refresh)
+  const [tab, setTabRaw] = useState(() => sessionStorage.getItem('nexus_tab') || 'image');
+  const [screen, setScreenRaw] = useState(() => sessionStorage.getItem('nexus_screen') || 'home');
+  const setTab = (v) => { setTabRaw(v); sessionStorage.setItem('nexus_tab', v); };
+  const setScreen = (v) => { setScreenRaw(v); sessionStorage.setItem('nexus_screen', v); };
   const [category, setCategory] = useState(null); // null=home, 'image','video','audio','chat','train'
 
   // Navigation helpers
@@ -747,7 +749,8 @@ function App() {
     const timer = setTimeout(() => setJobs(prev => prev.filter(j => !j.done || Date.now() - j.ts < 8000)), 8000);
     return () => clearTimeout(timer);
   }, [jobs]);
-  const [results, setResults] = useState([]);
+  const [results, setResultsRaw] = useState(() => { try { return JSON.parse(localStorage.getItem('nexus_results') || '[]'); } catch { return []; } });
+  const setResults = (fn) => { setResultsRaw(prev => { const next = typeof fn === 'function' ? fn(prev) : fn; try { localStorage.setItem('nexus_results', JSON.stringify(next.slice(0, 100))); } catch {} return next; }); };
   const [viewerItem, setViewerItem] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState(false);
