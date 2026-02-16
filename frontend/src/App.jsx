@@ -1919,9 +1919,16 @@ function App() {
       const imgUri = await toDataUri(skinImage);
       const modelObj = SKIN_MODELS.find(m => m.id === skinModel);
       let input;
-      if (modelObj?.isHaircut) { input = { image: imgUri, prompt: skinPrompt || 'change haircut' }; }
-      else if (modelObj?.isICLight) { input = { image: imgUri, prompt: skinPrompt || 'portrait, professional lighting' }; }
-      else { input = { input_image: imgUri, prompt: skinPrompt || 'make this person look realistic', disable_safety_checker: true }; }
+      if (modelObj?.isHaircut) {
+        // flux-kontext-apps/change-haircut schema: input_image, haircut, hair_color, gender
+        input = { input_image: imgUri, haircut: skinPrompt || 'Random', hair_color: 'No change', gender: 'none', aspect_ratio: 'match_input_image', output_format: 'png', safety_tolerance: 2 };
+      } else if (modelObj?.isICLight) {
+        // zsxkib/ic-light schema: image, prompt
+        input = { image: imgUri, prompt: skinPrompt || 'portrait, professional lighting' };
+      } else {
+        // fofr/kontext-make-person-real schema: input_image, prompt
+        input = { input_image: imgUri, prompt: skinPrompt || 'make this person look realistic', disable_safety_checker: true, aspect_ratio: 'match_input_image', megapixels: '1', guidance: 2.5, num_inference_steps: 30, output_format: 'png', output_quality: 90 };
+      }
       updateJob(jobId, { status: 'Processing portrait...' });
       // Use version mode if useVersion flag is set OR if model ID contains a version hash
       const hasVersion = modelObj?.useVersion || skinModel.includes(':');
