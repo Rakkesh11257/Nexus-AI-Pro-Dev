@@ -134,6 +134,8 @@ const I2V_MODELS = [
     params: { prompt: true, duration: [4,6,8], resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16'], generate_audio: true, first_frame: true, last_frame: true, negative_prompt: true, seed: true } },
   { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: '$0.07/sec (~₹5.86/sec)', nsfw: false, price: '$0.07/s',
     params: { prompt: true, duration: [5,10], aspect_ratio: ['16:9','9:16','1:1'], negative_prompt: true, first_frame: true, last_frame: true } },
+  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: '$0.05/sec (~₹4.20/sec)', nsfw: false, isGrokI2V: true,
+    params: { prompt: true, duration: { min: 1, max: 15, default: 5 }, resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16','1:1'] } },
 ];
 // T2V models with per-model config
 const T2V_MODELS = [
@@ -156,6 +158,8 @@ const T2V_MODELS = [
   { id: 'minimax/video-01-live', name: 'MiniMax Video-01 Live', desc: '$0.50/vid (~₹41.88/vid)', nsfw: false,
     params: { prompt_optimizer: true, first_frame: true } },
   // haiper-ai/haiper-video-2 removed - model 404'd
+  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: '$0.05/sec (~₹4.20/sec)', nsfw: false,
+    params: { duration: { min: 1, max: 15, default: 5 }, resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16','1:1'] } },
 ];
 const ASPECTS = [
   { id: '1:1', w: 1024, h: 1024 },
@@ -1215,6 +1219,7 @@ function App() {
 
     // Duration (array options)
     if (Array.isArray(p.duration)) input.duration = opts.duration || p.duration[0];
+    else if (p.duration?.min != null) input.duration = opts.duration ?? p.duration.default;
     // Seconds (Sora)
     if (Array.isArray(p.seconds)) input.seconds = opts.seconds || p.seconds[0];
     // Num frames (range object)
@@ -1449,6 +1454,12 @@ function App() {
             <div style={{ display: 'flex', gap: 4 }}>
               {p.duration.map(d => <button key={d} onClick={() => setOpts(o => ({ ...o, duration: d }))} style={btnStyle((opts.duration || p.duration[0]) === d)}>{d}s</button>)}
             </div>
+          </div>
+        )}
+        {p.duration?.min != null && !Array.isArray(p.duration) && (
+          <div>
+            <label style={S.label}>Duration: {opts.duration ?? p.duration.default}s</label>
+            <input type="range" min={p.duration.min} max={p.duration.max} value={opts.duration ?? p.duration.default} onChange={e => setOpts(o => ({ ...o, duration: parseInt(e.target.value) }))} style={{ width: '100%' }} />
           </div>
         )}
         {/* Seconds (Sora) */}
