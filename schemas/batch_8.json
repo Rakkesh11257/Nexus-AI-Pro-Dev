@@ -1,0 +1,244 @@
+{
+  "google/gemini-3-pro": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "audio": {
+        "type": "string",
+        "title": "Audio",
+        "format": "uri",
+        "x-order": 3,
+        "nullable": true,
+        "description": "Input audio to send with the prompt (max 1 audio file, up to 8.4 hours)"
+      },
+      "top_p": {
+        "type": "number",
+        "title": "Top P",
+        "default": 0.95,
+        "maximum": 1,
+        "minimum": 0,
+        "x-order": 7,
+        "description": "Nucleus sampling parameter - the model considers the results of the tokens with top_p probability mass"
+      },
+      "images": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        },
+        "title": "Images",
+        "default": [],
+        "x-order": 1,
+        "description": "Input images to send with the prompt (max 10 images, each up to 7MB)"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "The text prompt to send to the model"
+      },
+      "videos": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        },
+        "title": "Videos",
+        "default": [],
+        "x-order": 2,
+        "description": "Input videos to send with the prompt (max 10 videos, each up to 45 minutes)"
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "default": 1,
+        "maximum": 2,
+        "minimum": 0,
+        "x-order": 6,
+        "description": "Sampling temperature between 0 and 2"
+      },
+      "thinking_level": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/thinking_level"
+          }
+        ],
+        "x-order": 5,
+        "nullable": true,
+        "description": "Thinking level for reasoning (low or high). Replaces thinking_budget for Gemini 3 models."
+      },
+      "max_output_tokens": {
+        "type": "integer",
+        "title": "Max Output Tokens",
+        "default": 65535,
+        "maximum": 65535,
+        "minimum": 1,
+        "x-order": 8,
+        "description": "Maximum number of tokens to generate"
+      },
+      "system_instruction": {
+        "type": "string",
+        "title": "System Instruction",
+        "x-order": 4,
+        "nullable": true,
+        "description": "System instruction to guide the model's behavior"
+      }
+    }
+  },
+  "anthropic/claude-4.5-sonnet": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "x-order": 1,
+        "description": "Optional input image. Images are priced as (width px * height px)/750 input tokens"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "Input prompt"
+      },
+      "max_tokens": {
+        "type": "integer",
+        "title": "Max Tokens",
+        "default": 8192,
+        "maximum": 64000,
+        "minimum": 1024,
+        "x-order": 3,
+        "description": "Maximum number of output tokens"
+      },
+      "system_prompt": {
+        "type": "string",
+        "title": "System Prompt",
+        "default": "",
+        "x-order": 2,
+        "description": "System prompt"
+      },
+      "max_image_resolution": {
+        "type": "number",
+        "title": "Max Image Resolution",
+        "default": 0.5,
+        "maximum": 2,
+        "minimum": 0.001,
+        "x-order": 4,
+        "description": "Maximum image resolution in megapixels. Scales down image before sending it to Claude, to save time and money."
+      }
+    }
+  },
+  "xai/grok-4": {
+    "type": "object",
+    "title": "Input",
+    "properties": {
+      "top_p": {
+        "type": "number",
+        "title": "Top P",
+        "default": 1,
+        "x-order": 5,
+        "description": "Top-p (nucleus) sampling"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "default": "",
+        "x-order": 0,
+        "description": "Prompt"
+      },
+      "max_tokens": {
+        "type": "integer",
+        "title": "Max Tokens",
+        "default": 2048,
+        "x-order": 1,
+        "description": "The maximum number of tokens the model should generate as output."
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "default": 0.1,
+        "x-order": 2,
+        "description": "The value used to modulate the next token probabilities."
+      },
+      "presence_penalty": {
+        "type": "number",
+        "title": "Presence Penalty",
+        "default": 0,
+        "x-order": 3,
+        "description": "Presence penalty"
+      },
+      "frequency_penalty": {
+        "type": "number",
+        "title": "Frequency Penalty",
+        "default": 0,
+        "x-order": 4,
+        "description": "Frequency penalty"
+      }
+    }
+  },
+  "deepseek-ai/deepseek-v3.1": {
+    "type": "object",
+    "title": "Input",
+    "properties": {
+      "top_p": {
+        "type": "number",
+        "title": "Top P",
+        "default": 1,
+        "x-order": 4,
+        "description": "Top-p (nucleus) sampling"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "default": "Why are you better than Deepseek v3?",
+        "x-order": 1,
+        "description": "Prompt"
+      },
+      "thinking": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/thinking"
+          }
+        ],
+        "default": "None",
+        "x-order": 0,
+        "description": "Reasoning effort level for DeepSeek models. Use 'medium' for enhanced reasoning or leave as None for default behavior."
+      },
+      "max_tokens": {
+        "type": "integer",
+        "title": "Max Tokens",
+        "default": 1024,
+        "x-order": 2,
+        "description": "The maximum number of tokens the model should generate as output."
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "default": 0.1,
+        "x-order": 3,
+        "description": "The value used to modulate the next token probabilities."
+      },
+      "presence_penalty": {
+        "type": "number",
+        "title": "Presence Penalty",
+        "default": 0,
+        "x-order": 5,
+        "description": "Presence penalty"
+      },
+      "frequency_penalty": {
+        "type": "number",
+        "title": "Frequency Penalty",
+        "default": 0,
+        "x-order": 6,
+        "description": "Frequency penalty"
+      }
+    }
+  }
+}

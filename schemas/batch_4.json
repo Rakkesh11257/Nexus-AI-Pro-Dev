@@ -1,0 +1,572 @@
+{
+  "nightmareai/real-esrgan": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "image"
+    ],
+    "properties": {
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "description": "Input image"
+      },
+      "scale": {
+        "type": "number",
+        "title": "Scale",
+        "default": 4,
+        "maximum": 10,
+        "minimum": 0,
+        "description": "Factor to scale image by"
+      },
+      "face_enhance": {
+        "type": "boolean",
+        "title": "Face Enhance",
+        "default": false,
+        "description": "Run GFPGAN face enhancement along with upscaling"
+      }
+    }
+  },
+  "philz1337x/crystal-upscaler": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "image"
+    ],
+    "properties": {
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "x-order": 0,
+        "description": "An input image for upscaling"
+      },
+      "creativity": {
+        "type": "number",
+        "title": "Creativity",
+        "default": 0,
+        "maximum": 10,
+        "minimum": 0,
+        "x-order": 2,
+        "description": "Creativity level for upscaling"
+      },
+      "scale_factor": {
+        "type": "number",
+        "title": "Scale Factor",
+        "default": 2,
+        "x-order": 1,
+        "description": "Scale factor for upscaling"
+      },
+      "output_format": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/output_format"
+          }
+        ],
+        "default": "png",
+        "x-order": 3,
+        "description": "Format of the output image (JPG uses 95% quality)"
+      }
+    }
+  },
+  "fofr/kontext-make-person-real:3f0b0f59a22997052c144a76457f113f7c35f6573b9f994f14367ec35f96254d": {
+    "properties": {
+      "aspect_ratio": {
+        "default": "match_input_image",
+        "description": "Aspect ratio of the generated image. Use 'match_input_image' to match the aspect ratio of the input image.",
+        "enum": [
+          "1:1",
+          "16:9",
+          "21:9",
+          "3:2",
+          "2:3",
+          "4:5",
+          "5:4",
+          "3:4",
+          "4:3",
+          "9:16",
+          "9:21",
+          "match_input_image"
+        ],
+        "title": "aspect_ratio",
+        "type": "string",
+        "x-order": 2
+      },
+      "disable_safety_checker": {
+        "default": false,
+        "description": "Disable NSFW safety checker",
+        "title": "Disable Safety Checker",
+        "type": "boolean",
+        "x-order": 9
+      },
+      "guidance": {
+        "default": 2.5,
+        "description": "Guidance scale for generation",
+        "maximum": 10,
+        "minimum": 0,
+        "title": "Guidance",
+        "type": "number",
+        "x-order": 5
+      },
+      "input_image": {
+        "description": "Image to use as reference. Must be jpeg, png, gif, or webp.",
+        "format": "uri",
+        "title": "Input Image",
+        "type": "string",
+        "x-order": 1
+      },
+      "lora_strength": {
+        "default": 1,
+        "description": "Strength of the lora",
+        "title": "Lora Strength",
+        "type": "number",
+        "x-order": 11
+      },
+      "megapixels": {
+        "default": "1",
+        "description": "Approximate number of megapixels for generated image",
+        "enum": [
+          "1",
+          "0.25"
+        ],
+        "title": "megapixels",
+        "type": "string",
+        "x-order": 3
+      },
+      "num_inference_steps": {
+        "default": 30,
+        "description": "Number of inference steps",
+        "maximum": 50,
+        "minimum": 4,
+        "title": "Num Inference Steps",
+        "type": "integer",
+        "x-order": 4
+      },
+      "output_format": {
+        "default": "webp",
+        "description": "Output image format",
+        "enum": [
+          "webp",
+          "jpg",
+          "png"
+        ],
+        "title": "output_format",
+        "type": "string",
+        "x-order": 7
+      },
+      "output_quality": {
+        "default": 80,
+        "description": "Quality when saving the output images, from 0 to 100. 100 is best quality, 0 is lowest quality. Not relevant for .png outputs",
+        "maximum": 100,
+        "minimum": 0,
+        "title": "Output Quality",
+        "type": "integer",
+        "x-order": 8
+      },
+      "prompt": {
+        "description": "Text description of what you want to generate, or the instruction on how to edit the given image.",
+        "title": "Prompt",
+        "type": "string",
+        "x-order": 0
+      },
+      "replicate_weights": {
+        "description": "Path to the lora weights",
+        "title": "Replicate Weights",
+        "type": "string",
+        "x-order": 10
+      },
+      "seed": {
+        "description": "Random seed for reproducible generation. Leave blank for random.",
+        "title": "Seed",
+        "type": "integer",
+        "x-order": 6
+      }
+    },
+    "required": [
+      "prompt",
+      "input_image"
+    ],
+    "title": "Input",
+    "type": "object"
+  },
+  "flux-kontext-apps/change-haircut": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "input_image"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "nullable": true,
+        "description": "Random seed. Set for reproducible generation"
+      },
+      "gender": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/gender"
+          }
+        ],
+        "default": "none",
+        "x-order": 3,
+        "description": "The gender of the person"
+      },
+      "haircut": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/haircut"
+          }
+        ],
+        "default": "No change",
+        "x-order": 1,
+        "description": "The haircut to give them"
+      },
+      "hair_color": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/hair_color"
+          }
+        ],
+        "default": "No change",
+        "x-order": 2,
+        "description": "The color of the person's hair"
+      },
+      "input_image": {
+        "type": "string",
+        "title": "Input Image",
+        "format": "uri",
+        "description": "Image of the person's haircut you want to edit. Must be jpeg, png, gif, or webp."
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "match_input_image",
+        "x-order": 4,
+        "description": "Aspect ratio of the generated image. Use 'match_input_image' to match the aspect ratio of the input image."
+      },
+      "output_format": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/output_format"
+          }
+        ],
+        "default": "png",
+        "x-order": 6,
+        "description": "Output format for the generated image"
+      },
+      "safety_tolerance": {
+        "type": "integer",
+        "title": "Safety Tolerance",
+        "default": 2,
+        "maximum": 2,
+        "minimum": 0,
+        "description": "Safety tolerance, 0 is most strict and 2 is most permissive. 2 is currently the maximum allowed."
+      }
+    }
+  },
+  "zsxkib/ic-light:d41bcb10d8c159868f4cfbd7c6a2ca01484f7d39e4613419d5952c61562f1ba7": {
+    "properties": {
+      "appended_prompt": {
+        "default": "best quality",
+        "description": "Additional text to be appended to the main prompt, enhancing image quality",
+        "title": "Appended Prompt",
+        "type": "string",
+        "x-order": 2
+      },
+      "cfg": {
+        "default": 2,
+        "description": "Classifier-Free Guidance scale - higher values encourage adherence to prompt, lower values encourage more creative interpretation",
+        "maximum": 32,
+        "minimum": 1,
+        "title": "Cfg",
+        "type": "number",
+        "x-order": 7
+      },
+      "height": {
+        "default": 640,
+        "description": "The height of the generated images in pixels",
+        "enum": [
+          256,
+          320,
+          384,
+          448,
+          512,
+          576,
+          640,
+          704,
+          768,
+          832,
+          896,
+          960,
+          1024
+        ],
+        "title": "height",
+        "type": "integer",
+        "x-order": 5
+      },
+      "highres_denoise": {
+        "default": 0.5,
+        "description": "Controls the amount of denoising applied when refining the high resolution output (higher = more adherence to the upscaled latent, lower = more creative details added)",
+        "maximum": 1,
+        "minimum": 0.1,
+        "title": "Highres Denoise",
+        "type": "number",
+        "x-order": 9
+      },
+      "highres_scale": {
+        "default": 1.5,
+        "description": "The multiplier for the final output resolution relative to the initial latent resolution",
+        "maximum": 3,
+        "minimum": 1,
+        "title": "Highres Scale",
+        "type": "number",
+        "x-order": 8
+      },
+      "light_source": {
+        "default": "None",
+        "description": "The type and position of lighting to apply to the initial background latent",
+        "enum": [
+          "None",
+          "Left Light",
+          "Right Light",
+          "Top Light",
+          "Bottom Light"
+        ],
+        "title": "light_source",
+        "type": "string",
+        "x-order": 11
+      },
+      "lowres_denoise": {
+        "default": 0.9,
+        "description": "Controls the amount of denoising applied when generating the initial latent from the background image (higher = more adherence to the background, lower = more creative interpretation)",
+        "maximum": 1,
+        "minimum": 0.1,
+        "title": "Lowres Denoise",
+        "type": "number",
+        "x-order": 10
+      },
+      "negative_prompt": {
+        "default": "lowres, bad anatomy, bad hands, cropped, worst quality",
+        "description": "A text description of attributes to avoid in the generated images",
+        "title": "Negative Prompt",
+        "type": "string",
+        "x-order": 3
+      },
+      "number_of_images": {
+        "default": 1,
+        "description": "The number of unique images to generate from the given input and settings",
+        "maximum": 12,
+        "minimum": 1,
+        "title": "Number Of Images",
+        "type": "integer",
+        "x-order": 13
+      },
+      "output_format": {
+        "default": "webp",
+        "description": "The image file format of the generated output images",
+        "enum": [
+          "webp",
+          "jpg",
+          "png"
+        ],
+        "title": "output_format",
+        "type": "string",
+        "x-order": 14
+      },
+      "output_quality": {
+        "default": 80,
+        "description": "The image compression quality (for lossy formats like JPEG and WebP). 100 = best quality, 0 = lowest quality.",
+        "maximum": 100,
+        "minimum": 0,
+        "title": "Output Quality",
+        "type": "integer",
+        "x-order": 15
+      },
+      "prompt": {
+        "description": "A text description guiding the relighting and generation process",
+        "title": "Prompt",
+        "type": "string",
+        "x-order": 1
+      },
+      "seed": {
+        "description": "A fixed random seed for reproducible results (omit this parameter for a randomized seed)",
+        "title": "Seed",
+        "type": "integer",
+        "x-order": 12
+      },
+      "steps": {
+        "default": 25,
+        "description": "The number of diffusion steps to perform during generation (more steps generally improves image quality but increases processing time)",
+        "maximum": 100,
+        "minimum": 1,
+        "title": "Steps",
+        "type": "integer",
+        "x-order": 6
+      },
+      "subject_image": {
+        "description": "The main foreground image to be relighted",
+        "format": "uri",
+        "title": "Subject Image",
+        "type": "string",
+        "x-order": 0
+      },
+      "width": {
+        "default": 512,
+        "description": "The width of the generated images in pixels",
+        "enum": [
+          256,
+          320,
+          384,
+          448,
+          512,
+          576,
+          640,
+          704,
+          768,
+          832,
+          896,
+          960,
+          1024
+        ],
+        "title": "width",
+        "type": "integer",
+        "x-order": 4
+      }
+    },
+    "required": [
+      "subject_image",
+      "prompt"
+    ],
+    "title": "Input",
+    "type": "object"
+  },
+  "wan-video/wan-2.2-i2v-fast": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt",
+      "image"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "x-order": 9,
+        "nullable": true,
+        "description": "Random seed. Leave blank for random"
+      },
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "x-order": 1,
+        "description": "Input image to generate video from."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "Prompt for video generation"
+      },
+      "go_fast": {
+        "type": "boolean",
+        "title": "Go Fast",
+        "default": true,
+        "x-order": 7,
+        "description": "Go fast"
+      },
+      "last_image": {
+        "type": "string",
+        "title": "Last Image",
+        "format": "uri",
+        "x-order": 2,
+        "nullable": true,
+        "description": "Optional last image to condition the video generation. If provided, creates smoother transitions between frames."
+      },
+      "num_frames": {
+        "type": "integer",
+        "title": "Num Frames",
+        "default": 81,
+        "maximum": 121,
+        "minimum": 81,
+        "x-order": 3,
+        "description": "Number of video frames. 81 frames give the best results"
+      },
+      "resolution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/resolution"
+          }
+        ],
+        "default": "480p",
+        "x-order": 4,
+        "description": "Resolution of video. 16:9 corresponds to 832x480px, and 9:16 is 480x832px"
+      },
+      "sample_shift": {
+        "type": "number",
+        "title": "Sample Shift",
+        "default": 12,
+        "maximum": 20,
+        "minimum": 1,
+        "x-order": 8,
+        "description": "Sample shift factor"
+      },
+      "frames_per_second": {
+        "type": "integer",
+        "title": "Frames Per Second",
+        "default": 16,
+        "maximum": 30,
+        "minimum": 5,
+        "x-order": 5,
+        "description": "Frames per second. Note that the pricing of this model is based on the video duration at 16 fps"
+      },
+      "interpolate_output": {
+        "type": "boolean",
+        "title": "Interpolate Output",
+        "default": false,
+        "x-order": 6,
+        "description": "Interpolate the generated video to 30 FPS using ffmpeg"
+      },
+      "disable_safety_checker": {
+        "type": "boolean",
+        "title": "Disable Safety Checker",
+        "default": false,
+        "x-order": 10,
+        "description": "Disable safety checker for generated video."
+      },
+      "lora_scale_transformer": {
+        "type": "number",
+        "title": "Lora Scale Transformer",
+        "default": 1,
+        "x-order": 12,
+        "description": "Determines how strongly the transformer LoRA should be applied."
+      },
+      "lora_scale_transformer_2": {
+        "type": "number",
+        "title": "Lora Scale Transformer 2",
+        "default": 1,
+        "x-order": 14,
+        "description": "Determines how strongly the transformer_2 LoRA should be applied."
+      },
+      "lora_weights_transformer": {
+        "type": "string",
+        "title": "Lora Weights Transformer",
+        "x-order": 11,
+        "nullable": true,
+        "description": "Load LoRA weights for the HIGH transformer. Supports arbitrary .safetensors URLs from the Internet (for example, 'https://huggingface.co/TheRaf7/instagirl-v2/resolve/main/Instagirlv2.0_hinoise.safetensors')"
+      },
+      "lora_weights_transformer_2": {
+        "type": "string",
+        "title": "Lora Weights Transformer 2",
+        "x-order": 13,
+        "nullable": true,
+        "description": "Load LoRA weights for the LOW transformer_2. Supports arbitrary .safetensors URLs from the Internet. Can be different from transformer LoRA. (for example, 'https://huggingface.co/TheRaf7/instagirl-v2/resolve/main/Instagirlv2.0_lownoise.safetensors')"
+      }
+    }
+  }
+}

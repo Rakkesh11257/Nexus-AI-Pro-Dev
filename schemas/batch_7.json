@@ -1,0 +1,288 @@
+{
+  "haiper-ai/haiper-video-2": {
+    "error": "HTTP 404: {\"status\":404,\"title\":\"Not found\",\"detail\":\"Not found.\"}"
+  },
+  "runwayml/gen4-aleph": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt",
+      "video"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "nullable": true,
+        "description": "Random seed. Set for reproducible generation"
+      },
+      "video": {
+        "type": "string",
+        "title": "Video",
+        "format": "uri",
+        "description": "Input video to generate from. Videos must be less than 16MB. Only 5s of the input video will be used."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "description": "Text prompt for video generation"
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "16:9",
+        "x-order": 2,
+        "description": "Video aspect ratio"
+      },
+      "reference_image": {
+        "type": "string",
+        "title": "Reference Image",
+        "format": "uri",
+        "nullable": true,
+        "description": "Reference image to influence the style or content of the output."
+      }
+    }
+  },
+  "xai/grok-imagine-video": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "x-order": 1,
+        "description": "Input image to generate video from (image-to-video). Supports jpg, jpeg, png, webp."
+      },
+      "video": {
+        "type": "string",
+        "title": "Video",
+        "format": "uri",
+        "x-order": 2,
+        "description": "Input video to edit (video editing mode). Must be a direct link, max 8.7 seconds. Supports mp4, mov, webm."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "Text prompt for video generation"
+      },
+      "duration": {
+        "type": "integer",
+        "title": "Duration",
+        "default": 5,
+        "maximum": 15,
+        "minimum": 1,
+        "x-order": 3,
+        "description": "Duration of the video in seconds (1-15). Ignored when editing a video."
+      },
+      "resolution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/resolution"
+          }
+        ],
+        "default": "720p",
+        "x-order": 5,
+        "description": "Resolution of the video. Ignored when editing a video."
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "16:9",
+        "x-order": 4,
+        "description": "Aspect ratio of the video. Ignored when editing a video or when providing an input image."
+      }
+    }
+  },
+  "kwaivgi/kling-o1": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "mode": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/mode"
+          }
+        ],
+        "default": "pro",
+        "x-order": 7,
+        "description": "Video generation mode. 'std' is cost-effective, 'pro' has higher quality."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "Text prompt for video generation. Can include references like <<<image_1>>>, <<<video_1>>> to reference inputs."
+      },
+      "duration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/duration"
+          }
+        ],
+        "default": 5,
+        "x-order": 9,
+        "description": "Video duration in seconds. For text/image-to-video: 5 or 10. With video reference (feature type): 3-10. Ignored for video editing (base type)."
+      },
+      "end_image": {
+        "type": "string",
+        "title": "End Image",
+        "format": "uri",
+        "x-order": 2,
+        "description": "Last frame image for the video. Requires start_image to be set. Supports .jpg/.jpeg/.png, max 10MB."
+      },
+      "start_image": {
+        "type": "string",
+        "title": "Start Image",
+        "format": "uri",
+        "x-order": 1,
+        "description": "First frame image for the video. Supports .jpg/.jpeg/.png, max 10MB."
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "16:9",
+        "x-order": 8,
+        "description": "Aspect ratio of the generated video. Required for text-to-video. Ignored when using first frame image or video editing."
+      },
+      "reference_video": {
+        "type": "string",
+        "title": "Reference Video",
+        "format": "uri",
+        "x-order": 4,
+        "description": "Reference video for style, camera movement, or as base for editing. Supports .mp4/.mov, 3-10s duration, max 200MB."
+      },
+      "reference_images": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        },
+        "title": "Reference Images",
+        "x-order": 3,
+        "description": "Reference images for elements, scenes, or styles (up to 7 without video, 4 with video). Supports .jpg/.jpeg/.png."
+      },
+      "keep_original_sound": {
+        "type": "boolean",
+        "title": "Keep Original Sound",
+        "default": true,
+        "x-order": 6,
+        "description": "Whether to keep the original sound from the reference video."
+      },
+      "video_reference_type": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/video_reference_type"
+          }
+        ],
+        "default": "feature",
+        "x-order": 5,
+        "description": "How to use the reference video: 'feature' for style/camera reference, 'base' for video editing."
+      }
+    }
+  },
+  "xrunda/hello:104b4a39315349db50880757bc8c1c996c5309e3aa11286b0a3c84dab81fd440": {
+    "properties": {
+      "source": {
+        "description": "video Source",
+        "format": "uri",
+        "title": "Source",
+        "type": "string",
+        "x-order": 0
+      },
+      "target": {
+        "description": "face image",
+        "format": "uri",
+        "title": "Target",
+        "type": "string",
+        "x-order": 1
+      }
+    },
+    "title": "Input",
+    "type": "object"
+  },
+  "openai/gpt-5": {
+    "type": "object",
+    "title": "Input",
+    "properties": {
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "nullable": true,
+        "description": "The prompt to send to the model. Do not use if using messages."
+      },
+      "messages": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        },
+        "title": "Messages",
+        "default": [],
+        "x-order": 2,
+        "description": "A JSON string representing a list of messages. For example: [{\"role\": \"user\", \"content\": \"Hello, how are you?\"}]. If provided, prompt and system_prompt are ignored."
+      },
+      "verbosity": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/verbosity"
+          }
+        ],
+        "default": "medium",
+        "x-order": 5,
+        "description": "Constrains the verbosity of the model's response. Lower values will result in more concise responses, while higher values will result in more verbose responses. Currently supported values are low, medium, and high. GPT-5 supports this parameter to help control whether answers are short and to the point or long and comprehensive."
+      },
+      "image_input": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        },
+        "title": "Image Input",
+        "default": [],
+        "x-order": 3,
+        "description": "List of images to send to the model"
+      },
+      "system_prompt": {
+        "type": "string",
+        "title": "System Prompt",
+        "x-order": 1,
+        "nullable": true,
+        "description": "System prompt to set the assistant's behavior"
+      },
+      "reasoning_effort": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/reasoning_effort"
+          }
+        ],
+        "default": "minimal",
+        "x-order": 4,
+        "description": "Constrains effort on reasoning for GPT-5 models. Currently supported values are minimal, low, medium, and high. The minimal value gets answers back faster without extensive reasoning first. Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response. For higher reasoning efforts you may need to increase your max_completion_tokens to avoid empty responses (where all the tokens are used on reasoning)."
+      },
+      "max_completion_tokens": {
+        "type": "integer",
+        "title": "Max Completion Tokens",
+        "x-order": 6,
+        "nullable": true,
+        "description": "Maximum number of completion tokens to generate. For higher reasoning efforts you may need to increase your max_completion_tokens to avoid empty responses (where all the tokens are used on reasoning)."
+      }
+    }
+  }
+}

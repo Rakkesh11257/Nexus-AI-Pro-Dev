@@ -1,0 +1,462 @@
+{
+  "black-forest-labs/flux-1.1-pro-ultra": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "raw": {
+        "type": "boolean",
+        "title": "Raw",
+        "default": false,
+        "description": "Generate less processed, more natural-looking images"
+      },
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "description": "Random seed. Set for reproducible generation"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "description": "Text prompt for image generation"
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "1:1",
+        "x-order": 3,
+        "description": "Aspect ratio for the generated image"
+      },
+      "image_prompt": {
+        "type": "string",
+        "title": "Image Prompt",
+        "format": "uri",
+        "description": "Image to use with Flux Redux. This is used together with the text prompt to guide the generation towards the composition of the image_prompt. Must be jpeg, png, gif, or webp."
+      },
+      "output_format": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/output_format"
+          }
+        ],
+        "default": "jpg",
+        "x-order": 7,
+        "description": "Format of the output images."
+      },
+      "safety_tolerance": {
+        "type": "integer",
+        "title": "Safety Tolerance",
+        "default": 2,
+        "maximum": 6,
+        "minimum": 1,
+        "description": "Safety tolerance, 1 is most strict and 6 is most permissive"
+      },
+      "image_prompt_strength": {
+        "type": "number",
+        "title": "Image Prompt Strength",
+        "default": 0.1,
+        "maximum": 1,
+        "minimum": 0,
+        "description": "Blend between the prompt and the image prompt."
+      }
+    }
+  },
+  "google/nano-banana-pro": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "A text description of the image you want to generate"
+      },
+      "resolution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/resolution"
+          }
+        ],
+        "default": "2K",
+        "x-order": 3,
+        "description": "Resolution of the generated image"
+      },
+      "image_input": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        },
+        "title": "Image Input",
+        "default": [],
+        "x-order": 1,
+        "description": "Input images to transform or use as reference (supports up to 14 images)"
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "match_input_image",
+        "x-order": 2,
+        "description": "Aspect ratio of the generated image"
+      },
+      "output_format": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/output_format"
+          }
+        ],
+        "default": "jpg",
+        "x-order": 4,
+        "description": "Format of the output image"
+      },
+      "safety_filter_level": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/safety_filter_level"
+          }
+        ],
+        "default": "block_only_high",
+        "x-order": 5,
+        "description": "block_low_and_above is strictest, block_medium_and_above blocks some prompts, block_only_high is most permissive but some prompts will still be blocked"
+      }
+    }
+  },
+  "prunaai/flux-fast": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "default": -1,
+        "description": "Seed"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "description": "Prompt"
+      },
+      "guidance": {
+        "type": "number",
+        "title": "Guidance",
+        "default": 3.5,
+        "description": "Guidance scale"
+      },
+      "image_size": {
+        "type": "integer",
+        "title": "Image Size",
+        "default": 1024,
+        "description": "Base image size (longest side)"
+      },
+      "speed_mode": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/speed_mode"
+          }
+        ],
+        "default": "Extra Juiced \ud83d\udd25 (more speed)",
+        "x-order": 1,
+        "description": "Speed optimization level"
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "1:1",
+        "x-order": 5,
+        "description": "Aspect ratio of the output image"
+      },
+      "output_format": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/output_format"
+          }
+        ],
+        "default": "jpg",
+        "x-order": 7,
+        "description": "Output format"
+      },
+      "output_quality": {
+        "type": "integer",
+        "title": "Output Quality",
+        "default": 80,
+        "maximum": 100,
+        "minimum": 1,
+        "description": "Output quality (for jpg and webp)"
+      },
+      "num_inference_steps": {
+        "type": "integer",
+        "title": "Num Inference Steps",
+        "default": 28,
+        "description": "Number of inference steps"
+      }
+    }
+  },
+  "ideogram-ai/ideogram-v3-quality": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "mask": {
+        "type": "string",
+        "title": "Mask",
+        "format": "uri",
+        "nullable": true,
+        "description": "A black and white image. Black pixels are inpainted, white pixels are preserved. The mask will be resized to match the image size."
+      },
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "maximum": 2147483647,
+        "nullable": true,
+        "description": "Random seed. Set for reproducible generation"
+      },
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "nullable": true,
+        "description": "An image file to use for inpainting. You must also use a mask."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "description": "Text prompt for image generation"
+      },
+      "resolution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/resolution"
+          }
+        ],
+        "default": "None",
+        "x-order": 2,
+        "description": "Resolution. Overrides aspect ratio. Ignored if an inpainting image is given."
+      },
+      "style_type": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/style_type"
+          }
+        ],
+        "default": "None",
+        "x-order": 6,
+        "description": "The styles help define the specific aesthetic of the image you want to generate."
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "1:1",
+        "x-order": 1,
+        "description": "Aspect ratio. Ignored if a resolution or inpainting image is given."
+      },
+      "style_preset": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/style_preset"
+          }
+        ],
+        "default": "None",
+        "x-order": 9,
+        "description": "Apply a predefined artistic style to the generated image (V3 models only)."
+      },
+      "magic_prompt_option": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/magic_prompt_option"
+          }
+        ],
+        "default": "Auto",
+        "x-order": 3,
+        "description": "Magic Prompt will interpret your prompt and optimize it to maximize variety and quality of the images generated. You can also use it to write prompts in different languages."
+      },
+      "style_reference_images": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "anyOf": [],
+          "format": "uri"
+        },
+        "title": "Style Reference Images",
+        "nullable": true,
+        "description": "A list of images to use as style references."
+      }
+    }
+  },
+  "stability-ai/stable-diffusion-3.5-large": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "cfg": {
+        "type": "number",
+        "title": "Cfg",
+        "default": 5,
+        "maximum": 10,
+        "minimum": 1,
+        "description": "The guidance scale tells the model how similar the output should be to the prompt."
+      },
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "nullable": true,
+        "description": "Set a seed for reproducibility. Random by default."
+      },
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "nullable": true,
+        "description": "Input image for image to image mode. The aspect ratio of your output will match this image."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "description": "Text prompt for image generation"
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "1:1",
+        "x-order": 2,
+        "description": "The aspect ratio of your output image. This value is ignored if you are using an input image."
+      },
+      "output_format": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/output_format"
+          }
+        ],
+        "default": "webp",
+        "x-order": 7,
+        "description": "Format of the output images"
+      },
+      "negative_prompt": {
+        "type": "string",
+        "title": "Negative Prompt",
+        "nullable": true,
+        "description": "What you do not want to see in the image"
+      },
+      "prompt_strength": {
+        "type": "number",
+        "title": "Prompt Strength",
+        "default": 0.85,
+        "maximum": 1,
+        "minimum": 0,
+        "description": "Prompt strength (or denoising strength) when using image to image. 1.0 corresponds to full destruction of information in image."
+      }
+    }
+  },
+  "sdxl-based/consistent-character:9c77a3c2f884193fcee4d89645f02a0b9def9434f9e03cb98460456b831c8772": {
+    "properties": {
+      "disable_safety_checker": {
+        "default": false,
+        "description": "Disable safety checker for generated images.",
+        "title": "Disable Safety Checker",
+        "type": "boolean",
+        "x-order": 9
+      },
+      "negative_prompt": {
+        "default": "",
+        "description": "Things you do not want to see in your image",
+        "title": "Negative Prompt",
+        "type": "string",
+        "x-order": 1
+      },
+      "number_of_images_per_pose": {
+        "default": 1,
+        "description": "The number of images to generate for each pose.",
+        "maximum": 4,
+        "minimum": 1,
+        "title": "Number Of Images Per Pose",
+        "type": "integer",
+        "x-order": 4
+      },
+      "number_of_outputs": {
+        "default": 3,
+        "description": "The number of images to generate.",
+        "maximum": 20,
+        "minimum": 1,
+        "title": "Number Of Outputs",
+        "type": "integer",
+        "x-order": 3
+      },
+      "output_format": {
+        "default": "webp",
+        "description": "Format of the output images",
+        "enum": [
+          "webp",
+          "jpg",
+          "png"
+        ],
+        "title": "output_format",
+        "type": "string",
+        "x-order": 6
+      },
+      "output_quality": {
+        "default": 80,
+        "description": "Quality of the output images, from 0 to 100. 100 is best quality, 0 is lowest quality.",
+        "maximum": 100,
+        "minimum": 0,
+        "title": "Output Quality",
+        "type": "integer",
+        "x-order": 7
+      },
+      "prompt": {
+        "default": "A headshot photo",
+        "description": "Describe the subject. Include clothes and hairstyle for more consistency.",
+        "title": "Prompt",
+        "type": "string",
+        "x-order": 0
+      },
+      "randomise_poses": {
+        "default": true,
+        "description": "Randomise the poses used.",
+        "title": "Randomise Poses",
+        "type": "boolean",
+        "x-order": 5
+      },
+      "seed": {
+        "description": "Set a seed for reproducibility. Random by default.",
+        "title": "Seed",
+        "type": "integer",
+        "x-order": 8
+      },
+      "subject": {
+        "description": "An image of a person. Best images are square close ups of a face, but they do not have to be.",
+        "format": "uri",
+        "title": "Subject",
+        "type": "string",
+        "x-order": 2
+      }
+    },
+    "title": "Input",
+    "type": "object"
+  }
+}

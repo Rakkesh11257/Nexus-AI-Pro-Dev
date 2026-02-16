@@ -80,83 +80,82 @@ const ModelSelector = ({ models, value, onChange, extraOptions, style }) => {
 
 // ─── Model Configs ───
 const IMAGE_MODELS = [
-  { id: 'prunaai/wan-2.2-image', name: 'Wan 2.2 Image', desc: 'Wan Text to Image', maxSteps: 50, nsfw: true },
-  { id: 'bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe', name: 'SDXL Lightning 4-Step', desc: 'Ultra fast SDXL (~2s)', maxSteps: 10, nsfw: true, useVersion: true },
-  { id: 'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc', name: 'SDXL 1.0', desc: 'Stable Diffusion XL', maxSteps: 50, nsfw: true, useVersion: true },
-  { id: 'black-forest-labs/flux-schnell', name: 'FLUX Schnell', desc: 'Fast (~2s)', maxSteps: 4, nsfw: false },
-  { id: 'black-forest-labs/flux-dev', name: 'FLUX Dev', desc: 'High quality (~10s)', maxSteps: 50, nsfw: false },
-  { id: 'black-forest-labs/flux-1.1-pro', name: 'FLUX 1.1 Pro', desc: 'Best quality (~15s)', maxSteps: 50, nsfw: false },
-  { id: 'black-forest-labs/flux-1.1-pro-ultra', name: 'FLUX 1.1 Pro Ultra', desc: 'Ultra HD (~20s)', maxSteps: 50, nsfw: false },
-  { id: 'google/nano-banana-pro', name: 'Google Nano Banana Pro', desc: 'Google T2I', maxSteps: 50, nsfw: false },
-  { id: 'prunaai/flux-fast', name: 'FLUX Fast (Pruna)', desc: 'Speed optimized (~4s)', maxSteps: 28, nsfw: false },
-  { id: 'ideogram-ai/ideogram-v3-quality', name: 'Ideogram V3 Quality', desc: 'Best text rendering', maxSteps: 50, nsfw: false },
-  { id: 'stability-ai/stable-diffusion-3.5-large', name: 'SD 3.5 Large', desc: 'Stability AI latest', maxSteps: 50, nsfw: false },
+  { id: 'prunaai/wan-2.2-image', name: 'Wan 2.2 Image', desc: '$0.02/image (~₹1.68/image)', maxSteps: 50, nsfw: true },
+  { id: 'bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe', name: 'SDXL Lightning 4-Step', desc: '$0.0016/image (~₹0.13/image)', maxSteps: 10, nsfw: true, useVersion: true },
+  { id: 'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc', name: 'SDXL 1.0', desc: '$0.0051/image (~₹0.43/image)', maxSteps: 50, nsfw: true, useVersion: true },
+  { id: 'black-forest-labs/flux-schnell', name: 'FLUX Schnell', desc: '$0.003/image (~₹0.25/image)', maxSteps: 4, nsfw: false },
+  { id: 'black-forest-labs/flux-dev', name: 'FLUX Dev', desc: '$0.025/image (~₹2.10/image)', maxSteps: 50, nsfw: false },
+  { id: 'black-forest-labs/flux-1.1-pro', name: 'FLUX 1.1 Pro', desc: '$0.04/image (~₹3.35/image)', maxSteps: 50, nsfw: false },
+  { id: 'black-forest-labs/flux-1.1-pro-ultra', name: 'FLUX 1.1 Pro Ultra', desc: '$0.06/image (~₹5.03/image)', maxSteps: 50, nsfw: false },
+  { id: 'google/nano-banana-pro', name: 'Google Nano Banana Pro', desc: '$0.15/image (~₹12.55/image)', maxSteps: 50, nsfw: false },
+  { id: 'prunaai/flux-fast', name: 'FLUX Fast (Pruna)', desc: '$0.005/image (~₹0.42/image)', maxSteps: 28, nsfw: false },
+  { id: 'ideogram-ai/ideogram-v3-quality', name: 'Ideogram V3 Quality', desc: '$0.09/image (~₹7.53/image)', maxSteps: 50, nsfw: false },
+  { id: 'stability-ai/stable-diffusion-3.5-large', name: 'SD 3.5 Large', desc: '$0.065/image (~₹5.44/image)', maxSteps: 50, nsfw: false },
 ];
 const I2I_MODELS = [
   { id: 'sdxl-based/consistent-character:9c77a3c2f884193fcee4d89645f02a0b9def9434f9e03cb98460456b831c8772', name: 'Consistent Character', desc: '$0.038/run (~₹3.20/run)', nsfw: true, useVersion: true },
-  { id: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789', name: 'Instant-ID Pro', desc: '$0.031/run (~₹2.60/run)', nsfw: true, useVersion: true },
+  { id: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789', name: 'Instant-ID Pro', desc: '$0.027/run (~₹2.26/run)', nsfw: true, useVersion: true },
   { id: 'minimax/image-01', name: 'minimax/image-01', desc: '$0.01/image (~₹0.84/image)', nsfw: false, isMinimax: true },
   { id: 'zedge/instantid:ba2d5293be8794a05841a6f6eed81e810340142c3c25fab4838ff2b5d9574420', name: 'InstantID', desc: '$0.0015/run (~₹0.13/run)', nsfw: true, useVersion: true },
   { id: 'qwen/qwen-image', name: 'Qwen Image', desc: '$0.025/image (~₹2.10)', nsfw: false },
 ];
 const FACESWAP_MODELS = [
   { id: 'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111', name: 'cdingram/face-swap', desc: '$0.014/run (~₹1.17/run)', nsfw: true, useVersion: true },
-  { id: 'codeplugtech/face-swap:278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34', name: 'codeplugtech/face-swap', desc: '$0.0025/run (~₹0.21/run)', nsfw: true, useVersion: true },
+  { id: 'codeplugtech/face-swap:278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34', name: 'codeplugtech/face-swap', desc: '$0.0027/run (~₹0.23/run)', nsfw: true, useVersion: true },
 ];
 const UPSCALE_MODELS = [
   { id: 'nightmareai/real-esrgan', name: 'nightmareai/real-esrgan', desc: '$0.002/image (~₹0.17/image)', nsfw: true },
-  { id: 'philz1337x/crystal-upscaler', name: 'philz1337x/crystal-upscaler', desc: '$0.05-3.20/image (~₹4.20-268/image)', nsfw: true },
+  { id: 'philz1337x/crystal-upscaler', name: 'philz1337x/crystal-upscaler', desc: '$0.05-$3.20/image (~₹4.19-₹268/image)', nsfw: true },
 ];
 const SKIN_MODELS = [
   { id: 'fofr/kontext-make-person-real:3f0b0f59a22997052c144a76457f113f7c35f6573b9f994f14367ec35f96254d', name: 'fofr/kontext-make-person-real', desc: '$0.018/run (~₹1.51/run)', nsfw: true, useVersion: true },
   { id: 'flux-kontext-apps/change-haircut', name: 'flux-kontext-apps/change-haircut', desc: '$0.04/image (~₹3.35/image)', nsfw: true, isHaircut: true },
-  { id: 'zsxkib/ic-light:d41bcb10d8c159868f4cfbd7c6a2ca01484f7d39e4613419d5952c61562f1ba7', name: 'zsxkib/ic-light', desc: '$0.011/image (~₹0.92/image)', nsfw: true, useVersion: true, isICLight: true },
+  { id: 'zsxkib/ic-light:d41bcb10d8c159868f4cfbd7c6a2ca01484f7d39e4613419d5952c61562f1ba7', name: 'zsxkib/ic-light', desc: '$0.022/image (~₹1.84/image)', nsfw: true, useVersion: true, isICLight: true },
 ];
 const V2V_MODELS = [
-  { id: 'runwayml/gen4-aleph', name: 'runwayml/gen4-aleph', desc: '$0.18/sec (~₹15.10/sec)', nsfw: false },
-  { id: 'xai/grok-imagine-video', name: 'xai/grok-imagine-video', desc: '$0.05/sec (~₹4.20/sec)', nsfw: false, isGrokV2V: true },
-  { id: 'kwaivgi/kling-o1', name: 'kwaivgi/kling-o1', desc: '$0.126-0.168/sec (~₹10.60-14.10/sec)', nsfw: false, isKlingO1: true },
+  { id: 'runwayml/gen4-aleph', name: 'Runway Gen4 Aleph', desc: '$0.18/sec (~₹15.10/sec)', nsfw: false },
+  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: '$0.05/sec (~₹4.20/sec)', nsfw: false, isGrokV2V: true },
+  { id: 'kwaivgi/kling-o1', name: 'Kling O1', desc: '$0.084-$0.168/sec (~₹7.04-₹14.07/sec)', nsfw: false, isKlingO1: true },
 ];
 const VIDEOFS_MODELS = [
-  { id: 'xrunda/hello:104b4a39315349db50880757bc8c1c996c5309e3aa11286b0a3c84dab81fd440', name: 'Video Face Swap', desc: '~$0.12/run', price: '$0.12', useVersion: true },
+  { id: 'xrunda/hello:104b4a39315349db50880757bc8c1c996c5309e3aa11286b0a3c84dab81fd440', name: 'Video Face Swap', desc: '~$0.12/run (~₹10.05/run)', price: '$0.12', useVersion: true },
 ];
 // I2V models with per-model config
 const I2V_MODELS = [
-  { id: 'wan-video/wan-2.2-i2v-fast', name: 'Wan 2.2 I2V Fast', desc: '$0.05-0.145/vid', nsfw: true, price: '$0.05-0.145',
+  { id: 'wan-video/wan-2.2-i2v-fast', name: 'Wan 2.2 I2V Fast', desc: '$0.05-$0.145/vid (~₹4.19-₹12.14/vid)', nsfw: true, price: '$0.05-0.145',
     params: { prompt: true, last_frame: true, num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true } },
-  { id: 'wavespeedai/wan-2.1-i2v-720p', name: 'Wan 2.1 I2V 720p', desc: 'Wavespeed 720p', nsfw: true,
-    params: { prompt: true, last_frame: true, num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true } },
-  { id: 'wan-video/wan-2.5-i2v', name: 'Wan 2.5 I2V', desc: 'HD + audio', nsfw: false,
-    params: { prompt: true, duration: [5,10], resolution: ['720p','1080p'], negative_prompt: true, enable_prompt_expansion: true, seed: true } },
-  { id: 'wan-video/wan-2.5-i2v-fast', name: 'Wan 2.5 I2V Fast', desc: 'Fast + audio', nsfw: false,
-    params: { prompt: true, duration: [5,10], resolution: ['720p','1080p'], negative_prompt: true, enable_prompt_expansion: true, seed: true } },
-  { id: 'google/veo-3.1-fast', name: 'Google Veo 3.1 Fast', desc: '$0.10-0.15/sec', nsfw: false, price: '$0.10-0.15/s',
+  { id: 'wavespeedai/wan-2.1-i2v-720p', name: 'Wan 2.1 I2V 720p', desc: '$0.25/sec (~₹20.93/sec)', nsfw: true,
+    params: { prompt: true, aspect_ratio: ['16:9','9:16'], negative_prompt: true, sample_shift: { min: 0, max: 10, default: 3 }, sample_steps: { min: 1, max: 40, default: 30 }, sample_guide_scale: { min: 1, max: 10, default: 5 }, fast_mode: ['Off','Balanced','Fast'], seed: true, disable_safety_checker: true, lora: true } },
+  { id: 'wan-video/wan-2.5-i2v', name: 'Wan 2.5 I2V', desc: '$0.05-$0.15/sec (~₹4.19-₹12.55/sec)', nsfw: false,
+    params: { prompt: true, duration: [5,10], resolution: ['480p','720p','1080p'], negative_prompt: true, enable_prompt_expansion: true, seed: true, audio_upload: true } },
+  { id: 'wan-video/wan-2.5-i2v-fast', name: 'Wan 2.5 I2V Fast', desc: '$0.068-$0.102/sec (~₹5.69-₹8.54/sec)', nsfw: false,
+    params: { prompt: true, duration: [5,10], resolution: ['720p','1080p'], negative_prompt: true, enable_prompt_expansion: true, seed: true, audio_upload: true } },
+  { id: 'google/veo-3.1-fast', name: 'Google Veo 3.1 Fast', desc: '$0.10-$0.15/sec (~₹8.37-₹12.55/sec)', nsfw: false, price: '$0.10-0.15/s',
     params: { prompt: true, duration: [4,6,8], resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16'], generate_audio: true, first_frame: true, last_frame: true, negative_prompt: true, seed: true } },
-  { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: '$0.07/sec', nsfw: false, price: '$0.07/s',
+  { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: '$0.07/sec (~₹5.86/sec)', nsfw: false, price: '$0.07/s',
     params: { prompt: true, duration: [5,10], aspect_ratio: ['16:9','9:16','1:1'], negative_prompt: true, first_frame: true, last_frame: true } },
 ];
 // T2V models with per-model config
 const T2V_MODELS = [
   { id: 'wan-video/wan-2.2-t2v-fast', name: 'Wan 2.2 T2V Fast', desc: '$0.05-0.145/vid', nsfw: true, price: '$0.05-0.145',
     params: { num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], aspect_ratio: ['16:9','9:16'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true, optimize_prompt: true } },
-  { id: 'wavespeedai/wan-2.1-t2v-720p', name: 'Wan 2.1 T2V 720p', desc: 'Wavespeed 720p', nsfw: true,
-    params: { num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], aspect_ratio: ['16:9','9:16'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true, optimize_prompt: true } },
-  { id: 'wan-video/wan-2.5-t2v', name: 'Wan 2.5 T2V', desc: 'HD + audio', nsfw: false,
-    params: { size: ['1280*720','720*1280','1920*1080','1080*1920'], duration: [5,10], negative_prompt: true, enable_prompt_expansion: true, seed: true } },
-  { id: 'wan-video/wan-2.5-t2v-fast', name: 'Wan 2.5 T2V Fast', desc: 'Fastest + audio', nsfw: false,
-    params: { size: ['1280*720','720*1280','1920*1080','1080*1920'], duration: [5,10], negative_prompt: true, enable_prompt_expansion: true, seed: true } },
-  { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: '$0.07/sec', nsfw: false, price: '$0.07/s',
+  { id: 'wavespeedai/wan-2.1-t2v-720p', name: 'Wan 2.1 T2V 720p', desc: '$0.24/sec (~₹20.10/sec)', nsfw: true,
+    params: { prompt: true, aspect_ratio: ['16:9','9:16'], negative_prompt: true, sample_shift: { min: 0, max: 10, default: 3 }, sample_steps: { min: 1, max: 40, default: 30 }, sample_guide_scale: { min: 1, max: 10, default: 5 }, fast_mode: ['Off','Balanced','Fast'], seed: true, disable_safety_checker: true, lora: true } },
+  { id: 'wan-video/wan-2.5-t2v', name: 'Wan 2.5 T2V', desc: '$0.05-$0.15/sec (~₹4.19-₹12.55/sec)', nsfw: false,
+    params: { size: ['1280*720','720*1280','1920*1080','1080*1920'], duration: [5,10], negative_prompt: true, enable_prompt_expansion: true, seed: true, audio_upload: true } },
+  { id: 'wan-video/wan-2.5-t2v-fast', name: 'Wan 2.5 T2V Fast', desc: '$0.068-$0.102/sec (~₹5.69-₹8.54/sec)', nsfw: false,
+    params: { size: ['1280*720','720*1280','1920*1080','1080*1920'], duration: [5,10], negative_prompt: true, enable_prompt_expansion: true, seed: true, audio_upload: true } },
+  { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: '$0.07/sec (~₹5.86/sec)', nsfw: false, price: '$0.07/s',
     params: { duration: [5,10], aspect_ratio: ['16:9','9:16','1:1'], negative_prompt: true } },
-  { id: 'openai/sora-2-pro', name: 'OpenAI Sora 2 Pro', desc: 'Sora T2V', nsfw: false,
+  { id: 'openai/sora-2-pro', name: 'OpenAI Sora 2 Pro', desc: '$0.30-$0.50/sec (~₹25.13-₹41.88/sec)', nsfw: false,
     params: { seconds: [4,8,12], resolution: ['standard','high'], aspect_ratio: ['landscape','portrait'], first_frame: true } },
-  { id: 'google/veo-3.1-fast', name: 'Google Veo 3.1 Fast', desc: '$0.10-0.15/sec', nsfw: false, price: '$0.10-0.15/s',
+  { id: 'google/veo-3.1-fast', name: 'Google Veo 3.1 Fast', desc: '$0.10-$0.15/sec (~₹8.37-₹12.55/sec)', nsfw: false, price: '$0.10-0.15/s',
     params: { duration: [4,6,8], resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16'], generate_audio: true, negative_prompt: true, seed: true } },
-  { id: 'minimax/video-01', name: 'MiniMax Video-01', desc: 'High quality', nsfw: false,
-    params: { prompt_optimizer: true } },
-  { id: 'minimax/video-01-live', name: 'MiniMax Video-01 Live', desc: 'Real-time', nsfw: false,
-    params: { prompt_optimizer: true } },
-  { id: 'haiper-ai/haiper-video-2', name: 'Haiper Video 2', desc: 'Creative', nsfw: false,
-    params: { duration: [4,6], resolution: ['720p','1080p'] } },
+  { id: 'minimax/video-01', name: 'MiniMax Video-01', desc: '$0.50/vid (~₹41.88/vid)', nsfw: false,
+    params: { prompt_optimizer: true, first_frame: true } },
+  { id: 'minimax/video-01-live', name: 'MiniMax Video-01 Live', desc: '$0.50/vid (~₹41.88/vid)', nsfw: false,
+    params: { prompt_optimizer: true, first_frame: true } },
+  // haiper-ai/haiper-video-2 removed - model 404'd
 ];
 const ASPECTS = [
   { id: '1:1', w: 1024, h: 1024 },
@@ -738,6 +737,7 @@ function App() {
   const [skinHaircut, setSkinHaircut] = useState('No change');
   const [skinHairColor, setSkinHairColor] = useState('No change');
   const [skinGender, setSkinGender] = useState('none');
+  const [skinLightSource, setSkinLightSource] = useState('None');
   const [v2vModel, setV2vModel] = useState(V2V_MODELS[0].id);
   const [v2vVideo, setV2vVideo] = useState(null);
   const [v2vPrompt, setV2vPrompt] = useState('');
@@ -877,7 +877,16 @@ function App() {
       const asp = ASPECTS.find(a => a.id === aspect);
       const input = { prompt: prompt.trim(), width: asp.w, height: asp.h, num_outputs: 1 };
       if (negPrompt.trim()) input.negative_prompt = negPrompt.trim();
-      if (model.includes('schnell')) input.num_inference_steps = Math.min(steps, 4);
+      if (model.includes('schnell')) {
+        delete input.width; delete input.height;
+        input.aspect_ratio = asp.id || '1:1';
+        input.num_inference_steps = Math.min(steps, 4);
+        input.go_fast = true;
+        input.megapixels = '1';
+        input.output_format = 'png';
+        input.output_quality = 90;
+        input.disable_safety_checker = true;
+      }
       else if (model.includes('sdxl-lightning')) {
         input.num_inference_steps = Math.min(steps, 10);
         input.guidance_scale = 0;
@@ -892,6 +901,68 @@ function App() {
         input.high_noise_frac = 0.8;
         input.apply_watermark = false;
         input.disable_safety_checker = true;
+      }
+      else if (model.includes('prunaai/wan-2.2-image')) {
+        delete input.width; delete input.height; delete input.num_outputs;
+        input.aspect_ratio = asp.id || '16:9';
+        input.megapixels = 2;
+        input.output_format = 'png';
+        input.output_quality = 90;
+        input.juiced = true;
+      }
+      else if (model.includes('flux-dev')) {
+        delete input.width; delete input.height;
+        input.aspect_ratio = asp.id || '1:1';
+        input.guidance = Math.min(guidance, 10);
+        input.num_inference_steps = Math.min(steps, 50);
+        input.go_fast = true;
+        input.megapixels = '1';
+        input.output_format = 'png';
+        input.output_quality = 90;
+        input.disable_safety_checker = true;
+      }
+      else if (model.includes('flux-1.1-pro-ultra')) {
+        delete input.width; delete input.height; delete input.num_outputs; delete input.negative_prompt;
+        input.aspect_ratio = asp.id || '1:1';
+        input.output_format = 'png';
+        input.safety_tolerance = 5;
+        input.raw = false;
+      }
+      else if (model.includes('flux-1.1-pro')) {
+        delete input.width; delete input.height; delete input.num_outputs; delete input.negative_prompt;
+        input.aspect_ratio = asp.id || '1:1';
+        input.output_format = 'png';
+        input.output_quality = 90;
+        input.safety_tolerance = 5;
+        input.prompt_upsampling = false;
+      }
+      else if (model.includes('nano-banana')) {
+        delete input.width; delete input.height; delete input.num_outputs; delete input.negative_prompt;
+        input.aspect_ratio = asp.id || '1:1';
+        input.resolution = '2K';
+        input.output_format = 'jpg';
+        input.safety_filter_level = 'block_only_high';
+      }
+      else if (model.includes('prunaai/flux-fast')) {
+        delete input.width; delete input.height; delete input.num_outputs;
+        input.aspect_ratio = asp.id || '1:1';
+        input.guidance = guidance || 3.5;
+        input.num_inference_steps = steps || 28;
+        input.output_format = 'png';
+        input.output_quality = 90;
+        input.speed_mode = 'Extra Juiced \uD83D\uDD25 (more speed)';
+      }
+      else if (model.includes('ideogram')) {
+        delete input.width; delete input.height; delete input.num_outputs;
+        input.aspect_ratio = asp.id || '1:1';
+        input.magic_prompt_option = 'Auto';
+      }
+      else if (model.includes('stable-diffusion-3.5')) {
+        delete input.width; delete input.height; delete input.num_outputs;
+        input.aspect_ratio = asp.id || '1:1';
+        input.cfg = guidance || 5;
+        input.output_format = 'png';
+        if (negPrompt.trim()) input.negative_prompt = negPrompt.trim();
       }
       else { input.num_inference_steps = steps; input.guidance_scale = guidance; }
       if (seed) input.seed = parseInt(seed);
@@ -963,23 +1034,34 @@ function App() {
       // Model-specific image field names and params
       let input;
       if (i2iModel.includes('consistent-character')) {
-        input = { prompt: i2iPrompt.trim(), subject: dataUri };
+        input = { prompt: i2iPrompt.trim(), subject: dataUri, number_of_outputs: 3, number_of_images_per_pose: 1, randomise_poses: true, output_format: 'png', output_quality: 90, disable_safety_checker: true };
+        if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
       } else if (i2iModel.includes('zsxkib/instant-id')) {
-        input = { prompt: i2iPrompt.trim(), input_image: dataUri };
+        input = { prompt: i2iPrompt.trim(), image: dataUri };
         input.num_outputs = 1;
         input.guidance_scale = 7.5;
         input.num_inference_steps = 30;
-        input.disable_nsfw_checker = true;
         input.ip_adapter_scale = 0.8;
-        input.identitynet_strength_ratio = 0.8;
+        input.controlnet_conditioning_scale = 0.8;
+        input.sdxl_weights = 'RealVisXL_V4.0_Lightning';
+        input.enhance_nonface_region = true;
+        input.output_format = 'png';
+        input.output_quality = 90;
+        input.disable_safety_checker = true;
         if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
       } else if (i2iModel.includes('zedge/instantid')) {
         input = { prompt: i2iPrompt.trim(), input_image: dataUri };
         input.num_outputs = 1;
-        input.guidance_scale = 5;
+        input.guidance_scale = 7.5;
         input.num_inference_steps = 30;
-        input.disable_safety_checker = true;
+        input.ip_adapter_scale = 0.8;
+        input.identitynet_strength_ratio = 0.8;
+        input.sdxl_weights = 'RealVisXL_V5.0';
+        input.enhance_nonface_region = true;
+        input.disable_nsfw_checker = true;
         if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
+      } else if (i2iModel.includes('minimax/image-01')) {
+        input = { prompt: i2iPrompt.trim(), subject_reference: dataUri, aspect_ratio: aspect || '1:1', number_of_images: 1, prompt_optimizer: true };
       } else {
         input = { prompt: i2iPrompt.trim(), image: dataUri };
       }
@@ -994,8 +1076,10 @@ function App() {
         input.strength = i2iStrength;
         input.image_size = 'optimize_for_quality';
         input.aspect_ratio = aspect;
-        input.output_format = 'webp';
+        input.output_format = 'png';
+        input.output_quality = 90;
         input.num_inference_steps = steps;
+        input.disable_safety_checker = true;
         if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
       } else if (i2iModel.includes('stability-ai/sdxl')) {
         input.prompt_strength = i2iStrength;
@@ -1108,12 +1192,25 @@ function App() {
     if (image) {
       if (jobId) updateJob(jobId, { status: 'Preparing image...' });
       const imgData = image.startsWith('blob:') ? await toDataUri(image) : image;
-      // Veo/Sora use 'image' for first_frame param name, Kling uses 'image'
-      input.image = imgData;
+      // Kling uses start_image, Sora uses input_reference, others use image
+      if (modelCfg.id?.includes('kling')) {
+        input.start_image = imgData;
+      } else if (modelCfg.id?.includes('sora')) {
+        input.input_reference = imgData;
+      } else if (modelCfg.id?.includes('minimax/video-01')) {
+        input.first_frame_image = imgData;
+      } else {
+        input.image = imgData;
+      }
     }
     if (lastFrame && p.last_frame) {
       if (jobId) updateJob(jobId, { status: 'Preparing end frame...' });
-      input.last_frame = lastFrame.startsWith('blob:') ? await toDataUri(lastFrame) : lastFrame;
+      const lfData = lastFrame.startsWith('blob:') ? await toDataUri(lastFrame) : lastFrame;
+      if (modelCfg.id?.includes('kling')) {
+        input.end_image = lfData;
+      } else {
+        input.last_frame = lfData;
+      }
     }
 
     // Duration (array options)
@@ -1137,6 +1234,18 @@ function App() {
     // Sample shift (range object)
     if (p.sample_shift && typeof p.sample_shift === 'object') {
       input.sample_shift = opts.sample_shift ?? p.sample_shift.default;
+    }
+    // Sample steps (wavespeed)
+    if (p.sample_steps && typeof p.sample_steps === 'object') {
+      input.sample_steps = opts.sample_steps ?? p.sample_steps.default;
+    }
+    // Sample guide scale (wavespeed)
+    if (p.sample_guide_scale && typeof p.sample_guide_scale === 'object') {
+      input.sample_guide_scale = opts.sample_guide_scale ?? p.sample_guide_scale.default;
+    }
+    // Fast mode (wavespeed)
+    if (Array.isArray(p.fast_mode)) {
+      input.fast_mode = opts.fast_mode || p.fast_mode[1] || 'Balanced';
     }
     // Boolean flags
     if (p.go_fast) input.go_fast = opts.go_fast !== false;
@@ -1890,7 +1999,12 @@ function App() {
     setError('');
     try {
       const imgUri = await toDataUri(upscaleImage);
-      const input = { image: imgUri, scale: upscaleScale };
+      let input;
+      if (upscaleModel.includes('crystal-upscaler')) {
+        input = { image: imgUri, scale_factor: upscaleScale || 2, creativity: 0, output_format: 'png' };
+      } else {
+        input = { image: imgUri, scale: upscaleScale || 4, face_enhance: true };
+      }
       updateJob(jobId, { status: 'Upscaling...' });
       const resp = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
@@ -1926,8 +2040,8 @@ function App() {
         // flux-kontext-apps/change-haircut schema: input_image, haircut, hair_color, gender
         input = { input_image: imgUri, haircut: skinHaircut || 'No change', hair_color: skinHairColor || 'No change', gender: skinGender || 'none', aspect_ratio: 'match_input_image', output_format: 'png', safety_tolerance: 2 };
       } else if (modelObj?.isICLight) {
-        // zsxkib/ic-light schema: image, prompt
-        input = { image: imgUri, prompt: skinPrompt || 'portrait, professional lighting' };
+        // zsxkib/ic-light schema: subject_image, prompt, light_source, cfg, steps, width, height
+        input = { subject_image: imgUri, prompt: skinPrompt || 'portrait, professional lighting', light_source: skinLightSource || 'None', cfg: 2, steps: 25, width: 640, height: 640, highres_scale: 1.5, highres_denoise: 0.5, lowres_denoise: 0.9, number_of_images: 1, output_format: 'png', output_quality: 90, appended_prompt: 'best quality', negative_prompt: 'lowres, bad anatomy, bad hands, cropped, worst quality' };
       } else {
         // fofr/kontext-make-person-real schema: input_image, prompt
         input = { input_image: imgUri, prompt: skinPrompt || 'make this person look realistic', disable_safety_checker: true, aspect_ratio: 'match_input_image', megapixels: '1', guidance: 2.5, num_inference_steps: 30, output_format: 'png', output_quality: 90 };
@@ -1967,8 +2081,8 @@ function App() {
       const videoUri = await toDataUri(v2vVideo);
       const modelObj = V2V_MODELS.find(m => m.id === v2vModel);
       let input;
-      if (modelObj?.isGrokV2V) { input = { prompt: v2vPrompt, image: videoUri }; }
-      else if (modelObj?.isKlingO1) { input = { prompt: v2vPrompt, input_video: videoUri }; }
+      if (modelObj?.isGrokV2V) { input = { prompt: v2vPrompt, video: videoUri }; }
+      else if (modelObj?.isKlingO1) { input = { prompt: v2vPrompt, reference_video: videoUri, video_reference_type: 'base', mode: 'pro' }; }
       else { input = { prompt: v2vPrompt, video: videoUri }; }
       updateJob(jobId, { status: 'Editing video...' });
       const resp = await fetch(`${API_BASE}/api/replicate/predictions`, {
@@ -2813,7 +2927,7 @@ function App() {
             <ModelSelector models={SKIN_MODELS} value={skinModel} onChange={v => setSkinModel(v)} />
             <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Portrait Image</label>
             {skinImage ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><img src={skinImage} alt="" style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setSkinImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f464;</div>Upload portrait<br/><span style={{ fontSize: 11, color: '#555' }}>Face photo for enhancement</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setSkinImage(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
-            {(() => { const curSkinM = SKIN_MODELS.find(m => m.id === skinModel); if (curSkinM?.isHaircut) { return (<div><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Haircut Style</label><select value={skinHaircut} onChange={e => setSkinHaircut(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option key='No change' value='No change'>No change</option><option key='Random' value='Random'>Random</option><option key='Straight' value='Straight'>Straight</option><option key='Wavy' value='Wavy'>Wavy</option><option key='Curly' value='Curly'>Curly</option><option key='Bob' value='Bob'>Bob</option><option key='Pixie Cut' value='Pixie Cut'>Pixie Cut</option><option key='Layered' value='Layered'>Layered</option><option key='Messy Bun' value='Messy Bun'>Messy Bun</option><option key='High Ponytail' value='High Ponytail'>High Ponytail</option><option key='Low Ponytail' value='Low Ponytail'>Low Ponytail</option><option key='Braided Ponytail' value='Braided Ponytail'>Braided Ponytail</option><option key='French Braid' value='French Braid'>French Braid</option><option key='Dutch Braid' value='Dutch Braid'>Dutch Braid</option><option key='Fishtail Braid' value='Fishtail Braid'>Fishtail Braid</option><option key='Space Buns' value='Space Buns'>Space Buns</option><option key='Top Knot' value='Top Knot'>Top Knot</option><option key='Undercut' value='Undercut'>Undercut</option><option key='Mohawk' value='Mohawk'>Mohawk</option><option key='Crew Cut' value='Crew Cut'>Crew Cut</option><option key='Faux Hawk' value='Faux Hawk'>Faux Hawk</option><option key='Slicked Back' value='Slicked Back'>Slicked Back</option><option key='Side-Parted' value='Side-Parted'>Side-Parted</option><option key='Center-Parted' value='Center-Parted'>Center-Parted</option><option key='Blunt Bangs' value='Blunt Bangs'>Blunt Bangs</option><option key='Side-Swept Bangs' value='Side-Swept Bangs'>Side-Swept Bangs</option><option key='Shag' value='Shag'>Shag</option><option key='Lob' value='Lob'>Lob</option><option key='Angled Bob' value='Angled Bob'>Angled Bob</option><option key='A-Line Bob' value='A-Line Bob'>A-Line Bob</option><option key='Asymmetrical Bob' value='Asymmetrical Bob'>Asymmetrical Bob</option><option key='Graduated Bob' value='Graduated Bob'>Graduated Bob</option><option key='Inverted Bob' value='Inverted Bob'>Inverted Bob</option><option key='Layered Shag' value='Layered Shag'>Layered Shag</option><option key='Choppy Layers' value='Choppy Layers'>Choppy Layers</option><option key='Razor Cut' value='Razor Cut'>Razor Cut</option><option key='Perm' value='Perm'>Perm</option><option key='Soft Waves' value='Soft Waves'>Soft Waves</option><option key='Glamorous Waves' value='Glamorous Waves'>Glamorous Waves</option><option key='Hollywood Waves' value='Hollywood Waves'>Hollywood Waves</option><option key='Finger Waves' value='Finger Waves'>Finger Waves</option><option key='Tousled' value='Tousled'>Tousled</option><option key='Feathered' value='Feathered'>Feathered</option><option key='Pageboy' value='Pageboy'>Pageboy</option><option key='Pigtails' value='Pigtails'>Pigtails</option><option key='Pin Curls' value='Pin Curls'>Pin Curls</option><option key='Rollerset' value='Rollerset'>Rollerset</option><option key='Twist Out' value='Twist Out'>Twist Out</option><option key='Bantu Knots' value='Bantu Knots'>Bantu Knots</option><option key='Dreadlocks' value='Dreadlocks'>Dreadlocks</option><option key='Cornrows' value='Cornrows'>Cornrows</option><option key='Box Braids' value='Box Braids'>Box Braids</option><option key='Crochet Braids' value='Crochet Braids'>Crochet Braids</option><option key='Double Dutch Braids' value='Double Dutch Braids'>Double Dutch Braids</option><option key='French Fishtail Braid' value='French Fishtail Braid'>French Fishtail Braid</option><option key='Waterfall Braid' value='Waterfall Braid'>Waterfall Braid</option><option key='Rope Braid' value='Rope Braid'>Rope Braid</option><option key='Heart Braid' value='Heart Braid'>Heart Braid</option><option key='Halo Braid' value='Halo Braid'>Halo Braid</option><option key='Crown Braid' value='Crown Braid'>Crown Braid</option><option key='Braided Crown' value='Braided Crown'>Braided Crown</option><option key='Bubble Braid' value='Bubble Braid'>Bubble Braid</option><option key='Bubble Ponytail' value='Bubble Ponytail'>Bubble Ponytail</option><option key='Chignon' value='Chignon'>Chignon</option><option key='French Twist' value='French Twist'>French Twist</option><option key='Updo' value='Updo'>Updo</option><option key='Messy Updo' value='Messy Updo'>Messy Updo</option><option key='Beehive' value='Beehive'>Beehive</option><option key='Bouffant' value='Bouffant'>Bouffant</option><option key='Half-Up Half-Down' value='Half-Up Half-Down'>Half-Up Half-Down</option><option key='Victory Rolls' value='Victory Rolls'>Victory Rolls</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Hair Color</label><select value={skinHairColor} onChange={e => setSkinHairColor(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option key='No change' value='No change'>No change</option><option key='Random' value='Random'>Random</option><option key='Blonde' value='Blonde'>Blonde</option><option key='Brunette' value='Brunette'>Brunette</option><option key='Black' value='Black'>Black</option><option key='Dark Brown' value='Dark Brown'>Dark Brown</option><option key='Medium Brown' value='Medium Brown'>Medium Brown</option><option key='Light Brown' value='Light Brown'>Light Brown</option><option key='Auburn' value='Auburn'>Auburn</option><option key='Copper' value='Copper'>Copper</option><option key='Red' value='Red'>Red</option><option key='Strawberry Blonde' value='Strawberry Blonde'>Strawberry Blonde</option><option key='Platinum Blonde' value='Platinum Blonde'>Platinum Blonde</option><option key='Silver' value='Silver'>Silver</option><option key='White' value='White'>White</option><option key='Blue' value='Blue'>Blue</option><option key='Purple' value='Purple'>Purple</option><option key='Pink' value='Pink'>Pink</option><option key='Green' value='Green'>Green</option><option key='Blue-Black' value='Blue-Black'>Blue-Black</option><option key='Golden Blonde' value='Golden Blonde'>Golden Blonde</option><option key='Honey Blonde' value='Honey Blonde'>Honey Blonde</option><option key='Caramel' value='Caramel'>Caramel</option><option key='Chestnut' value='Chestnut'>Chestnut</option><option key='Mahogany' value='Mahogany'>Mahogany</option><option key='Burgundy' value='Burgundy'>Burgundy</option><option key='Jet Black' value='Jet Black'>Jet Black</option><option key='Ash Brown' value='Ash Brown'>Ash Brown</option><option key='Ash Blonde' value='Ash Blonde'>Ash Blonde</option><option key='Rose Gold' value='Rose Gold'>Rose Gold</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Gender</label><select value={skinGender} onChange={e => setSkinGender(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option value="none">Auto Detect</option><option value="male">Male</option><option value="female">Female</option></select></div>); } else { return (<div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>{curSkinM?.isICLight ? 'Lighting Prompt' : 'Enhancement Prompt'}</label><textarea style={{ ...S.input, minHeight: 80, width: '100%' }} placeholder={curSkinM?.isICLight ? 'e.g. professional studio lighting, warm sunset glow...' : 'e.g. make this person look photorealistic...'} value={skinPrompt} onChange={e => setSkinPrompt(e.target.value)} /></div>); } })()}
+            {(() => { const curSkinM = SKIN_MODELS.find(m => m.id === skinModel); if (curSkinM?.isHaircut) { return (<div><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Haircut Style</label><select value={skinHaircut} onChange={e => setSkinHaircut(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option key='No change' value='No change'>No change</option><option key='Random' value='Random'>Random</option><option key='Straight' value='Straight'>Straight</option><option key='Wavy' value='Wavy'>Wavy</option><option key='Curly' value='Curly'>Curly</option><option key='Bob' value='Bob'>Bob</option><option key='Pixie Cut' value='Pixie Cut'>Pixie Cut</option><option key='Layered' value='Layered'>Layered</option><option key='Messy Bun' value='Messy Bun'>Messy Bun</option><option key='High Ponytail' value='High Ponytail'>High Ponytail</option><option key='Low Ponytail' value='Low Ponytail'>Low Ponytail</option><option key='Braided Ponytail' value='Braided Ponytail'>Braided Ponytail</option><option key='French Braid' value='French Braid'>French Braid</option><option key='Dutch Braid' value='Dutch Braid'>Dutch Braid</option><option key='Fishtail Braid' value='Fishtail Braid'>Fishtail Braid</option><option key='Space Buns' value='Space Buns'>Space Buns</option><option key='Top Knot' value='Top Knot'>Top Knot</option><option key='Undercut' value='Undercut'>Undercut</option><option key='Mohawk' value='Mohawk'>Mohawk</option><option key='Crew Cut' value='Crew Cut'>Crew Cut</option><option key='Faux Hawk' value='Faux Hawk'>Faux Hawk</option><option key='Slicked Back' value='Slicked Back'>Slicked Back</option><option key='Side-Parted' value='Side-Parted'>Side-Parted</option><option key='Center-Parted' value='Center-Parted'>Center-Parted</option><option key='Blunt Bangs' value='Blunt Bangs'>Blunt Bangs</option><option key='Side-Swept Bangs' value='Side-Swept Bangs'>Side-Swept Bangs</option><option key='Shag' value='Shag'>Shag</option><option key='Lob' value='Lob'>Lob</option><option key='Angled Bob' value='Angled Bob'>Angled Bob</option><option key='A-Line Bob' value='A-Line Bob'>A-Line Bob</option><option key='Asymmetrical Bob' value='Asymmetrical Bob'>Asymmetrical Bob</option><option key='Graduated Bob' value='Graduated Bob'>Graduated Bob</option><option key='Inverted Bob' value='Inverted Bob'>Inverted Bob</option><option key='Layered Shag' value='Layered Shag'>Layered Shag</option><option key='Choppy Layers' value='Choppy Layers'>Choppy Layers</option><option key='Razor Cut' value='Razor Cut'>Razor Cut</option><option key='Perm' value='Perm'>Perm</option><option key='Soft Waves' value='Soft Waves'>Soft Waves</option><option key='Glamorous Waves' value='Glamorous Waves'>Glamorous Waves</option><option key='Hollywood Waves' value='Hollywood Waves'>Hollywood Waves</option><option key='Finger Waves' value='Finger Waves'>Finger Waves</option><option key='Tousled' value='Tousled'>Tousled</option><option key='Feathered' value='Feathered'>Feathered</option><option key='Pageboy' value='Pageboy'>Pageboy</option><option key='Pigtails' value='Pigtails'>Pigtails</option><option key='Pin Curls' value='Pin Curls'>Pin Curls</option><option key='Rollerset' value='Rollerset'>Rollerset</option><option key='Twist Out' value='Twist Out'>Twist Out</option><option key='Bantu Knots' value='Bantu Knots'>Bantu Knots</option><option key='Dreadlocks' value='Dreadlocks'>Dreadlocks</option><option key='Cornrows' value='Cornrows'>Cornrows</option><option key='Box Braids' value='Box Braids'>Box Braids</option><option key='Crochet Braids' value='Crochet Braids'>Crochet Braids</option><option key='Double Dutch Braids' value='Double Dutch Braids'>Double Dutch Braids</option><option key='French Fishtail Braid' value='French Fishtail Braid'>French Fishtail Braid</option><option key='Waterfall Braid' value='Waterfall Braid'>Waterfall Braid</option><option key='Rope Braid' value='Rope Braid'>Rope Braid</option><option key='Heart Braid' value='Heart Braid'>Heart Braid</option><option key='Halo Braid' value='Halo Braid'>Halo Braid</option><option key='Crown Braid' value='Crown Braid'>Crown Braid</option><option key='Braided Crown' value='Braided Crown'>Braided Crown</option><option key='Bubble Braid' value='Bubble Braid'>Bubble Braid</option><option key='Bubble Ponytail' value='Bubble Ponytail'>Bubble Ponytail</option><option key='Chignon' value='Chignon'>Chignon</option><option key='French Twist' value='French Twist'>French Twist</option><option key='Updo' value='Updo'>Updo</option><option key='Messy Updo' value='Messy Updo'>Messy Updo</option><option key='Beehive' value='Beehive'>Beehive</option><option key='Bouffant' value='Bouffant'>Bouffant</option><option key='Half-Up Half-Down' value='Half-Up Half-Down'>Half-Up Half-Down</option><option key='Victory Rolls' value='Victory Rolls'>Victory Rolls</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Hair Color</label><select value={skinHairColor} onChange={e => setSkinHairColor(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option key='No change' value='No change'>No change</option><option key='Random' value='Random'>Random</option><option key='Blonde' value='Blonde'>Blonde</option><option key='Brunette' value='Brunette'>Brunette</option><option key='Black' value='Black'>Black</option><option key='Dark Brown' value='Dark Brown'>Dark Brown</option><option key='Medium Brown' value='Medium Brown'>Medium Brown</option><option key='Light Brown' value='Light Brown'>Light Brown</option><option key='Auburn' value='Auburn'>Auburn</option><option key='Copper' value='Copper'>Copper</option><option key='Red' value='Red'>Red</option><option key='Strawberry Blonde' value='Strawberry Blonde'>Strawberry Blonde</option><option key='Platinum Blonde' value='Platinum Blonde'>Platinum Blonde</option><option key='Silver' value='Silver'>Silver</option><option key='White' value='White'>White</option><option key='Blue' value='Blue'>Blue</option><option key='Purple' value='Purple'>Purple</option><option key='Pink' value='Pink'>Pink</option><option key='Green' value='Green'>Green</option><option key='Blue-Black' value='Blue-Black'>Blue-Black</option><option key='Golden Blonde' value='Golden Blonde'>Golden Blonde</option><option key='Honey Blonde' value='Honey Blonde'>Honey Blonde</option><option key='Caramel' value='Caramel'>Caramel</option><option key='Chestnut' value='Chestnut'>Chestnut</option><option key='Mahogany' value='Mahogany'>Mahogany</option><option key='Burgundy' value='Burgundy'>Burgundy</option><option key='Jet Black' value='Jet Black'>Jet Black</option><option key='Ash Brown' value='Ash Brown'>Ash Brown</option><option key='Ash Blonde' value='Ash Blonde'>Ash Blonde</option><option key='Rose Gold' value='Rose Gold'>Rose Gold</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Gender</label><select value={skinGender} onChange={e => setSkinGender(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option value="none">Auto Detect</option><option value="male">Male</option><option value="female">Female</option></select></div>); } else if (curSkinM?.isICLight) { return (<div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Light Source</label><select value={skinLightSource} onChange={e => setSkinLightSource(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option value="None">None (Auto)</option><option value="Left Light">Left Light</option><option value="Right Light">Right Light</option><option value="Top Light">Top Light</option><option value="Bottom Light">Bottom Light</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Lighting Prompt</label><textarea style={{ ...S.input, minHeight: 80, width: '100%' }} placeholder='e.g. professional studio lighting, warm sunset glow...' value={skinPrompt} onChange={e => setSkinPrompt(e.target.value)} /></div>); } else { return (<div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Enhancement Prompt</label><textarea style={{ ...S.input, minHeight: 80, width: '100%' }} placeholder='e.g. make this person look photorealistic...' value={skinPrompt} onChange={e => setSkinPrompt(e.target.value)} /></div>); } })()}
             <button onClick={generateSkin} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : SKIN_MODELS.find(m => m.id === skinModel)?.isHaircut ? '✂️ Change Haircut' : SKIN_MODELS.find(m => m.id === skinModel)?.isICLight ? '💡 Relight Portrait' : '✨ Enhance Portrait'}</button>
           </div>
         )}

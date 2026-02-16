@@ -1,0 +1,519 @@
+{
+  "wavespeedai/wan-2.1-i2v-720p": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt",
+      "image"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "x-order": 5,
+        "nullable": true,
+        "description": "Random seed. Set for reproducible generation"
+      },
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "x-order": 3,
+        "description": "Image for use as the initial frame of the video."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "Text prompt for image generation"
+      },
+      "fast_mode": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/fast_mode"
+          }
+        ],
+        "default": "Balanced",
+        "x-order": 4,
+        "description": "Speed up generation with different levels of acceleration. Faster modes may degrade quality somewhat. The speedup is dependent on the content, so different videos may see different speedups."
+      },
+      "lora_scale": {
+        "type": "number",
+        "title": "Lora Scale",
+        "default": 1,
+        "maximum": 4,
+        "minimum": 0,
+        "x-order": 10,
+        "description": "Determines how strongly the main LoRA should be applied. Sane results between 0 and 1 for base inference. You may still need to experiment to find the best value for your particular lora."
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "16:9",
+        "x-order": 2,
+        "description": "Aspect ratio of the output video."
+      },
+      "lora_weights": {
+        "type": "string",
+        "title": "Lora Weights",
+        "x-order": 9,
+        "nullable": true,
+        "description": "Load LoRA weights. Supports HuggingFace URLs in the format huggingface.co/<owner>/<model-name>, CivitAI URLs in the format civitai.com/models/<id>[/<model-name>], or arbitrary .safetensors URLs from the Internet."
+      },
+      "sample_shift": {
+        "type": "integer",
+        "title": "Sample Shift",
+        "default": 3,
+        "maximum": 10,
+        "minimum": 0,
+        "x-order": 8,
+        "description": "Flow shift parameter for video generation"
+      },
+      "sample_steps": {
+        "type": "integer",
+        "title": "Sample Steps",
+        "default": 30,
+        "maximum": 40,
+        "minimum": 1,
+        "x-order": 7,
+        "description": "Number of inference steps"
+      },
+      "negative_prompt": {
+        "type": "string",
+        "title": "Negative Prompt",
+        "default": "",
+        "x-order": 1,
+        "description": "Negative prompt to avoid certain elements"
+      },
+      "sample_guide_scale": {
+        "type": "number",
+        "title": "Sample Guide Scale",
+        "default": 5,
+        "maximum": 10,
+        "minimum": 1,
+        "x-order": 6,
+        "description": "Guidance scale for generation"
+      },
+      "disable_safety_checker": {
+        "type": "boolean",
+        "title": "Disable Safety Checker",
+        "default": false,
+        "x-order": 11,
+        "description": "Disable safety checker for generated videos"
+      }
+    }
+  },
+  "wan-video/wan-2.5-i2v": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "image",
+      "prompt"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "x-order": 7,
+        "nullable": true,
+        "description": "Random seed for reproducible generation"
+      },
+      "audio": {
+        "type": "string",
+        "title": "Audio",
+        "format": "uri",
+        "x-order": 3,
+        "nullable": true,
+        "description": "Audio file (wav/mp3, 3-30s, \u226415MB) for voice/music synchronization"
+      },
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "x-order": 0,
+        "description": "Input image for video generation"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 1,
+        "description": "Text prompt for video generation"
+      },
+      "duration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/duration"
+          }
+        ],
+        "default": 5,
+        "x-order": 5,
+        "description": "Duration of the generated video in seconds"
+      },
+      "resolution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/resolution"
+          }
+        ],
+        "default": "720p",
+        "x-order": 4,
+        "description": "Video resolution"
+      },
+      "negative_prompt": {
+        "type": "string",
+        "title": "Negative Prompt",
+        "default": "",
+        "x-order": 2,
+        "description": "Negative prompt to avoid certain elements"
+      },
+      "enable_prompt_expansion": {
+        "type": "boolean",
+        "title": "Enable Prompt Expansion",
+        "default": true,
+        "x-order": 6,
+        "description": "If set to true, the prompt optimizer will be enabled"
+      }
+    }
+  },
+  "wan-video/wan-2.5-i2v-fast": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "image",
+      "prompt"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "nullable": true,
+        "description": "Random seed for reproducible generation"
+      },
+      "audio": {
+        "type": "string",
+        "title": "Audio",
+        "format": "uri",
+        "nullable": true,
+        "description": "Audio file (wav/mp3, 3-30s, \u226415MB) for voice/music synchronization"
+      },
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "description": "Input image for video generation"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "description": "Text prompt for video generation"
+      },
+      "duration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/duration"
+          }
+        ],
+        "default": 5,
+        "x-order": 5,
+        "description": "Duration of the generated video in seconds"
+      },
+      "resolution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/resolution"
+          }
+        ],
+        "default": "720p",
+        "x-order": 4,
+        "description": "Video resolution"
+      },
+      "negative_prompt": {
+        "type": "string",
+        "title": "Negative Prompt",
+        "default": "",
+        "description": "Negative prompt to avoid certain elements"
+      },
+      "enable_prompt_expansion": {
+        "type": "boolean",
+        "title": "Enable Prompt Expansion",
+        "default": true,
+        "description": "If set to true, the prompt optimizer will be enabled"
+      }
+    }
+  },
+  "google/veo-3.1-fast": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "x-order": 8,
+        "nullable": true,
+        "description": "Random seed. Omit for random generations"
+      },
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "x-order": 3,
+        "nullable": true,
+        "description": "Input image to start generating from. Ideal images are 16:9 or 9:16 and 1280x720 or 720x1280, depending on the aspect ratio you choose."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "Text prompt for video generation"
+      },
+      "duration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/duration"
+          }
+        ],
+        "default": 8,
+        "x-order": 2,
+        "description": "Video duration in seconds"
+      },
+      "last_frame": {
+        "type": "string",
+        "title": "Last Frame",
+        "format": "uri",
+        "x-order": 4,
+        "nullable": true,
+        "description": "Ending image for interpolation. When provided with an input image, creates a transition between the two images."
+      },
+      "resolution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/resolution"
+          }
+        ],
+        "default": "1080p",
+        "x-order": 6,
+        "description": "Resolution of the generated video"
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "16:9",
+        "x-order": 1,
+        "description": "Video aspect ratio"
+      },
+      "generate_audio": {
+        "type": "boolean",
+        "title": "Generate Audio",
+        "default": true,
+        "x-order": 7,
+        "description": "Generate audio with the video"
+      },
+      "negative_prompt": {
+        "type": "string",
+        "title": "Negative Prompt",
+        "x-order": 5,
+        "nullable": true,
+        "description": "Description of what to exclude from the generated video"
+      }
+    }
+  },
+  "kwaivgi/kling-v2.5-turbo-pro": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "image": {
+        "type": "string",
+        "title": "Image",
+        "format": "uri",
+        "x-order": 6,
+        "nullable": true,
+        "deprecated": true,
+        "description": "Deprecated: Use start_image instead."
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "Text prompt for video generation"
+      },
+      "duration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/duration"
+          }
+        ],
+        "default": 5,
+        "x-order": 5,
+        "description": "Duration of the video in seconds"
+      },
+      "end_image": {
+        "type": "string",
+        "title": "End Image",
+        "format": "uri",
+        "x-order": 3,
+        "description": "Last frame of the video"
+      },
+      "start_image": {
+        "type": "string",
+        "title": "Start Image",
+        "format": "uri",
+        "x-order": 2,
+        "description": "First frame of the video"
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "16:9",
+        "x-order": 4,
+        "description": "Aspect ratio of the video. Ignored if start_image is provided."
+      },
+      "negative_prompt": {
+        "type": "string",
+        "title": "Negative Prompt",
+        "default": "",
+        "x-order": 1,
+        "description": "Things you do not want to see in the video"
+      }
+    }
+  },
+  "wan-video/wan-2.2-t2v-fast": {
+    "type": "object",
+    "title": "Input",
+    "required": [
+      "prompt"
+    ],
+    "properties": {
+      "seed": {
+        "type": "integer",
+        "title": "Seed",
+        "x-order": 9,
+        "nullable": true,
+        "description": "Random seed. Leave blank for random"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "x-order": 0,
+        "description": "Prompt for video generation"
+      },
+      "go_fast": {
+        "type": "boolean",
+        "title": "Go Fast",
+        "default": true,
+        "x-order": 7,
+        "description": "Go fast"
+      },
+      "num_frames": {
+        "type": "integer",
+        "title": "Num Frames",
+        "default": 81,
+        "maximum": 121,
+        "minimum": 81,
+        "x-order": 2,
+        "description": "Number of video frames. 81 frames give the best results"
+      },
+      "resolution": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/resolution"
+          }
+        ],
+        "default": "480p",
+        "x-order": 4,
+        "description": "Resolution of video. 16:9 corresponds to 832x480px, and 9:16 is 480x832px"
+      },
+      "aspect_ratio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/aspect_ratio"
+          }
+        ],
+        "default": "16:9",
+        "x-order": 3,
+        "description": "Aspect ratio of video. 16:9 corresponds to 832x480px, and 9:16 is 480x832px"
+      },
+      "sample_shift": {
+        "type": "number",
+        "title": "Sample Shift",
+        "default": 12,
+        "maximum": 20,
+        "minimum": 1,
+        "x-order": 8,
+        "description": "Sample shift factor"
+      },
+      "optimize_prompt": {
+        "type": "boolean",
+        "title": "Optimize Prompt",
+        "default": false,
+        "x-order": 1,
+        "description": "Translate prompt to Chinese before generation"
+      },
+      "frames_per_second": {
+        "type": "integer",
+        "title": "Frames Per Second",
+        "default": 16,
+        "maximum": 30,
+        "minimum": 5,
+        "x-order": 5,
+        "description": "Frames per second. Note that the pricing of this model is based on the video duration at 16 fps"
+      },
+      "interpolate_output": {
+        "type": "boolean",
+        "title": "Interpolate Output",
+        "default": true,
+        "x-order": 6,
+        "description": "Interpolate the generated video to 30 FPS using ffmpeg"
+      },
+      "disable_safety_checker": {
+        "type": "boolean",
+        "title": "Disable Safety Checker",
+        "default": false,
+        "x-order": 10,
+        "description": "Disable safety checker for generated video."
+      },
+      "lora_scale_transformer": {
+        "type": "number",
+        "title": "Lora Scale Transformer",
+        "default": 1,
+        "x-order": 12,
+        "description": "Determines how strongly the transformer LoRA should be applied."
+      },
+      "lora_scale_transformer_2": {
+        "type": "number",
+        "title": "Lora Scale Transformer 2",
+        "default": 1,
+        "x-order": 14,
+        "description": "Determines how strongly the transformer_2 LoRA should be applied."
+      },
+      "lora_weights_transformer": {
+        "type": "string",
+        "title": "Lora Weights Transformer",
+        "x-order": 11,
+        "nullable": true,
+        "description": "Load LoRA weights for transformer. Supports arbitrary .safetensors URLs from the Internet (for example, 'https://huggingface.co/Viktor1717/scandinavian-interior-style1/resolve/main/my_first_flux_lora_v1.safetensors')"
+      },
+      "lora_weights_transformer_2": {
+        "type": "string",
+        "title": "Lora Weights Transformer 2",
+        "x-order": 13,
+        "nullable": true,
+        "description": "Load LoRA weights for transformer_2. Supports arbitrary .safetensors URLs from the Internet. Can be different from transformer LoRA."
+      }
+    }
+  }
+}
