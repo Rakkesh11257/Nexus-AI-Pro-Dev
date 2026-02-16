@@ -111,6 +111,8 @@ function HistoryPanel({ results, onViewItem, onDeleteItem, onDeleteAll, isMobile
                 cursor: 'pointer',
                 transition: 'border-color 0.2s',
                 position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
               {/* Delete button on each card */}
@@ -132,29 +134,32 @@ function HistoryPanel({ results, onViewItem, onDeleteItem, onDeleteAll, isMobile
                   title="Delete"
                 >✕</button>
               )}
-              <div onClick={() => onViewItem && onViewItem(item)}>
-                {item.type === 'video' ? (
-                  <video
-                    src={item.url}
-                    muted
-                    playsInline
-                    onMouseEnter={e => e.target?.play?.()}
-                    onMouseLeave={e => { if(e.target?.pause) { e.target.pause(); e.target.currentTime = 0; }}}
-                    style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }}
-                  />
-                ) : item.type === 'audio' ? (
-                  <div style={{ padding: '12px 10px 6px' }}>
-                    <div style={{ fontSize: 22, textAlign: 'center', marginBottom: 6 }}>🎵</div>
-                    <audio src={item.url} controls style={{ width: '100%', height: 32 }} onClick={e => e.stopPropagation()} />
-                  </div>
-                ) : (
-                  <img
-                    src={item.url}
-                    alt=''
-                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
-                    onError={e => { e.target.style.display = 'none'; }}
-                  />
-                )}
+              <div onClick={() => onViewItem && onViewItem(item)} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                {/* Fixed-height media container */}
+                <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden', position: 'relative', background: '#0a0a18' }}>
+                  {item.type === 'video' ? (
+                    <video
+                      src={item.url}
+                      muted
+                      playsInline
+                      onMouseEnter={e => e.target?.play?.()}
+                      onMouseLeave={e => { if(e.target?.pause) { e.target.pause(); e.target.currentTime = 0; }}}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  ) : item.type === 'audio' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '12px 10px' }}>
+                      <div style={{ fontSize: 36, marginBottom: 10 }}>🎵</div>
+                      <audio src={item.url} controls style={{ width: '100%', height: 32 }} onClick={e => e.stopPropagation()} />
+                    </div>
+                  ) : (
+                    <img
+                      src={item.url}
+                      alt=''
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      onError={e => { e.target.style.display = 'none'; }}
+                    />
+                  )}
+                </div>
                 <div style={{ padding: '6px 8px' }}>
                   <p style={{
                     fontSize: 11, color: '#777', margin: 0,
