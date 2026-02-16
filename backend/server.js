@@ -657,13 +657,15 @@ app.post('/api/replicate/predictions', requirePaid, async (req, res) => {
     const { model, version, input, _model } = req.body;
 
     let url, body;
-    if (version) {
+    const modelId = model || _model;
+    // Use version mode if version is provided, OR if model contains ':' (version hash)
+    const versionHash = version || (modelId && modelId.includes(':') ? modelId.split(':')[1] : null);
+    if (versionHash) {
       // Version-based: POST /v1/predictions with version hash
       url = 'https://api.replicate.com/v1/predictions';
-      body = { version, input };
+      body = { version: versionHash, input };
     } else {
       // Model-based: POST /v1/models/{owner}/{name}/predictions
-      const modelId = model || _model;
       url = `https://api.replicate.com/v1/models/${modelId}/predictions`;
       body = { input };
     }

@@ -1923,7 +1923,9 @@ function App() {
       else if (modelObj?.isICLight) { input = { image: imgUri, prompt: skinPrompt || 'portrait, professional lighting' }; }
       else { input = { input_image: imgUri, prompt: skinPrompt || 'make this person look realistic', disable_safety_checker: true }; }
       updateJob(jobId, { status: 'Processing portrait...' });
-      const reqBody = modelObj?.useVersion ? { version: skinModel.split(':')[1], input } : { model: skinModel, input };
+      // Use version mode if useVersion flag is set OR if model ID contains a version hash
+      const hasVersion = modelObj?.useVersion || skinModel.includes(':');
+      const reqBody = hasVersion ? { version: skinModel.split(':')[1], input } : { model: skinModel, input };
       const resp = await fetch(`${API_BASE}/api/replicate/predictions`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify(reqBody)
