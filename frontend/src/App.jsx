@@ -1921,7 +1921,7 @@ function App() {
       let input;
       if (modelObj?.isHaircut) { input = { image: imgUri, prompt: skinPrompt || 'change haircut' }; }
       else if (modelObj?.isICLight) { input = { image: imgUri, prompt: skinPrompt || 'portrait, professional lighting' }; }
-      else { input = { image: imgUri, prompt: skinPrompt || 'make this person look realistic' }; }
+      else { input = { input_image: imgUri, prompt: skinPrompt || 'make this person look realistic', disable_safety_checker: true }; }
       updateJob(jobId, { status: 'Processing portrait...' });
       const reqBody = modelObj?.useVersion ? { version: skinModel.split(':')[1], input } : { model: skinModel, input };
       const resp = await fetch(`${API_BASE}/api/replicate/predictions`, {
