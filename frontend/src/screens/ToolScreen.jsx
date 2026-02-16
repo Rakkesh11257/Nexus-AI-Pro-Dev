@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CATEGORY_TOOLS } from './CategoryScreen.jsx';
 
 // ─── Hook: detect mobile ───
@@ -286,47 +286,26 @@ export default function ToolScreen({
     </div>
   );
 
-  // Shared sub-tool cards (OpenArt style) with scroll-into-view on tab change
-  const scrollContainerRef = useRef(null);
-  const activeTabRef = useRef(null);
-
-  // Only scroll if the active tab is completely out of view (clipped by container)
-  useEffect(() => {
-    if (activeTabRef.current && scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const activeEl = activeTabRef.current;
-      const containerRect = container.getBoundingClientRect();
-      const activeRect = activeEl.getBoundingClientRect();
-      // Only scroll if tab is fully or mostly clipped — use 'nearest' to minimize movement
-      if (activeRect.right > containerRect.right || activeRect.left < containerRect.left) {
-        activeEl.scrollIntoView({ behavior: 'instant', inline: 'nearest', block: 'nearest' });
-      }
-    }
-  }, [tabId]);
-
+  // Shared sub-tool cards (OpenArt style) — manual scroll only, no auto-scroll
   const SubToolCards = ({ padding }) => {
     if (siblings.length <= 1) return null;
     return (
-      <div
-        ref={scrollContainerRef}
-        style={{
-          display: 'flex',
-          gap: 8,
-          padding: padding || '14px 20px',
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-        }}
-      >
+      <div style={{
+        display: 'flex',
+        gap: 8,
+        padding: padding || '14px 20px',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+      }}>
         {siblings.map(t => (
-          <div key={t.id} ref={t.tab === tabId ? activeTabRef : null}>
-            <ToolCard
-              tool={t}
-              isActive={t.tab === tabId}
-              onClick={() => onSwitchTool(t.tab)}
-              isMobile={isMobile}
-            />
-          </div>
+          <ToolCard
+            key={t.id}
+            tool={t}
+            isActive={t.tab === tabId}
+            onClick={() => onSwitchTool(t.tab)}
+            isMobile={isMobile}
+          />
         ))}
       </div>
     );
