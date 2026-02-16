@@ -2869,7 +2869,7 @@ function App() {
             )}
 
             {/* Start Training Button */}
-            <button onClick={startTraining} disabled={loading || trainPolling} style={{ ...S.generateBtn, opacity: (loading || trainPolling) ? 0.5 : 1, marginBottom: 16 }}>
+            <button onClick={startTraining} disabled={loading || trainPolling} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: (loading || trainPolling) ? 0.5 : 1, marginBottom: 16 }}>
               {trainPolling ? '⏳ Training in Progress...' : '🧪 Start Training'}
             </button>
 

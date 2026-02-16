@@ -136,7 +136,7 @@ function HistoryPanel({ results, onViewItem, onDeleteItem, onDeleteAll, isMobile
               )}
               <div onClick={() => onViewItem && onViewItem(item)} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                 {/* Fixed-height media container */}
-                <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden', position: 'relative', background: '#0a0a18' }}>
+                <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', position: 'relative', background: '#0a0a18' }}>
                   {item.type === 'video' ? (
                     <video
                       src={item.url}

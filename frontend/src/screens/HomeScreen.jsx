@@ -12,6 +12,9 @@ const CATEGORIES = [
     subTools: [
       { id: 'create-image', label: 'Create Image', desc: 'Generate images from text prompts', media: '/samples/create-image.gif', tab: 'image' },
       { id: 'edit-image', label: 'Edit Image', desc: 'Transform images with AI', media: '/samples/edit-image.gif', tab: 'i2i' },
+      { id: 'face-swap', label: 'Face Swap', desc: 'Swap faces between photos', media: '/samples/face-swap.gif', tab: 'faceswap' },
+      { id: 'image-upscale', label: 'Image Upscale', desc: 'Enhance resolution up to 10x', media: '/samples/image-upscale.gif', tab: 'upscale' },
+      { id: 'portrait-studio', label: 'Portrait Studio', desc: 'Enhance portraits & change haircuts', media: '/samples/portrait-studio.gif', tab: 'skin' },
     ],
   },
   {
@@ -25,6 +28,8 @@ const CATEGORIES = [
       { id: 'create-video', label: 'Create Video', desc: 'Generate videos from text', media: '/samples/create-video.gif', tab: 't2v' },
       { id: 'animate-image', label: 'Animate Image', desc: 'Turn images into video', media: '/samples/animate-image.gif', tab: 'i2v' },
       { id: 'motion-sync', label: 'Motion Sync', desc: 'Transfer motion between videos', media: '/samples/motion-sync.gif', tab: 'motion' },
+      { id: 'edit-video', label: 'Edit Video', desc: 'Transform videos with AI prompts', media: '/samples/edit-video.gif', tab: 'v2v' },
+      { id: 'video-face-swap', label: 'Video Face Swap', desc: 'Swap faces in videos', media: '/samples/face-swap.gif', tab: 'videofs' },
     ],
   },
   {
