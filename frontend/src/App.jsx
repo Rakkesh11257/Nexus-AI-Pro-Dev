@@ -1820,7 +1820,7 @@ function App() {
     try {
       const srcUri = await toDataUri(faceswapSource);
       const tgtUri = await toDataUri(faceswapTarget);
-      const input = { swap_image: srcUri, target_image: tgtUri };
+      const input = { swap_image: srcUri, input_image: tgtUri };
       const modelObj = FACESWAP_MODELS.find(m => m.id === faceswapModel);
       updateJob(jobId, { status: 'Swapping faces...' });
       const reqBody = modelObj?.useVersion ? { version: faceswapModel.split(':')[1], input } : { model: faceswapModel, input };
