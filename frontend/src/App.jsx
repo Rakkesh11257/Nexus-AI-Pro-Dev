@@ -957,8 +957,30 @@ function App() {
       const dataUri = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
 
       const curI2IModel = I2I_MODELS.find(m => m.id === i2iModel);
-      // Consistent Character model uses 'subject' not 'image'
-      const input = i2iModel.includes('consistent-character') ? { prompt: i2iPrompt.trim(), subject: dataUri } : { prompt: i2iPrompt.trim(), image: dataUri };
+      // Model-specific image field names
+      let input;
+      if (i2iModel.includes('consistent-character')) {
+        input = { prompt: i2iPrompt.trim(), subject: dataUri };
+      } else {
+        input = { prompt: i2iPrompt.trim(), image: dataUri };
+      }
+
+      // Model-specific default params
+      if (i2iModel.includes('zsxkib/instant-id')) {
+        input.num_outputs = 1;
+        input.guidance_scale = 7.5;
+        input.num_inference_steps = 30;
+        input.disable_safety_checker = true;
+        input.ip_adapter_scale = 0.8;
+        input.controlnet_conditioning_scale = 0.8;
+        if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
+      } else if (i2iModel.includes('zedge/instantid')) {
+        input.num_outputs = 1;
+        input.guidance_scale = 5;
+        input.num_inference_steps = 30;
+        input.disable_safety_checker = true;
+        if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
+      }
 
       // Model-specific params
       if (i2iModel.includes('nano-banana')) {
