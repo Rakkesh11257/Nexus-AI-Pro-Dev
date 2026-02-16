@@ -99,6 +99,7 @@ function HistoryPanel({ results, onViewItem, onDeleteItem, onDeleteAll, isMobile
           gap: 10,
           overflowY: 'auto',
           flex: 1,
+          alignItems: 'start',
         }}>
           {items.map((item, i) => (
             <div
