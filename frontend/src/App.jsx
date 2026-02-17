@@ -195,6 +195,7 @@ const AUDIO_MODELS = [
 ];
 const VOICECLONE_MODELS = [
   { id: 'lucataco/xtts-v2:684bc3855b37866c0c65add2ff39c78f3dea3f4ff103a436465326e0f438d55e', name: 'XTTS V2', desc: '$0.13/run (~\u20b910.89/run)', useVersion: true },
+  { id: 'resemble-ai/chatterbox', name: 'Chatterbox', desc: '$0.025/1K chars (~\u20b92.09/1K chars)', isChatterbox: true },
 ];
 // Transcribe models
 const TRANSCRIBE_MODELS = [
@@ -777,6 +778,9 @@ function App() {
   const [voicecloneText, setVoicecloneText] = useState('');
   const [voicecloneLang, setVoicecloneLang] = useState('en');
   const [voicecloneCleanup, setVoicecloneCleanup] = useState(false);
+  const [voicecloneExag, setVoicecloneExag] = useState(0.5);
+  const [voicecloneCfg, setVoicecloneCfg] = useState(0.5);
+  const [voicecloneTemp, setVoicecloneTemp] = useState(0.8);
 
   // Audio Generation
   const [audioModel, setAudioModel] = useState(AUDIO_MODELS[0].id);
@@ -2302,10 +2306,15 @@ function App() {
     const jobId = addJob('voiceclone', voicecloneModel, 'Voice Clone');
     setError('');
     try {
-      const modelObj = VOICECLONE_MODELS.find(m => m.id === voicecloneModel);
       updateJob(jobId, { status: 'Uploading voice sample...' });
       const audioUrl = await uploadToReplicate(voicecloneAudio, 'audio/mpeg');
-      let input = { speaker: audioUrl, text: voicecloneText.trim(), language: voicecloneLang || 'en', cleanup_voice: voicecloneCleanup }; 
+      const modelObj = VOICECLONE_MODELS.find(m => m.id === voicecloneModel);
+      let input;
+      if (modelObj?.isChatterbox) {
+        input = { prompt: voicecloneText.trim(), audio_prompt: audioUrl, exaggeration: voicecloneExag ?? 0.5, cfg_weight: voicecloneCfg ?? 0.5, temperature: voicecloneTemp ?? 0.8 };
+      } else {
+        input = { speaker: audioUrl, text: voicecloneText.trim(), language: voicecloneLang || 'en', cleanup_voice: voicecloneCleanup };
+      }
       updateJob(jobId, { status: 'Cloning voice...' });
       const reqBody = modelObj?.useVersion && voicecloneModel.includes(':') ? { version: voicecloneModel.split(':')[1], input } : { model: voicecloneModel, input };
       const resp = await fetch(API_BASE + '/api/replicate/predictions', {
@@ -2832,7 +2841,9 @@ function App() {
         })()}
 
         {/* ══ VOICE CLONE TAB ══ */}
-        {tab === 'voiceclone' && (
+        {tab === 'voiceclone' && (() => {
+          const isChatterbox = VOICECLONE_MODELS.find(m => m.id === voicecloneModel)?.isChatterbox;
+          return (
           <div>
             {VOICECLONE_MODELS.length > 0 ? (
               <>
@@ -2846,7 +2857,8 @@ function App() {
               <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}><div style={{ fontSize: 48, marginBottom: 12 }}>&#x1f6a7;</div><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Coming Soon</div><div style={{ fontSize: 13 }}>Voice clone models will be available shortly.</div></div>
             )}
           </div>
-        )}
+          );
+        })()}
         {/* ══ TRANSCRIBE TAB ══ */}
         {tab === 'transcribe' && (() => {
           const isGPT4o = transcribeModel.includes('gpt-4o');
