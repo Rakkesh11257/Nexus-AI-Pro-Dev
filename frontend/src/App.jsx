@@ -187,7 +187,7 @@ const AUDIO_MODELS = [
   { id: 'elevenlabs/turbo-v2.5', name: 'ElevenLabs Turbo V2.5', desc: 'Fast TTS',
     params: { voice: ['Rachel','Drew','Clyde','Paul','Aria','Domi','Dave','Roger','Fin','Sarah','James','Jane','Juniper','Arabella','Hope','Bradford','Reginald','Gaming','Austin','Kuon','Blondie','Priyanka','Alexandra','Monika','Mark','Grimblewood'], stability: { min: 0, max: 1, default: 0.5 }, similarity_boost: { min: 0, max: 1, default: 0.75 }, style: { min: 0, max: 1, default: 0 }, speed: { min: 0.7, max: 1.2, default: 1 }, language_code: true } },
   { id: 'minimax/speech-02-turbo', name: 'MiniMax Speech 02 Turbo', desc: '$0.06/1K tokens (~\u20b95.03/1K tokens)', isMiniMaxTTS: true,
-    params: { voice_id: ['Wise_Woman','Young_Man','Calm_Woman','Energetic_Girl','Deep_Voice_Man','Sweet_Girl','Cute_Boy','Gentle_Woman','Narrator_Man','Newscaster_Woman'], speed: { min: 0.5, max: 2, default: 1 }, pitch: { min: -12, max: 12, default: 0 }, emotion: ['auto','happy','sad','angry','fearful','disgusted','surprised','calm','fluent','neutral'], language_boost: ['None','Automatic','Chinese','English','Arabic','Russian','Spanish','French','Portuguese','German','Turkish','Dutch','Ukrainian','Vietnamese','Indonesian','Japanese','Italian','Korean','Thai','Polish','Romanian','Greek','Czech','Finnish','Hindi','Bulgarian','Danish','Hebrew','Malay','Persian','Slovak','Swedish','Croatian','Filipino','Hungarian','Norwegian','Slovenian','Catalan','Tamil','Afrikaans'] } },
+    params: { voice_id: ['Wise_Woman','Young_Man','Calm_Woman','Energetic_Girl','Deep_Voice_Man','Sweet_Girl','Cute_Boy','Gentle_Woman','Narrator_Man','Newscaster_Woman'], speed: { min: 0.5, max: 2, default: 1 }, pitch: { min: -12, max: 12, default: 0 }, emotion: ['auto','happy','sad','angry','fearful','disgusted','surprised','calm','fluent','neutral'] } },
   { id: 'google/lyria-2', name: 'Google Lyria 2', desc: 'AI music generation',
     params: { negative_prompt: true, seed: true } },
   { id: 'zsxkib/mmaudio:62871fb59889b2d7c13777f08deb3b36bdff88f7e1d53a50ad7694548a41b484', name: 'MMAudio', desc: 'Video/Image to audio', useVersion: true,
@@ -1744,7 +1744,6 @@ function App() {
         input.speed = audioOpts.speed ?? 1;
         input.pitch = audioOpts.pitch ?? 0;
         input.emotion = audioOpts.emotion || 'auto';
-        if (audioOpts.language_boost && audioOpts.language_boost !== 'None') input.language_boost = audioOpts.language_boost;
       }
       updateJob(jobId, { status: 'Generating audio...' });
       // Version-based model (MMAudio)
@@ -2765,12 +2764,6 @@ function App() {
                   <label style={S.label}>Emotion</label>
                   <select value={audioOpts.emotion || 'auto'} onChange={e => setAudioOpts(o => ({...o, emotion: e.target.value}))} style={{ ...S.select, width: '100%' }}>
                     {p.emotion?.map(v => <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={S.label}>Language</label>
-                  <select value={audioOpts.language_boost || 'None'} onChange={e => setAudioOpts(o => ({...o, language_boost: e.target.value}))} style={{ ...S.select, width: '100%' }}>
-                    {p.language_boost?.map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
                 <div>
