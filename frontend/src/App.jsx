@@ -1188,6 +1188,20 @@ function App() {
     return result.url;
   };
 
+  // ─── Helper: upload file to temp server storage (serves with correct Content-Type for Runway etc.) ───
+  const uploadToTemp = async (blobOrDataUri, contentType = 'video/mp4') => {
+    const dataUri = blobOrDataUri.startsWith('blob:') ? await toDataUri(blobOrDataUri) : blobOrDataUri;
+    const res = await fetch(`${API_BASE}/api/upload-temp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken },
+      body: JSON.stringify({ data: dataUri, content_type: contentType }),
+    });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || `Temp upload failed (${res.status})`); }
+    const result = await res.json();
+    if (!result.url) throw new Error('Temp upload succeeded but no URL returned');
+    return result.url;
+  };
+
   // ─── Helper: build video input from model config ───
   const buildVideoInput = async (modelCfg, opts, prompt, negPrompt, image, lastFrame, jobId) => {
     const p = modelCfg.params || {};
@@ -2131,10 +2145,10 @@ function App() {
           input = { prompt: v2vPrompt, reference_video: videoUrl, video_reference_type: 'base', mode: 'pro' };
         }
       } else {
-        // Runway Gen4: use data URI — Replicate converts it with correct Content-Type
-        updateJob(jobId, { status: 'Preparing video...' });
-        const videoUri = await toDataUri(v2vVideo);
-        input = { prompt: v2vPrompt, video: videoUri };
+        // Runway Gen4: upload to temp server (serves with correct Content-Type: video/mp4)
+        updateJob(jobId, { status: 'Uploading video...' });
+        const videoUrl = await uploadToTemp(v2vVideo, 'video/mp4');
+        input = { prompt: v2vPrompt, video: videoUrl };
       }
       updateJob(jobId, { status: 'Editing video...' });
       const resp = await fetch(`${API_BASE}/api/replicate/predictions`, {

@@ -6,11 +6,40 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
+const fs = require('fs');
+const os = require('os');
 
 const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Temp upload directory for serving files with correct Content-Type
+const TEMP_UPLOAD_DIR = path.join(os.tmpdir(), 'nexus-uploads');
+if (!fs.existsSync(TEMP_UPLOAD_DIR)) fs.mkdirSync(TEMP_UPLOAD_DIR, { recursive: true });
+
+// Serve temp uploads with correct Content-Type headers
+app.use('/tmp-uploads', (req, res, next) => {
+  const filePath = path.join(TEMP_UPLOAD_DIR, req.path);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeMap = { '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.webm': 'video/webm', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
+  res.set('Content-Type', mimeMap[ext] || 'application/octet-stream');
+  res.sendFile(filePath);
+});
+
+// Clean up temp files older than 10 minutes every 5 minutes
+setInterval(() => {
+  try {
+    const files = fs.readdirSync(TEMP_UPLOAD_DIR);
+    const now = Date.now();
+    for (const f of files) {
+      const fp = path.join(TEMP_UPLOAD_DIR, f);
+      const stat = fs.statSync(fp);
+      if (now - stat.mtimeMs > 10 * 60 * 1000) fs.unlinkSync(fp);
+    }
+  } catch (e) {}
+}, 5 * 60 * 1000);
 
 // ============================================
 // RATE LIMITING
@@ -679,6 +708,38 @@ app.post('/api/replicate/upload', requirePaid, async (req, res) => {
   } catch (err) {
     console.error('File upload error:', err.message);
     res.status(502).json({ error: 'Failed to upload file: ' + err.message });
+  }
+});
+
+// Upload file to temp storage with correct Content-Type (for models like Runway that validate headers)
+app.post('/api/upload-temp', requirePaid, async (req, res) => {
+  try {
+    const { data, content_type } = req.body;
+    if (!data) return res.status(400).json({ error: 'No file data provided' });
+
+    const base64 = data.includes(',') ? data.split(',')[1] : data;
+    const buffer = Buffer.from(base64, 'base64');
+
+    const extMap = {
+      'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov',
+      'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp',
+    };
+    const ext = extMap[content_type] || '';
+    const filename = `${crypto.randomUUID()}${ext}`;
+    const filePath = path.join(TEMP_UPLOAD_DIR, filename);
+
+    fs.writeFileSync(filePath, buffer);
+    console.log('>>> Temp file saved:', filename, content_type, buffer.length, 'bytes');
+
+    // Build public URL - use the request's host
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    const publicUrl = `${protocol}://${host}/tmp-uploads/${filename}`;
+
+    res.json({ url: publicUrl, filename });
+  } catch (err) {
+    console.error('Temp upload error:', err.message);
+    res.status(500).json({ error: 'Failed to save temp file: ' + err.message });
   }
 });
 
