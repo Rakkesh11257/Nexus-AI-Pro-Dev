@@ -674,6 +674,7 @@ app.post('/api/replicate/upload', requirePaid, async (req, res) => {
 
     const fileData = await createRes.json();
     console.log('>>> Replicate file uploaded:', fileData.id, 'content_type:', fileData.content_type, 'url:', fileData.urls?.get);
+    // Return both the API URL and the file ID for models that need proper Content-Type
     res.json({ url: fileData.urls?.get, id: fileData.id, content_type: fileData.content_type });
   } catch (err) {
     console.error('File upload error:', err.message);

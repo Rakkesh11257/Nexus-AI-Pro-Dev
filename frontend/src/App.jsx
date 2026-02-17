@@ -2120,17 +2120,21 @@ function App() {
         if (vidSizeMB > 16) throw new Error(`Video is ${vidSizeMB.toFixed(1)}MB. Runway max is 16MB.`);
       }
 
-      // All V2V models need uploaded URL for video (not base64)
-      updateJob(jobId, { status: 'Uploading video...' });
-      const videoUrl = await uploadToReplicate(v2vVideo, vidType || 'video/mp4');
-      let input;
-      if (modelObj?.isGrokV2V) {
-        input = { prompt: v2vPrompt, video: videoUrl };
-      } else if (modelObj?.isKlingO1) {
-        input = { prompt: v2vPrompt, reference_video: videoUrl, video_reference_type: 'base', mode: 'pro' };
+      // Upload video: Runway needs data URI (Replicate handles conversion with correct Content-Type)
+      // Grok and Kling need uploaded URL
+      if (modelObj?.isGrokV2V || modelObj?.isKlingO1) {
+        updateJob(jobId, { status: 'Uploading video...' });
+        const videoUrl = await uploadToReplicate(v2vVideo, vidType || 'video/mp4');
+        if (modelObj?.isGrokV2V) {
+          input = { prompt: v2vPrompt, video: videoUrl };
+        } else {
+          input = { prompt: v2vPrompt, reference_video: videoUrl, video_reference_type: 'base', mode: 'pro' };
+        }
       } else {
-        // Runway Gen4
-        input = { prompt: v2vPrompt, video: videoUrl };
+        // Runway Gen4: use data URI — Replicate converts it with correct Content-Type
+        updateJob(jobId, { status: 'Preparing video...' });
+        const videoUri = await toDataUri(v2vVideo);
+        input = { prompt: v2vPrompt, video: videoUri };
       }
       updateJob(jobId, { status: 'Editing video...' });
       const resp = await fetch(`${API_BASE}/api/replicate/predictions`, {
