@@ -122,6 +122,9 @@ const VIDEOFS_MODELS = [
   { id: 'xrunda/hello:104b4a39315349db50880757bc8c1c996c5309e3aa11286b0a3c84dab81fd440', name: 'Video Face Swap', desc: '~$0.12/run (~₹10.05/run)', price: '$0.12', useVersion: true },
   { id: 'okaris/roop:8c1e100ecabb3151cf1e6c62879b6de7a4b84602de464ed249b6cff0b86211d8', name: 'Roop Face Swap', desc: '$0.074/run (~₹6.20/run)', useVersion: true, isRoop: true },
 ];
+const VENHANCE_MODELS = [
+  // Models will be added here
+];
 // I2V models with per-model config
 const I2V_MODELS = [
   { id: 'wan-video/wan-2.2-i2v-fast', name: 'Wan 2.2 I2V Fast', desc: '$0.05-$0.145/vid (~₹4.19-₹12.14/vid)', nsfw: true, price: '$0.05-0.145',
@@ -752,6 +755,9 @@ function App() {
   const [vfsModel, setVfsModel] = useState(VIDEOFS_MODELS[0].id);
   const [vfsVideo, setVfsVideo] = useState(null);
   const [vfsFaceImage, setVfsFaceImage] = useState(null);
+  // Video Enhance
+  const [venhanceModel, setVenhanceModel] = useState(VENHANCE_MODELS[0]?.id || '');
+  const [venhanceVideo, setVenhanceVideo] = useState(null);
 
   // Audio Generation
   const [audioModel, setAudioModel] = useState(AUDIO_MODELS[0].id);
@@ -2219,7 +2225,43 @@ function App() {
   };
 
 
-  // ─── Render ───
+  
+
+  // ─── Generate Video Enhance ───
+  const generateVideoEnhance = async () => {
+    if (!venhanceVideo) return setError('Upload a video to enhance');
+    if (!venhanceModel) return setError('No video enhance model available');
+    if (!canGenerate()) return;
+    const jobId = addJob('venhance', venhanceModel, 'Video Enhance');
+    setError('');
+    try {
+      const modelObj = VENHANCE_MODELS.find(m => m.id === venhanceModel);
+      updateJob(jobId, { status: 'Uploading video...' });
+      const videoUrl = await uploadToReplicate(venhanceVideo, 'video/mp4');
+      let input = { video: videoUrl };
+      updateJob(jobId, { status: 'Enhancing video...' });
+      const reqBody = modelObj?.useVersion && venhanceModel.includes(':') ? { version: venhanceModel.split(':')[1], input } : { model: venhanceModel, input };
+      const resp = await fetch(API_BASE + '/api/replicate/predictions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: 'Bearer ' + apiKey },
+        body: JSON.stringify(reqBody)
+      });
+      if (resp.status === 403) { setShowPaywall(true); finishJob(jobId, 'API key required'); return; }
+      if (!resp.ok) throw new Error(await parseApiError(resp));
+      let result = await resp.json();
+      while (result.status !== 'succeeded' && result.status !== 'failed') {
+        await new Promise(r => setTimeout(r, 3000));
+        const poll = await fetch(API_BASE + '/api/replicate/predictions/' + result.id, { headers: { 'x-auth-token': accessToken, Authorization: 'Bearer ' + apiKey } });
+        result = await poll.json();
+        updateJob(jobId, { status: result.status });
+      }
+      if (result.status === 'failed') throw new Error(result.error || 'Video enhance failed');
+      const output = typeof result.output === 'string' ? result.output : Array.isArray(result.output) ? result.output[0] : result.output;
+      setResults(prev => [{ url: output, type: 'video', model: venhanceModel, prompt: 'Video Enhance', ts: Date.now() }, ...prev]);
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
+  };
+
+// ─── Render ───
   if (authState === 'loading') return (<><StarField /><div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}><div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#22d47b', borderRadius: '50%' }} /></div></>);
   if (authState === 'auth') return <AuthScreen onAuth={handleAuth} />;
 
@@ -2267,20 +2309,20 @@ function App() {
             onBack={() => {
               // Use currentCategory if available (set when navigating from a category screen)
               // Fall back to the hardcoded map for tools that only belong to one category
-              const fallbackMap = { image: 'image', i2i: 'image', faceswap: 'image', upscale: 'image', skin: 'image', i2v: 'image', t2v: 'video', v2v: 'video', motion: 'video', videofs: 'video', audio: 'audio', transcribe: 'transcribe', train: 'character', chat: 'chat' };
+              const fallbackMap = { image: 'image', i2i: 'image', faceswap: 'image', upscale: 'image', skin: 'image', i2v: 'image', t2v: 'video', v2v: 'video', motion: 'video', videofs: 'video', venhance: 'video', audio: 'audio', transcribe: 'transcribe', train: 'character', chat: 'chat' };
               const catId = currentCategory || fallbackMap[tab];
               if (catId) { setScreen('category:' + catId); } else { navigateHome(); }
             }}
             onSwitchTool={(newTab) => { setTab(newTab); setScreen(newTab); }}
             results={results.filter(r => {
-              const tabTypes = { image: ['image'], i2i: ['image'], faceswap: ['image'], upscale: ['image'], skin: ['image'], i2v: ['video'], t2v: ['video'], v2v: ['video'], motion: ['video'], videofs: ['video'], audio: ['audio'], transcribe: ['transcription'] };
+              const tabTypes = { image: ['image'], i2i: ['image'], faceswap: ['image'], upscale: ['image'], skin: ['image'], i2v: ['video'], t2v: ['video'], v2v: ['video'], motion: ['video'], videofs: ['video'], venhance: ['video'], audio: ['audio'], transcribe: ['transcription'] };
               const types = tabTypes[tab] || [];
               return types.includes(r.type);
             })}
             onViewItem={(item) => setViewerItem(item)}
             onDeleteItem={(item) => setResults(prev => prev.filter(r => r !== item))}
             onDeleteAll={() => {
-              const tabTypes = { image: ['image'], i2i: ['image'], faceswap: ['image'], upscale: ['image'], skin: ['image'], i2v: ['video'], t2v: ['video'], v2v: ['video'], motion: ['video'], videofs: ['video'], audio: ['audio'], transcribe: ['transcription'] };
+              const tabTypes = { image: ['image'], i2i: ['image'], faceswap: ['image'], upscale: ['image'], skin: ['image'], i2v: ['video'], t2v: ['video'], v2v: ['video'], motion: ['video'], videofs: ['video'], venhance: ['video'], audio: ['audio'], transcribe: ['transcription'] };
               const types = tabTypes[tab] || [];
               setResults(prev => prev.filter(r => !types.includes(r.type)));
             }}
@@ -3044,6 +3086,20 @@ function App() {
               </div>
             </div>
             <button onClick={generateVideoFS} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Swap Face in Video'}</button>
+          </div>
+        )}
+        {tab === 'venhance' && (
+          <div>
+            {VENHANCE_MODELS.length > 0 ? (
+              <>
+                <ModelSelector models={VENHANCE_MODELS} value={venhanceModel} onChange={v => setVenhanceModel(v)} />
+                <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Source Video</label>
+                {venhanceVideo ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><video src={venhanceVideo} style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} controls muted /><button onClick={() => setVenhanceVideo(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f3ac;</div>Upload video to enhance<br/><span style={{ fontSize: 11, color: '#555' }}>Upscale resolution &amp; improve quality</span><input type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) setVenhanceVideo(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
+                <button onClick={generateVideoEnhance} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Enhance Video'}</button>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}><div style={{ fontSize: 48, marginBottom: 12 }}>&#x1f6a7;</div><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Coming Soon</div><div style={{ fontSize: 13 }}>Video enhance models will be available shortly.</div></div>
+            )}
           </div>
         )}
 
