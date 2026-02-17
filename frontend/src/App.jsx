@@ -124,6 +124,7 @@ const VIDEOFS_MODELS = [
 ];
 const VENHANCE_MODELS = [
   { id: 'topazlabs/video-upscale', name: 'Topaz Video Upscale', desc: '$0.08/unit (~₹6.70/unit)', nsfw: false, isTopaz: true },
+  { id: 'lucataco/real-esrgan-video:3e56ce4b57863bd03048b42bc09bdd4db20d427cca5fde9d8ae4dc60e1bb4775', name: 'Real-ESRGAN Video', desc: '$0.94/run (~₹78.73/run)', nsfw: false, isEsrgan: true, useVersion: true },
 ];
 // I2V models with per-model config
 const I2V_MODELS = [
@@ -2239,8 +2240,15 @@ function App() {
     try {
       const modelObj = VENHANCE_MODELS.find(m => m.id === venhanceModel);
       updateJob(jobId, { status: 'Uploading video...' });
-      const videoUrl = await uploadToTemp(venhanceVideo, 'video/mp4');
-      let input = { video: videoUrl, target_resolution: venhanceRes, target_fps: venhanceFps };
+      let input;
+      if (modelObj?.isEsrgan) {
+        const videoUrl = await uploadToReplicate(venhanceVideo, 'video/mp4');
+        const resMap = { '720p': 'FHD', '1080p': 'FHD', '4k': '4k' };
+        input = { video_path: videoUrl, resolution: resMap[venhanceRes] || 'FHD', model: 'RealESRGAN_x4plus' };
+      } else {
+        const videoUrl = await uploadToTemp(venhanceVideo, 'video/mp4');
+        input = { video: videoUrl, target_resolution: venhanceRes, target_fps: venhanceFps };
+      }
       updateJob(jobId, { status: 'Enhancing video...' });
       const reqBody = modelObj?.useVersion && venhanceModel.includes(':') ? { version: venhanceModel.split(':')[1], input } : { model: venhanceModel, input };
       const resp = await fetch(API_BASE + '/api/replicate/predictions', {
