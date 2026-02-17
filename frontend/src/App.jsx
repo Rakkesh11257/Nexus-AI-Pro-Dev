@@ -2133,14 +2133,16 @@ function App() {
         if (vidSizeMB > 200) throw new Error(`Video is ${vidSizeMB.toFixed(1)}MB. Max is 200MB.`);
       }
 
-      // Upload video: all V2V models use Replicate upload
+      // Upload video: Kling O1 needs URL with file extension, use temp server
+      // Grok works with Replicate file URLs
       updateJob(jobId, { status: 'Uploading video...' });
-      const videoUrl = await uploadToReplicate(v2vVideo, vidType || 'video/mp4');
       let input;
-      if (modelObj?.isGrokV2V) {
-        input = { prompt: v2vPrompt, video: videoUrl };
-      } else {
+      if (modelObj?.isKlingO1) {
+        const videoUrl = await uploadToTemp(v2vVideo, vidType || 'video/mp4');
         input = { prompt: v2vPrompt, reference_video: videoUrl, video_reference_type: 'base', mode: 'pro' };
+      } else {
+        const videoUrl = await uploadToReplicate(v2vVideo, vidType || 'video/mp4');
+        input = { prompt: v2vPrompt, video: videoUrl };
       }
       updateJob(jobId, { status: 'Editing video...' });
       const resp = await fetch(`${API_BASE}/api/replicate/predictions`, {
