@@ -679,8 +679,14 @@ function App() {
   const [accessToken, setAccessToken] = useState('');
 
   // Tab & Category (persist across refresh)
-  const [tab, setTabRaw] = useState(() => localStorage.getItem('nexus_tab') || 'image');
-  const [screen, setScreenRaw] = useState(() => localStorage.getItem('nexus_screen') || 'home');
+  const [tab, setTabRaw] = useState(() => {
+    const saved = localStorage.getItem('nexus_tab') || 'image';
+    return saved === 'venhance' ? 'replacechar' : saved;
+  });
+  const [screen, setScreenRaw] = useState(() => {
+    const saved = localStorage.getItem('nexus_screen') || 'home';
+    return saved === 'venhance' ? 'replacechar' : saved;
+  });
   const setTab = (v) => { setTabRaw(v); try { localStorage.setItem('nexus_tab', v); } catch {} };
   const setScreen = (v) => { setScreenRaw(v); try { localStorage.setItem('nexus_screen', v); } catch {} };
   const [category, setCategory] = useState(null); // null=home, 'image','video','audio','chat','train'
