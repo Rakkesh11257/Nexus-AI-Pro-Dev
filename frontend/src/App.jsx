@@ -196,6 +196,7 @@ const AUDIO_MODELS = [
 const VOICECLONE_MODELS = [
   { id: 'lucataco/xtts-v2:684bc3855b37866c0c65add2ff39c78f3dea3f4ff103a436465326e0f438d55e', name: 'XTTS V2', desc: '$0.13/run (~\u20b910.89/run)', useVersion: true },
   { id: 'resemble-ai/chatterbox', name: 'Chatterbox', desc: '$0.025/1K chars (~\u20b92.09/1K chars)', isChatterbox: true },
+  { id: 'minimax/voice-cloning', name: 'MiniMax Voice Clone', desc: '$3.00/clone (~\u20b9251.25/clone)', isMiniMaxClone: true },
 ];
 // Transcribe models
 const TRANSCRIBE_MODELS = [
@@ -2300,7 +2301,8 @@ function App() {
   // ─── Generate Voice Clone ───
   const generateVoiceClone = async () => {
     if (!voicecloneAudio) return setError('Upload a voice sample');
-    if (!voicecloneText.trim()) return setError('Enter text to speak');
+    const modelObjCheck = VOICECLONE_MODELS.find(m => m.id === voicecloneModel);
+    if (!modelObjCheck?.isMiniMaxClone && !voicecloneText.trim()) return setError('Enter text to speak');
     if (!voicecloneModel) return setError('No voice clone model available');
     if (!canGenerate()) return;
     const jobId = addJob('voiceclone', voicecloneModel, 'Voice Clone');
@@ -2310,7 +2312,9 @@ function App() {
       const audioUrl = await uploadToReplicate(voicecloneAudio, 'audio/mpeg');
       const modelObj = VOICECLONE_MODELS.find(m => m.id === voicecloneModel);
       let input;
-      if (modelObj?.isChatterbox) {
+      if (modelObj?.isMiniMaxClone) {
+        input = { voice_file: audioUrl, model: 'speech-02-turbo', need_noise_reduction: voicecloneCleanup, need_volume_normalization: false, accuracy: 0.7 };
+      } else if (modelObj?.isChatterbox) {
         input = { prompt: voicecloneText.trim(), audio_prompt: audioUrl, exaggeration: voicecloneExag ?? 0.5, cfg_weight: voicecloneCfg ?? 0.5, temperature: voicecloneTemp ?? 0.8 };
       } else {
         input = { speaker: audioUrl, text: voicecloneText.trim(), language: voicecloneLang || 'en', cleanup_voice: voicecloneCleanup };
@@ -2332,7 +2336,15 @@ function App() {
       }
       if (result.status === 'failed') throw new Error(result.error || 'Voice clone failed');
       const output = typeof result.output === 'string' ? result.output : Array.isArray(result.output) ? result.output[0] : result.output;
-      setResults(prev => [{ url: output, type: 'audio', model: voicecloneModel, prompt: voicecloneText.trim(), ts: Date.now() }, ...prev]);
+      if (modelObj?.isMiniMaxClone) {
+        // MiniMax returns a voice_id string, not audio
+        const voiceId = typeof result.output === 'object' && result.output?.voice_id ? result.output.voice_id : output;
+        setResults(prev => [{ url: null, type: 'voiceclone_id', voiceId: voiceId, model: voicecloneModel, prompt: 'Voice ID: ' + voiceId, ts: Date.now() }, ...prev]);
+        setError('');
+        alert('Voice cloned! Voice ID: ' + voiceId + '\n\nUse this ID in the MiniMax Speech TTS model (Audio tab) by entering it as the voice.');
+      } else {
+        setResults(prev => [{ url: output, type: 'audio', model: voicecloneModel, prompt: voicecloneText.trim(), ts: Date.now() }, ...prev]);
+      }
       finishJob(jobId);
     } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
@@ -2842,7 +2854,9 @@ function App() {
 
         {/* ══ VOICE CLONE TAB ══ */}
         {tab === 'voiceclone' && (() => {
-          const isChatterbox = VOICECLONE_MODELS.find(m => m.id === voicecloneModel)?.isChatterbox;
+          const vcModel = VOICECLONE_MODELS.find(m => m.id === voicecloneModel);
+          const isChatterbox = vcModel?.isChatterbox;
+          const isMiniMaxClone = vcModel?.isMiniMaxClone;
           return (
           <div>
             {VOICECLONE_MODELS.length > 0 ? (
@@ -2850,7 +2864,13 @@ function App() {
                 <ModelSelector models={VOICECLONE_MODELS} value={voicecloneModel} onChange={v => setVoicecloneModel(v)} />
                 <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Voice Sample</label>
                 {voicecloneAudio ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><audio src={voicecloneAudio} style={{ borderRadius: 8 }} controls /><button onClick={() => setVoicecloneAudio(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f3a4;</div>Upload voice sample<br/><span style={{ fontSize: 11, color: '#555' }}>Audio clip of the voice to clone</span><input type="file" accept="audio/*" onChange={e => { const f = e.target.files?.[0]; if (f) setVoicecloneAudio(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
-                <textarea style={{ ...S.input, minHeight: 80, marginBottom: 14 }} placeholder="Enter text to speak in the cloned voice..." value={voicecloneText} onChange={e => setVoicecloneText(e.target.value)} />
+                {isMiniMaxClone ? (
+                  <div style={{ padding: '12px 16px', background: 'rgba(34,212,123,0.08)', border: '1px solid rgba(34,212,123,0.2)', borderRadius: 10, marginBottom: 14, fontSize: 13, color: '#aaa' }}>
+                    <strong style={{ color: '#22d47b' }}>\u{2139}\u{fe0f} Clone Only</strong> — This creates a voice ID you can use in MiniMax Speech TTS (Audio tab). Upload 10s–5min of clear speech. MP3, M4A, or WAV, max 20MB.
+                  </div>
+                ) : (
+                  <textarea style={{ ...S.input, minHeight: 80, marginBottom: 14 }} placeholder="Enter text to speak in the cloned voice..." value={voicecloneText} onChange={e => setVoicecloneText(e.target.value)} />
+                )}
                 <button onClick={generateVoiceClone} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : '🎤 Clone Voice'}</button>
               </>
             ) : (
