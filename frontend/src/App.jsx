@@ -186,6 +186,8 @@ const AUDIO_MODELS = [
     params: { voice: ['Rachel','Drew','Clyde','Paul','Aria','Domi','Dave','Roger','Fin','Sarah','James','Jane','Juniper','Arabella','Hope','Bradford','Reginald','Gaming','Austin','Kuon','Blondie','Priyanka','Alexandra','Monika','Mark','Grimblewood'], stability: { min: 0, max: 1, default: 0.5 }, similarity_boost: { min: 0, max: 1, default: 0.75 }, style: { min: 0, max: 1, default: 0 }, speed: { min: 0.7, max: 1.2, default: 1 }, language_code: true } },
   { id: 'elevenlabs/turbo-v2.5', name: 'ElevenLabs Turbo V2.5', desc: 'Fast TTS',
     params: { voice: ['Rachel','Drew','Clyde','Paul','Aria','Domi','Dave','Roger','Fin','Sarah','James','Jane','Juniper','Arabella','Hope','Bradford','Reginald','Gaming','Austin','Kuon','Blondie','Priyanka','Alexandra','Monika','Mark','Grimblewood'], stability: { min: 0, max: 1, default: 0.5 }, similarity_boost: { min: 0, max: 1, default: 0.75 }, style: { min: 0, max: 1, default: 0 }, speed: { min: 0.7, max: 1.2, default: 1 }, language_code: true } },
+  { id: 'minimax/speech-02-turbo', name: 'MiniMax Speech 02 Turbo', desc: '$0.06/1K tokens (~\u20b95.03/1K tokens)', isMiniMaxTTS: true,
+    params: { voice_id: ['Wise_Woman','Young_Man','Calm_Woman','Energetic_Girl','Deep_Voice_Man','Sweet_Girl','Cute_Boy','Gentle_Woman','Narrator_Man','Newscaster_Woman'], speed: { min: 0.5, max: 2, default: 1 }, pitch: { min: -12, max: 12, default: 0 }, emotion: ['auto','happy','sad','angry','fearful','disgusted','surprised','calm','fluent','neutral'] } },
   { id: 'google/lyria-2', name: 'Google Lyria 2', desc: 'AI music generation',
     params: { negative_prompt: true, seed: true } },
   { id: 'zsxkib/mmaudio:62871fb59889b2d7c13777f08deb3b36bdff88f7e1d53a50ad7694548a41b484', name: 'MMAudio', desc: 'Video/Image to audio', useVersion: true,
@@ -1698,6 +1700,7 @@ function App() {
     const isEL = audioModel.includes('elevenlabs');
     const isLyria = audioModel.includes('lyria');
     const isMM = audioModel.includes('mmaudio');
+    const isMiniMaxTTS = modelCfg?.isMiniMaxTTS;
     const jobId = addJob('audio', audioModel, audioPrompt.trim());
     setError('');
     try {
@@ -1732,6 +1735,15 @@ function App() {
           updateJob(jobId, { status: 'Uploading image...' });
           input.image = audioImage.startsWith('blob:') ? await toDataUri(audioImage) : audioImage;
         }
+      }
+      // MiniMax Speech TTS
+      if (isMiniMaxTTS) {
+        input.text = input.prompt;
+        delete input.prompt;
+        input.voice_id = audioOpts.voice_id || 'Wise_Woman';
+        input.speed = audioOpts.speed ?? 1;
+        input.pitch = audioOpts.pitch ?? 0;
+        input.emotion = audioOpts.emotion || 'auto';
       }
       updateJob(jobId, { status: 'Generating audio...' });
       // Version-based model (MMAudio)
@@ -2633,13 +2645,14 @@ function App() {
           const isEL = audioModel.includes('elevenlabs');
           const isLyria = audioModel.includes('lyria');
           const isMM = audioModel.includes('mmaudio');
+          const isMiniMaxTTS = modelCfg?.isMiniMaxTTS;
           const btnSt = (sel) => ({ padding: '6px 12px', background: sel ? 'rgba(34,212,123,0.2)' : '#111827', border: sel ? '1px solid rgba(34,212,123,0.4)' : '1px solid #333', borderRadius: 6, color: sel ? '#fff' : '#888', cursor: 'pointer', fontSize: 12 });
           return (
           <div>
             <ModelSelector models={AUDIO_MODELS} value={audioModel} onChange={v => { setAudioModel(v); setAudioOpts({}); setAudioNegPrompt(''); setAudioVideo(null); setAudioImage(null); }} />
 
             {/* Prompt */}
-            <textarea style={{ ...S.input, minHeight: isEL ? 80 : 60 }} placeholder={isEL ? 'Enter text to speak...' : isLyria ? 'Describe the music you want...' : 'Describe the audio/sound...'} value={audioPrompt} onChange={e => setAudioPrompt(e.target.value)} />
+            <textarea style={{ ...S.input, minHeight: isEL ? 80 : 60 }} placeholder={isMiniMaxTTS ? 'Enter text to speak (max 10,000 chars)...' : isEL ? 'Enter text to speak...' : isLyria ? 'Describe the music you want...' : 'Describe the audio/sound...'} value={audioPrompt} onChange={e => setAudioPrompt(e.target.value)} />
 
             {/* Negative Prompt (Lyria & MMAudio) */}
             {(isLyria || isMM) && (
@@ -2738,6 +2751,33 @@ function App() {
               </div>
             )}
 
+            {/* MiniMax Speech TTS options */}
+            {isMiniMaxTTS && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+                <div>
+                  <label style={S.label}>Voice</label>
+                  <select value={audioOpts.voice_id || 'Wise_Woman'} onChange={e => setAudioOpts(o => ({...o, voice_id: e.target.value}))} style={{ ...S.select, width: '100%' }}>
+                    {p.voice_id?.map(v => <option key={v} value={v}>{v.replace(/_/g, ' ')}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={S.label}>Emotion</label>
+                  <select value={audioOpts.emotion || 'auto'} onChange={e => setAudioOpts(o => ({...o, emotion: e.target.value}))} style={{ ...S.select, width: '100%' }}>
+                    {p.emotion?.map(v => <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={S.label}>Speed: {audioOpts.speed ?? 1}x</label>
+                  <input type="range" min={0.5} max={2} step={0.1} value={audioOpts.speed ?? 1} onChange={e => setAudioOpts(o => ({...o, speed: +e.target.value}))} style={{ width: '100%' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#555' }}><span>0.5x</span><span>2x</span></div>
+                </div>
+                <div>
+                  <label style={S.label}>Pitch: {audioOpts.pitch ?? 0} semitones</label>
+                  <input type="range" min={-12} max={12} step={1} value={audioOpts.pitch ?? 0} onChange={e => setAudioOpts(o => ({...o, pitch: +e.target.value}))} style={{ width: '100%' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#555' }}><span>-12</span><span>0</span><span>+12</span></div>
+                </div>
+              </div>
+            )}
             <button onClick={generateAudio} style={{ ...S.btn, marginTop: 12 }}>
               🔊 Generate Audio
             </button>
