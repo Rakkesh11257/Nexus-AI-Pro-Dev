@@ -45,6 +45,7 @@ const CATEGORY_TOOLS = {
     color: '#f59e0b',
     tools: [
       { id: 'music-gen', label: 'Music Generation', media: '/samples/music-gen.gif', tab: 'audio' },
+      { id: 'voice-clone', label: 'Voice Clone', desc: 'Clone any voice with AI', media: '/samples/music-gen.gif', tab: 'voiceclone' },
     ],
   },
   transcribe: {

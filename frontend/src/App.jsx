@@ -193,6 +193,9 @@ const AUDIO_MODELS = [
   { id: 'zsxkib/mmaudio:62871fb59889b2d7c13777f08deb3b36bdff88f7e1d53a50ad7694548a41b484', name: 'MMAudio', desc: 'Video/Image to audio', useVersion: true,
     params: { video: true, image: true, negative_prompt: true, duration: { min: 1, max: 30, default: 8 }, num_steps: { min: 1, max: 50, default: 25 }, cfg_strength: { min: 1, max: 10, default: 4.5 }, seed: true } },
 ];
+const VOICECLONE_MODELS = [
+  // Models will be added here
+];
 // Transcribe models
 const TRANSCRIBE_MODELS = [
   { id: 'openai/gpt-4o-transcribe', name: 'GPT-4o Transcribe', desc: 'OpenAI latest transcription',
@@ -767,6 +770,11 @@ function App() {
   const [replacecharModel, setReplacecharModel] = useState(REPLACECHAR_MODELS[0]?.id || '');
   const [replacecharVideo, setReplacecharVideo] = useState(null);
   const [replacecharImage, setReplacecharImage] = useState(null);
+
+  // Voice Clone
+  const [voicecloneModel, setVoicecloneModel] = useState(VOICECLONE_MODELS[0]?.id || '');
+  const [voicecloneAudio, setVoicecloneAudio] = useState(null);
+  const [voicecloneText, setVoicecloneText] = useState('');
 
   // Audio Generation
   const [audioModel, setAudioModel] = useState(AUDIO_MODELS[0].id);
@@ -2283,6 +2291,41 @@ function App() {
     } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
+  // ─── Generate Voice Clone ───
+  const generateVoiceClone = async () => {
+    if (!voicecloneAudio) return setError('Upload a voice sample');
+    if (!voicecloneText.trim()) return setError('Enter text to speak');
+    if (!voicecloneModel) return setError('No voice clone model available');
+    if (!canGenerate()) return;
+    const jobId = addJob('voiceclone', voicecloneModel, 'Voice Clone');
+    setError('');
+    try {
+      const modelObj = VOICECLONE_MODELS.find(m => m.id === voicecloneModel);
+      updateJob(jobId, { status: 'Uploading voice sample...' });
+      const audioUrl = await uploadToReplicate(voicecloneAudio, 'audio/mpeg');
+      let input = { audio: audioUrl, text: voicecloneText.trim() };
+      // Model-specific input will be added here
+      updateJob(jobId, { status: 'Cloning voice...' });
+      const reqBody = modelObj?.useVersion && voicecloneModel.includes(':') ? { version: voicecloneModel.split(':')[1], input } : { model: voicecloneModel, input };
+      const resp = await fetch(API_BASE + '/api/replicate/predictions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken, Authorization: 'Bearer ' + apiKey },
+        body: JSON.stringify(reqBody)
+      });
+      if (resp.status === 403) { setShowPaywall(true); finishJob(jobId, 'API key required'); return; }
+      if (!resp.ok) throw new Error(await parseApiError(resp));
+      let result = await resp.json();
+      while (result.status !== 'succeeded' && result.status !== 'failed') {
+        await new Promise(r => setTimeout(r, 3000));
+        const poll = await fetch(API_BASE + '/api/replicate/predictions/' + result.id, { headers: { 'x-auth-token': accessToken, Authorization: 'Bearer ' + apiKey } });
+        result = await poll.json();
+        updateJob(jobId, { status: result.status });
+      }
+      if (result.status === 'failed') throw new Error(result.error || 'Voice clone failed');
+      const output = typeof result.output === 'string' ? result.output : Array.isArray(result.output) ? result.output[0] : result.output;
+      setResults(prev => [{ url: output, type: 'audio', model: voicecloneModel, prompt: voicecloneText.trim(), ts: Date.now() }, ...prev]);
+      finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
+  };
 // ─── Render ───
   if (authState === 'loading') return (<><StarField /><div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}><div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#22d47b', borderRadius: '50%' }} /></div></>);
   if (authState === 'auth') return <AuthScreen onAuth={handleAuth} />;
@@ -2331,20 +2374,20 @@ function App() {
             onBack={() => {
               // Use currentCategory if available (set when navigating from a category screen)
               // Fall back to the hardcoded map for tools that only belong to one category
-              const fallbackMap = { image: 'image', i2i: 'image', faceswap: 'image', upscale: 'image', skin: 'image', i2v: 'image', t2v: 'video', v2v: 'video', motion: 'video', videofs: 'video', replacechar: 'video', audio: 'audio', transcribe: 'transcribe', train: 'character', chat: 'chat' };
+              const fallbackMap = { image: 'image', i2i: 'image', faceswap: 'image', upscale: 'image', skin: 'image', i2v: 'image', t2v: 'video', v2v: 'video', motion: 'video', videofs: 'video', replacechar: 'video', audio: 'audio', voiceclone: 'audio', transcribe: 'transcribe', train: 'character', chat: 'chat' };
               const catId = currentCategory || fallbackMap[tab];
               if (catId) { setScreen('category:' + catId); } else { navigateHome(); }
             }}
             onSwitchTool={(newTab) => { setTab(newTab); setScreen(newTab); }}
             results={results.filter(r => {
-              const tabTypes = { image: ['image'], i2i: ['image'], faceswap: ['image'], upscale: ['image'], skin: ['image'], i2v: ['video'], t2v: ['video'], v2v: ['video'], motion: ['video'], videofs: ['video'], replacechar: ['video'], audio: ['audio'], transcribe: ['transcription'] };
+              const tabTypes = { image: ['image'], i2i: ['image'], faceswap: ['image'], upscale: ['image'], skin: ['image'], i2v: ['video'], t2v: ['video'], v2v: ['video'], motion: ['video'], videofs: ['video'], replacechar: ['video'], audio: ['audio'], voiceclone: ['audio'], transcribe: ['transcription'] };
               const types = tabTypes[tab] || [];
               return types.includes(r.type);
             })}
             onViewItem={(item) => setViewerItem(item)}
             onDeleteItem={(item) => setResults(prev => prev.filter(r => r !== item))}
             onDeleteAll={() => {
-              const tabTypes = { image: ['image'], i2i: ['image'], faceswap: ['image'], upscale: ['image'], skin: ['image'], i2v: ['video'], t2v: ['video'], v2v: ['video'], motion: ['video'], videofs: ['video'], replacechar: ['video'], audio: ['audio'], transcribe: ['transcription'] };
+              const tabTypes = { image: ['image'], i2i: ['image'], faceswap: ['image'], upscale: ['image'], skin: ['image'], i2v: ['video'], t2v: ['video'], v2v: ['video'], motion: ['video'], videofs: ['video'], replacechar: ['video'], audio: ['audio'], voiceclone: ['audio'], transcribe: ['transcription'] };
               const types = tabTypes[tab] || [];
               setResults(prev => prev.filter(r => !types.includes(r.type)));
             }}
@@ -2787,6 +2830,22 @@ function App() {
           );
         })()}
 
+        {/* ══ VOICE CLONE TAB ══ */}
+        {tab === 'voiceclone' && (
+          <div>
+            {VOICECLONE_MODELS.length > 0 ? (
+              <>
+                <ModelSelector models={VOICECLONE_MODELS} value={voicecloneModel} onChange={v => setVoicecloneModel(v)} />
+                <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Voice Sample</label>
+                {voicecloneAudio ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><audio src={voicecloneAudio} style={{ borderRadius: 8 }} controls /><button onClick={() => setVoicecloneAudio(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f3a4;</div>Upload voice sample<br/><span style={{ fontSize: 11, color: '#555' }}>Audio clip of the voice to clone</span><input type="file" accept="audio/*" onChange={e => { const f = e.target.files?.[0]; if (f) setVoicecloneAudio(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
+                <textarea style={{ ...S.input, minHeight: 80, marginBottom: 14 }} placeholder="Enter text to speak in the cloned voice..." value={voicecloneText} onChange={e => setVoicecloneText(e.target.value)} />
+                <button onClick={generateVoiceClone} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : '🎤 Clone Voice'}</button>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}><div style={{ fontSize: 48, marginBottom: 12 }}>&#x1f6a7;</div><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Coming Soon</div><div style={{ fontSize: 13 }}>Voice clone models will be available shortly.</div></div>
+            )}
+          </div>
+        )}
         {/* ══ TRANSCRIBE TAB ══ */}
         {tab === 'transcribe' && (() => {
           const isGPT4o = transcribeModel.includes('gpt-4o');
