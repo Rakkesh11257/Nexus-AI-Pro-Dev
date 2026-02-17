@@ -2239,7 +2239,7 @@ function App() {
     try {
       const modelObj = VENHANCE_MODELS.find(m => m.id === venhanceModel);
       updateJob(jobId, { status: 'Uploading video...' });
-      const videoUrl = await uploadToReplicate(venhanceVideo, 'video/mp4');
+      const videoUrl = await uploadToTemp(venhanceVideo, 'video/mp4');
       let input = { video: videoUrl, target_resolution: venhanceRes, target_fps: venhanceFps };
       updateJob(jobId, { status: 'Enhancing video...' });
       const reqBody = modelObj?.useVersion && venhanceModel.includes(':') ? { version: venhanceModel.split(':')[1], input } : { model: venhanceModel, input };
