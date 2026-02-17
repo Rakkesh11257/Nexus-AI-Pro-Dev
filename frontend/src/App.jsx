@@ -2134,8 +2134,8 @@ function App() {
         if (vidSizeMB > 16) throw new Error(`Video is ${vidSizeMB.toFixed(1)}MB. Runway max is 16MB.`);
       }
 
-      // Upload video: Runway needs data URI (Replicate handles conversion with correct Content-Type)
-      // Grok and Kling need uploaded URL
+      // Upload video: Runway needs temp URL, Grok and Kling need Replicate URL
+      let input;
       if (modelObj?.isGrokV2V || modelObj?.isKlingO1) {
         updateJob(jobId, { status: 'Uploading video...' });
         const videoUrl = await uploadToReplicate(v2vVideo, vidType || 'video/mp4');
