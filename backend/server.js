@@ -655,17 +655,22 @@ app.post('/api/payment/verify-upgrade', verifyToken, async (req, res) => {
       customer_notify: 1,
       notes: { userId: req.user.sub, email: req.user.email, plan: 'yearly' },
     });
-    // 3. Mark upgrade payment done, subscription pending auth
+    // 3. Update DynamoDB to yearly immediately
+    const now = new Date();
+    const subEnd = new Date(now);
+    subEnd.setFullYear(subEnd.getFullYear() + 1);
     await dynamoClient.send(new UpdateCommand({
       TableName: DYNAMO_TABLE,
       Key: { userId: req.user.sub },
-      UpdateExpression: 'SET upgradePaymentId = :pid, upgradedFromMonthly = :upgraded',
+      UpdateExpression: 'SET isPaid = :paid, paymentId = :pid, paymentPlan = :plan, paidAt = :now, razorpaySubscriptionId = :subId, subscriptionEnd = :subEnd, subscriptionStatus = :status, upgradedFromMonthly = :upgraded, upgradePaymentId = :upgPid',
       ExpressionAttributeValues: {
-        ':pid': razorpay_payment_id, ':upgraded': true,
+        ':paid': true, ':pid': razorpay_payment_id, ':plan': 'yearly',
+        ':now': now.toISOString(), ':subId': subscription.id,
+        ':subEnd': subEnd.toISOString(), ':status': 'active', ':upgraded': true, ':upgPid': razorpay_payment_id,
       },
     }));
-    console.log('Upgrade payment verified:', req.user.email, razorpay_payment_id, '- subscription pending auth:', subscription.id);
-    res.json({ success: true, needsSubscriptionAuth: true, subscriptionId: subscription.id, keyId: RAZORPAY_KEY_ID, planName: 'NEXUS AI Pro - Yearly', plan: 'yearly' });
+    console.log('Upgrade verified:', req.user.email, 'monthly -> yearly', razorpay_payment_id, 'sub:', subscription.id);
+    res.json({ success: true, message: 'Upgraded to Yearly!', isPaid: true, plan: 'yearly', subscriptionId: subscription.id });
   } catch (err) {
     console.error('Upgrade activation error:', err);
     res.status(500).json({ error: 'Payment verified but upgrade failed. Contact support.' });
