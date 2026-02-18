@@ -646,31 +646,22 @@ app.post('/api/payment/verify-upgrade', verifyToken, async (req, res) => {
     if (oldSubId) {
       try { await razorpay.subscriptions.cancel(oldSubId); } catch (e) { console.log('Old sub cancel:', e.message); }
     }
-    // 2. Create new yearly subscription (needs frontend auth to activate)
-    if (!YEARLY_PLAN_ID) throw new Error('Yearly plan not configured');
-    const subscription = await razorpay.subscriptions.create({
-      plan_id: YEARLY_PLAN_ID,
-      total_count: 10,
-      quantity: 1,
-      customer_notify: 1,
-      notes: { userId: req.user.sub, email: req.user.email, plan: 'yearly' },
-    });
-    // 3. Update DynamoDB to yearly immediately
+    // 2. Update DynamoDB to yearly (no subscription, just expiry-based)
     const now = new Date();
     const subEnd = new Date(now);
     subEnd.setFullYear(subEnd.getFullYear() + 1);
     await dynamoClient.send(new UpdateCommand({
       TableName: DYNAMO_TABLE,
       Key: { userId: req.user.sub },
-      UpdateExpression: 'SET isPaid = :paid, paymentId = :pid, paymentPlan = :plan, paidAt = :now, razorpaySubscriptionId = :subId, subscriptionEnd = :subEnd, subscriptionStatus = :status, upgradedFromMonthly = :upgraded, upgradePaymentId = :upgPid',
+      UpdateExpression: 'SET isPaid = :paid, paymentId = :pid, paymentPlan = :plan, paidAt = :now, subscriptionEnd = :subEnd, subscriptionStatus = :status, upgradedFromMonthly = :upgraded, upgradePaymentId = :upgPid REMOVE razorpaySubscriptionId',
       ExpressionAttributeValues: {
         ':paid': true, ':pid': razorpay_payment_id, ':plan': 'yearly',
-        ':now': now.toISOString(), ':subId': subscription.id,
+        ':now': now.toISOString(),
         ':subEnd': subEnd.toISOString(), ':status': 'active', ':upgraded': true, ':upgPid': razorpay_payment_id,
       },
     }));
-    console.log('Upgrade verified:', req.user.email, 'monthly -> yearly', razorpay_payment_id, 'sub:', subscription.id);
-    res.json({ success: true, message: 'Upgraded to Yearly!', isPaid: true, plan: 'yearly', subscriptionId: subscription.id });
+    console.log('Upgrade verified:', req.user.email, 'monthly -> yearly', razorpay_payment_id);
+    res.json({ success: true, message: 'Upgraded to Yearly!', isPaid: true, plan: 'yearly' });
   } catch (err) {
     console.error('Upgrade activation error:', err);
     res.status(500).json({ error: 'Payment verified but upgrade failed. Contact support.' });
