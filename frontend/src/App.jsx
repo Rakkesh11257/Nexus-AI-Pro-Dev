@@ -662,7 +662,37 @@ function UpgradeModal({ onClose, accessToken, user, onUpgradeSuccess }) {
               }),
             });
             const result = await verifyRes.json();
-            if (result.success) {
+            if (result.success && result.needsSubscriptionAuth) {
+              // Step 3: Open second Razorpay checkout for yearly subscription auth
+              const subOptions = {
+                key: result.keyId,
+                subscription_id: result.subscriptionId,
+                name: 'NEXUS AI Pro',
+                description: result.planName,
+                prefill: { email: user?.email || '' },
+                theme: { color: '#f59e0b' },
+                modal: { ondismiss: () => { setError('Subscription setup cancelled. Your \u20b92,500 upgrade was charged but subscription is not active. Please contact support.'); setLoading(false); } },
+                handler: async function (subResponse) {
+                  try {
+                    const subVerify = await fetch(`${API_BASE}/api/payment/verify`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken },
+                      body: JSON.stringify({
+                        razorpay_payment_id: subResponse.razorpay_payment_id,
+                        razorpay_signature: subResponse.razorpay_signature,
+                        razorpay_subscription_id: subResponse.razorpay_subscription_id || result.subscriptionId,
+                        plan: 'yearly',
+                      }),
+                    });
+                    const subResult = await subVerify.json();
+                    if (subResult.success) { onUpgradeSuccess(); } else { setError(subResult.error || 'Subscription verification failed'); }
+                  } catch (err) { setError('Subscription verification failed. Contact support.'); }
+                },
+              };
+              const rzpSub = new window.Razorpay(subOptions);
+              rzpSub.on('payment.failed', (resp) => { setError(resp.error?.description || 'Subscription payment failed.'); setLoading(false); });
+              rzpSub.open();
+            } else if (result.success) {
               onUpgradeSuccess();
             } else {
               setError(result.error || 'Verification failed');
