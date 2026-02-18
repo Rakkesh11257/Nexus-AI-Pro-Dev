@@ -80,7 +80,7 @@ const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: AW
 // ============================================
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_SCpCGFak928F7f';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'sAaMXrCyXwMAVxIHfqgaQFA1';
-const PLAN_LIFETIME_PRICE = 299900; // Rs 2999 in paise
+const PLAN_YEARLY_PRICE = 299900;   // Rs 2999 in paise
 const PLAN_MONTHLY_PRICE = 49900;   // Rs 499 in paise
 
 const razorpay = new Razorpay({
@@ -114,7 +114,7 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
     const event = JSON.parse(body);
     console.log('Webhook event:', event.event);
 
-    // --- One-time payment captured (lifetime) ---
+    // --- One-time payment captured (legacy lifetime users) ---
     if (event.event === 'payment.captured') {
       const payment = event.payload.payment.entity;
       const userId = payment.notes?.userId;
@@ -136,7 +136,7 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
       }
     }
 
-    // --- Subscription charged (monthly renewal success) ---
+    // --- Subscription charged (monthly/yearly renewal success) ---
     if (event.event === 'subscription.charged') {
       const sub = event.payload.subscription.entity;
       const userId = sub.notes?.userId;
@@ -304,7 +304,7 @@ app.post('/auth/login', async (req, res) => {
       await dynamoClient.send(new PutCommand({ TableName: DYNAMO_TABLE, Item: userData }));
     } else {
       // Check monthly subscription expiry
-      if (userData.paymentPlan === 'monthly' && userData.subscriptionEnd) {
+      if ((userData.paymentPlan === 'monthly' || userData.paymentPlan === 'yearly') && userData.subscriptionEnd) {
         const endDate = new Date(userData.subscriptionEnd);
         if (endDate < new Date() && userData.subscriptionStatus !== 'active') {
           userData.isPaid = false;
@@ -384,7 +384,7 @@ app.get('/auth/me', verifyToken, async (req, res) => {
 
     // Check monthly expiry
     let isPaid = userData.isPaid || false;
-    if (userData.paymentPlan === 'monthly' && userData.subscriptionEnd) {
+    if ((userData.paymentPlan === 'monthly' || userData.paymentPlan === 'yearly') && userData.subscriptionEnd) {
       const endDate = new Date(userData.subscriptionEnd);
       if (endDate < new Date() && userData.subscriptionStatus !== 'active') {
         isPaid = false;
@@ -406,8 +406,9 @@ app.get('/auth/me', verifyToken, async (req, res) => {
 // RAZORPAY PAYMENT ROUTES
 // ============================================
 
-// Auto-create monthly plan on startup
+// Auto-create monthly & yearly plans on startup
 let MONTHLY_PLAN_ID = process.env.RAZORPAY_MONTHLY_PLAN_ID || null;
+let YEARLY_PLAN_ID = process.env.RAZORPAY_YEARLY_PLAN_ID || null;
 
 (async () => {
   if (MONTHLY_PLAN_ID) return;
@@ -432,11 +433,37 @@ let MONTHLY_PLAN_ID = process.env.RAZORPAY_MONTHLY_PLAN_ID || null;
       console.log('Created monthly plan:', MONTHLY_PLAN_ID);
     }
   } catch (err) {
-    console.error('Failed to setup Razorpay plan:', err.message);
+    console.error('Failed to setup monthly Razorpay plan:', err.message);
+  }
+  // Yearly plan
+  if (!YEARLY_PLAN_ID) {
+    try {
+      const plans = await razorpay.plans.all({ count: 50 });
+      const existing = plans.items.find(p => p.item?.name === 'NEXUS AI Pro - Yearly' && p.item?.amount === PLAN_YEARLY_PRICE);
+      if (existing) {
+        YEARLY_PLAN_ID = existing.id;
+        console.log('Found existing yearly plan:', YEARLY_PLAN_ID);
+      } else {
+        const plan = await razorpay.plans.create({
+          period: 'yearly',
+          interval: 1,
+          item: {
+            name: 'NEXUS AI Pro - Yearly',
+            amount: PLAN_YEARLY_PRICE,
+            currency: 'INR',
+            description: 'Yearly access to NEXUS AI Pro',
+          },
+        });
+        YEARLY_PLAN_ID = plan.id;
+        console.log('Created yearly plan:', YEARLY_PLAN_ID);
+      }
+    } catch (err) {
+      console.error('Failed to setup yearly Razorpay plan:', err.message);
+    }
   }
 })();
 
-// Create Order (lifetime) or Subscription (monthly)
+// Create Subscription (monthly or yearly)
 app.post('/api/payment/create-order', verifyToken, async (req, res) => {
   const { plan } = req.body;
 
@@ -460,24 +487,25 @@ app.post('/api/payment/create-order', verifyToken, async (req, res) => {
         plan: 'monthly',
         amount: PLAN_MONTHLY_PRICE,
       });
-    } else {
-      const receiptId = `nxs_${Date.now()}`;
-      const order = await razorpay.orders.create({
-        amount: PLAN_LIFETIME_PRICE,
-        currency: 'INR',
-        receipt: receiptId,
-        notes: { userId: req.user.sub, email: req.user.email, plan: 'lifetime' },
+    } else if (plan === 'yearly') {
+      if (!YEARLY_PLAN_ID) return res.status(500).json({ error: 'Yearly plan not configured yet. Try again in a moment.' });
+      const subscription = await razorpay.subscriptions.create({
+        plan_id: YEARLY_PLAN_ID,
+        total_count: 10,
+        quantity: 1,
+        customer_notify: 1,
+        notes: { userId: req.user.sub, email: req.user.email, plan: 'yearly' },
       });
-
       res.json({
-        type: 'order',
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
+        type: 'subscription',
+        subscriptionId: subscription.id,
         keyId: RAZORPAY_KEY_ID,
-        planName: 'NEXUS AI Pro - Lifetime',
-        plan: 'lifetime',
+        planName: 'NEXUS AI Pro - Yearly',
+        plan: 'yearly',
+        amount: PLAN_YEARLY_PRICE,
       });
+    } else {
+      return res.status(400).json({ error: 'Invalid plan. Choose monthly or yearly.' });
     }
   } catch (err) {
     console.error('Razorpay create error:', err.error || err.message || err);
@@ -492,7 +520,7 @@ app.post('/api/payment/verify', verifyToken, async (req, res) => {
 
   // Signature differs for order vs subscription
   let signaturePayload;
-  if (plan === 'monthly' && razorpay_subscription_id) {
+  if ((plan === 'monthly' || plan === 'yearly') && razorpay_subscription_id) {
     signaturePayload = `${razorpay_payment_id}|${razorpay_subscription_id}`;
   } else {
     signaturePayload = `${razorpay_order_id}|${razorpay_payment_id}`;
@@ -510,21 +538,26 @@ app.post('/api/payment/verify', verifyToken, async (req, res) => {
   try {
     const now = new Date();
 
-    if (plan === 'monthly') {
+    if (plan === 'monthly' || plan === 'yearly') {
       const subEnd = new Date(now);
-      subEnd.setMonth(subEnd.getMonth() + 1);
+      if (plan === 'yearly') {
+        subEnd.setFullYear(subEnd.getFullYear() + 1);
+      } else {
+        subEnd.setMonth(subEnd.getMonth() + 1);
+      }
 
       await dynamoClient.send(new UpdateCommand({
         TableName: DYNAMO_TABLE,
         Key: { userId: req.user.sub },
         UpdateExpression: 'SET isPaid = :paid, paymentId = :pid, paymentPlan = :plan, paidAt = :now, razorpaySubscriptionId = :subId, subscriptionEnd = :subEnd, subscriptionStatus = :status',
         ExpressionAttributeValues: {
-          ':paid': true, ':pid': razorpay_payment_id, ':plan': 'monthly',
+          ':paid': true, ':pid': razorpay_payment_id, ':plan': plan,
           ':now': now.toISOString(), ':subId': razorpay_subscription_id,
           ':subEnd': subEnd.toISOString(), ':status': 'active',
         },
       }));
     } else {
+      // Legacy lifetime one-time payment
       await dynamoClient.send(new UpdateCommand({
         TableName: DYNAMO_TABLE,
         Key: { userId: req.user.sub },

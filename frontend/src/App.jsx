@@ -461,12 +461,12 @@ function AuthScreen({ onAuth }) {
 
 // ─── Paywall Modal ───
 function PaywallModal({ onClose, accessToken, user, onPaymentSuccess }) {
-  const [selectedPlan, setSelectedPlan] = useState('lifetime');
+  const [selectedPlan, setSelectedPlan] = useState('yearly');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const plans = [
-    { id: 'lifetime', name: 'Lifetime', price: '₹2,999', originalPrice: '₹9,999', priceNum: 2999, desc: 'One-time payment', badge: 'BEST VALUE' },
+    { id: 'yearly', name: 'Yearly', price: '₹2,999', originalPrice: '₹9,999', priceNum: 2999, desc: 'Per year', badge: 'BEST VALUE' },
     { id: 'monthly', name: 'Monthly', price: '₹499', originalPrice: '₹999', priceNum: 499, desc: 'Per month', badge: null },
   ];
 
@@ -573,7 +573,7 @@ function PaywallModal({ onClose, accessToken, user, onPaymentSuccess }) {
 
           {/* Features */}
           <div style={{ textAlign: 'left', marginBottom: 20 }}>
-            {['All FLUX image models (Schnell, Dev, 1.1 Pro)', 'Wan 2.2 & Wavespeed video generation', 'MiniMax Video-01 text-to-video', 'Train your own AI model with LoRA', 'Unlimited generations with your API key', selectedPlan === 'lifetime' ? 'Lifetime access & updates' : '30-day access, cancel anytime', 'Prices may increase in future — lock in now!'].map(f => (
+            {['All FLUX image models (Schnell, Dev, 1.1 Pro)', 'Wan 2.2 & Wavespeed video generation', 'MiniMax Video-01 text-to-video', 'Train your own AI model with LoRA', 'Unlimited generations with your API key', selectedPlan === 'yearly' ? '365-day access, cancel anytime' : '30-day access, cancel anytime', 'Prices may increase in future — lock in now!'].map(f => (
               <div key={f} style={{ padding: '7px 0', borderBottom: '1px solid #1f2937', color: '#ccc', fontSize: 13 }}>
                 <span style={{ color: '#4ade80', marginRight: 8 }}>✓</span>{f}
               </div>
