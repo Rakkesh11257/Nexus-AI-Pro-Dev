@@ -459,7 +459,7 @@ function AuthScreen({ onAuth }) {
             {loading ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><span className="animate-spin" style={{ width: 16, height: 16, border: '2px solid rgba(6,6,8,0.3)', borderTopColor: '#060608', borderRadius: '50%', display: 'inline-block' }} />Please wait...</span> : submitLabels[mode]}
           </button>
 
-          {mode === 'verify' && <p style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Didn't get a code? <span onClick={resendCode} style={AS.link}>Resend</span></p>}
+          {mode === 'verify' && <><p style={{ textAlign: 'center', marginTop: 14, fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>📧 Please check your <strong style={{ color: 'rgba(255,255,255,0.5)' }}>spam/junk folder</strong> if you didn't receive the code</p><p style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Still no code? <span onClick={resendCode} style={AS.link}>Resend</span></p></>}
 
           <div style={{ marginTop: 24, textAlign: 'center', fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>
             {mode === 'login' && <>Don't have an account? <span onClick={() => switchMode('signup')} style={AS.link}>Sign Up</span><br /><span onClick={() => switchMode('forgot')} style={{ ...AS.link, fontSize: 13, marginTop: 10, display: 'inline-block', opacity: 0.7 }}>Forgot password?</span></>}
@@ -584,7 +584,7 @@ function PaywallModal({ onClose, accessToken, user, onPaymentSuccess }) {
 
           {/* Offer Deadline */}
           <div style={{ background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: 8, padding: '8px 12px', marginBottom: 16, textAlign: 'center' }}>
-            <span style={{ fontSize: 13, color: '#eab308', fontWeight: 600 }}>⏰ Offer valid only till Feb 20, 2026</span>
+            <span style={{ fontSize: 13, color: '#eab308', fontWeight: 600 }}>⏰ Offer valid only till Feb 28, 2026</span>
           </div>
 
           {/* Features */}
@@ -610,6 +610,11 @@ function PaywallModal({ onClose, accessToken, user, onPaymentSuccess }) {
                 <span style={{ color: f.startsWith('No ') || f.startsWith('Limited ') ? '#f87171' : '#4ade80', marginRight: 8 }}>{f.startsWith('No ') || f.startsWith('Limited ') ? '✗' : '✓'}</span>{f}
               </div>
             ))}
+          </div>
+
+          {/* UPI Tip */}
+          <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 16, textAlign: 'center' }}>
+            <span style={{ fontSize: 12, color: '#60a5fa' }}>💡 For UPI payments, we recommend using <strong>Google Pay</strong> or <strong>Paytm</strong> for a smoother experience</span>
           </div>
 
           <button onClick={handlePayment} disabled={loading} style={{ ...S.btn, opacity: loading ? 0.7 : 1, fontSize: 16, padding: 16 }}>
@@ -707,6 +712,10 @@ function UpgradeModal({ onClose, accessToken, user, onUpgradeSuccess }) {
             <div style={{ fontSize: 32, fontWeight: 700, color: '#fff' }}>₹2,500</div>
             <div style={{ fontSize: 13, color: '#888' }}>One-time upgrade fee</div>
             <div style={{ fontSize: 12, color: '#f59e0b', marginTop: 6 }}>Then ₹2,999/year when you renew</div>
+          </div>
+          {/* UPI Tip */}
+          <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 16, textAlign: 'center' }}>
+            <span style={{ fontSize: 12, color: '#60a5fa' }}>💡 For UPI payments, we recommend using <strong>Google Pay</strong> or <strong>Paytm</strong> for a smoother experience</span>
           </div>
           <button onClick={handleUpgrade} disabled={loading} style={{ ...S.btn, opacity: loading ? 0.7 : 1, fontSize: 16, padding: 16, background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
             {loading ? 'Processing...' : 'Upgrade Now → ₹2,500'}

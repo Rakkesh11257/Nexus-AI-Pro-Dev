@@ -115,6 +115,115 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
+// ─── Latest Banners Data ───
+const LATEST_BANNERS = [
+  {
+    id: 'challenge',
+    title: '$40,000 AI Creative Challenge',
+    subtitle: 'Create. Submit. Win big.',
+    media: '/ai-creators.gif',
+    link: 'https://nexus-ai-pro.com/challenge.html',
+    color: '#fbbf24',
+    badge: '🏆 Live Now',
+  },
+];
+
+// ─── Latest Banners Component (scrollable) ───
+function LatestBanners({ isMobile }) {
+  const scrollRef = React.useRef(null);
+  const [showArrow, setShowArrow] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const check = () => setShowArrow(el.scrollWidth > el.clientWidth + 10);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const scroll = (dir) => {
+    const el = scrollRef.current;
+    if (el) el.scrollBy({ left: dir * 340, behavior: 'smooth' });
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <div
+        ref={scrollRef}
+        className="latest-scroll"
+        style={{
+          display: 'flex', gap: 14, overflowX: 'auto', scrollSnapType: 'x mandatory',
+          scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch',
+          paddingBottom: 4,
+        }}
+      >
+        <style>{`.latest-scroll::-webkit-scrollbar{display:none}`}</style>
+        {LATEST_BANNERS.map(b => (
+          <a
+            key={b.id}
+            href={b.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              flex: '0 0 auto',
+              width: isMobile ? 'calc(100vw - 40px)' : LATEST_BANNERS.length === 1 ? '100%' : 'clamp(320px, 48%, 560px)',
+              aspectRatio: isMobile ? '16 / 9' : '2.2 / 1',
+              borderRadius: 16, overflow: 'hidden', position: 'relative',
+              cursor: 'pointer', scrollSnapAlign: 'start', textDecoration: 'none',
+              border: `1px solid ${b.color}25`,
+              background: '#0c0e13',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 12px 40px ${b.color}20`; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+          >
+            <img src={b.media} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)',
+            }} />
+            {b.badge && (
+              <div style={{
+                position: 'absolute', top: 12, left: 12,
+                background: `${b.color}20`, border: `1px solid ${b.color}40`,
+                borderRadius: 50, padding: '4px 12px', fontSize: 11, fontWeight: 700,
+                color: b.color, letterSpacing: '0.03em',
+              }}>{b.badge}</div>
+            )}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: isMobile ? '16px' : '20px 24px' }}>
+              <div style={{
+                fontSize: isMobile ? 16 : 20, fontWeight: 700, color: '#fff',
+                fontFamily: "'Outfit', sans-serif", marginBottom: 4,
+              }}>{b.title}</div>
+              <div style={{ fontSize: isMobile ? 12 : 14, color: '#aaa' }}>{b.subtitle}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+      {/* Scroll arrows */}
+      {showArrow && !isMobile && (
+        <>
+          <button onClick={() => scroll(-1)} style={{
+            position: 'absolute', top: '50%', left: -6, transform: 'translateY(-50%)',
+            width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(10,10,16,0.9)', color: '#fff', fontSize: 18,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(8px)', zIndex: 2,
+          }}>‹</button>
+          <button onClick={() => scroll(1)} style={{
+            position: 'absolute', top: '50%', right: -6, transform: 'translateY(-50%)',
+            width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(10,10,16,0.9)', color: '#fff', fontSize: 18,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(8px)', zIndex: 2,
+          }}>›</button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Home Screen ───
 export default function HomeScreen({ onSelectTool, onSelectCategory }) {
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -236,6 +345,14 @@ export default function HomeScreen({ onSelectTool, onSelectCategory }) {
           })}
         </div>
       )}
+
+      {/* ── Latest ── */}
+      <div style={{ padding: '0 12px', marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <h2 style={{ fontSize: isMobile ? 20 : 22, fontWeight: 700, color: '#f0f0f5', margin: 0, fontFamily: "'Outfit', sans-serif" }}>Latest</h2>
+        </div>
+        <LatestBanners isMobile={isMobile} />
+      </div>
 
       {/* ── NEXUS AI Suite ── */}
       <div style={{ padding: '0 12px', marginBottom: 40 }}>
