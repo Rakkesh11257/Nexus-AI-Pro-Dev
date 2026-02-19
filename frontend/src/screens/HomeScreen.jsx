@@ -167,9 +167,11 @@ function LatestBanners({ isMobile }) {
             rel="noopener noreferrer"
             style={{
               flex: '0 0 auto',
-              width: isMobile ? 'calc(100vw - 40px)' : LATEST_BANNERS.length === 1 ? '100%' : 'clamp(320px, 48%, 560px)',
-              aspectRatio: isMobile ? '16 / 9' : '2.2 / 1',
-              borderRadius: 16, overflow: 'hidden', position: 'relative',
+              width: isMobile ? 'calc(80vw)' : 'calc(38%)',
+              minWidth: isMobile ? 260 : 300,
+              maxWidth: 480,
+              aspectRatio: '16 / 9',
+              borderRadius: 14, overflow: 'hidden', position: 'relative',
               cursor: 'pointer', scrollSnapAlign: 'start', textDecoration: 'none',
               border: `1px solid ${b.color}25`,
               background: '#0c0e13',
@@ -185,18 +187,18 @@ function LatestBanners({ isMobile }) {
             }} />
             {b.badge && (
               <div style={{
-                position: 'absolute', top: 12, left: 12,
+                position: 'absolute', top: 10, left: 10,
                 background: `${b.color}20`, border: `1px solid ${b.color}40`,
-                borderRadius: 50, padding: '4px 12px', fontSize: 11, fontWeight: 700,
+                borderRadius: 50, padding: '3px 10px', fontSize: 10, fontWeight: 700,
                 color: b.color, letterSpacing: '0.03em',
               }}>{b.badge}</div>
             )}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: isMobile ? '16px' : '20px 24px' }}>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: isMobile ? '10px 12px' : '14px 16px' }}>
               <div style={{
-                fontSize: isMobile ? 16 : 20, fontWeight: 700, color: '#fff',
-                fontFamily: "'Outfit', sans-serif", marginBottom: 4,
+                fontSize: isMobile ? 13 : 15, fontWeight: 700, color: '#fff',
+                fontFamily: "'Outfit', sans-serif", marginBottom: 2,
               }}>{b.title}</div>
-              <div style={{ fontSize: isMobile ? 12 : 14, color: '#aaa' }}>{b.subtitle}</div>
+              <div style={{ fontSize: isMobile ? 11 : 12, color: '#aaa' }}>{b.subtitle}</div>
             </div>
           </a>
         ))}
