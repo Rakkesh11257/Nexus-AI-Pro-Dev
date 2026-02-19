@@ -12,6 +12,7 @@ const os = require('os');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 // Temp upload directory for serving files with correct Content-Type
