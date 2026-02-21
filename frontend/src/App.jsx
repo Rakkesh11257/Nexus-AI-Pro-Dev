@@ -86,90 +86,90 @@ const ModelSelector = ({ models, value, onChange, extraOptions, style, userPlan,
 
 // ─── Model Configs ───
 const IMAGE_MODELS = [
-  { id: 'prunaai/wan-2.2-image', name: 'Wan 2.2 Image', desc: '$0.02/image (~₹1.68/image)', maxSteps: 50, nsfw: true },
-  { id: 'bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe', name: 'SDXL Lightning 4-Step', desc: '$0.0016/image (~₹0.13/image)', maxSteps: 10, nsfw: true, useVersion: true },
-  { id: 'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc', name: 'SDXL 1.0', desc: '$0.0051/image (~₹0.43/image)', maxSteps: 50, nsfw: true, useVersion: true },
-  { id: 'black-forest-labs/flux-schnell', name: 'FLUX Schnell', desc: '$0.003/image (~₹0.25/image)', maxSteps: 4, nsfw: false },
-  { id: 'black-forest-labs/flux-dev', name: 'FLUX Dev', desc: '$0.025/image (~₹2.10/image)', maxSteps: 50, nsfw: false },
-  { id: 'black-forest-labs/flux-1.1-pro', name: 'FLUX 1.1 Pro', desc: '$0.04/image (~₹3.35/image)', maxSteps: 50, nsfw: false },
-  { id: 'black-forest-labs/flux-1.1-pro-ultra', name: 'FLUX 1.1 Pro Ultra', desc: '$0.06/image (~₹5.03/image)', maxSteps: 50, nsfw: false },
-  { id: 'google/nano-banana-pro', name: 'Google Nano Banana Pro', desc: '$0.15/image (~₹12.55/image)', maxSteps: 50, nsfw: false },
-  { id: 'prunaai/flux-fast', name: 'FLUX Fast (Pruna)', desc: '$0.005/image (~₹0.42/image)', maxSteps: 28, nsfw: false },
-  { id: 'ideogram-ai/ideogram-v3-quality', name: 'Ideogram V3 Quality', desc: '$0.09/image (~₹7.53/image)', maxSteps: 50, nsfw: false },
-  { id: 'stability-ai/stable-diffusion-3.5-large', name: 'SD 3.5 Large', desc: '$0.065/image (~₹5.44/image)', maxSteps: 50, nsfw: false },
+  { id: 'prunaai/wan-2.2-image', name: 'Wan 2.2 Image', desc: 'High quality, versatile', maxSteps: 50, nsfw: true },
+  { id: 'bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe', name: 'SDXL Lightning 4-Step', desc: 'Ultra fast, 4 steps only', maxSteps: 10, nsfw: true, useVersion: true },
+  { id: 'stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc', name: 'SDXL 1.0', desc: 'Classic Stable Diffusion XL', maxSteps: 50, nsfw: true, useVersion: true },
+  { id: 'black-forest-labs/flux-schnell', name: 'FLUX Schnell', desc: 'Fast & lightweight', maxSteps: 4, nsfw: false },
+  { id: 'black-forest-labs/flux-dev', name: 'FLUX Dev', desc: 'High quality, balanced speed', maxSteps: 50, nsfw: false },
+  { id: 'black-forest-labs/flux-1.1-pro', name: 'FLUX 1.1 Pro', desc: 'Professional quality', maxSteps: 50, nsfw: false },
+  { id: 'black-forest-labs/flux-1.1-pro-ultra', name: 'FLUX 1.1 Pro Ultra', desc: 'Best quality, highest detail', maxSteps: 50, nsfw: false },
+  { id: 'google/nano-banana-pro', name: 'Google Nano Banana Pro', desc: 'Google\'s image model', maxSteps: 50, nsfw: false },
+  { id: 'prunaai/flux-fast', name: 'FLUX Fast (Pruna)', desc: 'Optimized FLUX, faster', maxSteps: 28, nsfw: false },
+  { id: 'ideogram-ai/ideogram-v3-quality', name: 'Ideogram V3 Quality', desc: 'Best for text in images', maxSteps: 50, nsfw: false },
+  { id: 'stability-ai/stable-diffusion-3.5-large', name: 'SD 3.5 Large', desc: 'Latest Stable Diffusion', maxSteps: 50, nsfw: false },
 ];
 const I2I_MODELS = [
-  { id: 'sdxl-based/consistent-character:9c77a3c2f884193fcee4d89645f02a0b9def9434f9e03cb98460456b831c8772', name: 'Consistent Character', desc: '$0.038/run (~₹3.20/run)', nsfw: true, useVersion: true },
-  { id: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789', name: 'Instant-ID Pro', desc: '$0.027/run (~₹2.26/run)', nsfw: true, useVersion: true },
-  { id: 'minimax/image-01', name: 'minimax/image-01', desc: '$0.01/image (~₹0.84/image)', nsfw: false, isMinimax: true },
-  { id: 'zedge/instantid:ba2d5293be8794a05841a6f6eed81e810340142c3c25fab4838ff2b5d9574420', name: 'InstantID', desc: '$0.0015/run (~₹0.13/run)', nsfw: true, useVersion: true },
-  { id: 'qwen/qwen-image', name: 'Qwen Image', desc: '$0.025/image (~₹2.10)', nsfw: false },
+  { id: 'sdxl-based/consistent-character:9c77a3c2f884193fcee4d89645f02a0b9def9434f9e03cb98460456b831c8772', name: 'Consistent Character', desc: 'Same character, different scenes', nsfw: true, useVersion: true },
+  { id: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789', name: 'Instant-ID Pro', desc: 'Face-preserving generation', nsfw: true, useVersion: true },
+  { id: 'minimax/image-01', name: 'minimax/image-01', desc: 'MiniMax image generation', nsfw: false, isMinimax: true },
+  { id: 'zedge/instantid:ba2d5293be8794a05841a6f6eed81e810340142c3c25fab4838ff2b5d9574420', name: 'InstantID', desc: 'Fast face-preserving generation', nsfw: true, useVersion: true },
+  { id: 'qwen/qwen-image', name: 'Qwen Image', desc: 'Qwen AI image editing', nsfw: false },
 ];
 const FACESWAP_MODELS = [
-  { id: 'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111', name: 'cdingram/face-swap', desc: '$0.014/run (~₹1.17/run)', nsfw: true, useVersion: true },
-  { id: 'codeplugtech/face-swap:278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34', name: 'codeplugtech/face-swap', desc: '$0.0027/run (~₹0.23/run)', nsfw: true, useVersion: true },
+  { id: 'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111', name: 'cdingram/face-swap', desc: 'High quality face swap', nsfw: true, useVersion: true },
+  { id: 'codeplugtech/face-swap:278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34', name: 'codeplugtech/face-swap', desc: 'Fast face swap', nsfw: true, useVersion: true },
 ];
 const UPSCALE_MODELS = [
-  { id: 'nightmareai/real-esrgan', name: 'nightmareai/real-esrgan', desc: '$0.002/image (~₹0.17/image)', nsfw: true },
-  { id: 'philz1337x/crystal-upscaler', name: 'philz1337x/crystal-upscaler', desc: '$0.05-$3.20/image (~₹4.19-₹268/image)', nsfw: true },
+  { id: 'nightmareai/real-esrgan', name: 'nightmareai/real-esrgan', desc: 'Fast 4x upscaling', nsfw: true },
+  { id: 'philz1337x/crystal-upscaler', name: 'philz1337x/crystal-upscaler', desc: 'Crystal clear enhancement', nsfw: true },
 ];
 const SKIN_MODELS = [
-  { id: 'fofr/kontext-make-person-real:3f0b0f59a22997052c144a76457f113f7c35f6573b9f994f14367ec35f96254d', name: 'fofr/kontext-make-person-real', desc: '$0.018/run (~₹1.51/run)', nsfw: true, useVersion: true },
-  { id: 'flux-kontext-apps/change-haircut', name: 'flux-kontext-apps/change-haircut', desc: '$0.04/image (~₹3.35/image)', nsfw: true, isHaircut: true },
-  { id: 'zsxkib/ic-light:d41bcb10d8c159868f4cfbd7c6a2ca01484f7d39e4613419d5952c61562f1ba7', name: 'zsxkib/ic-light', desc: '$0.022/image (~₹1.84/image)', nsfw: true, useVersion: true, isICLight: true },
+  { id: 'fofr/kontext-make-person-real:3f0b0f59a22997052c144a76457f113f7c35f6573b9f994f14367ec35f96254d', name: 'fofr/kontext-make-person-real', desc: 'Make AI portraits realistic', nsfw: true, useVersion: true },
+  { id: 'flux-kontext-apps/change-haircut', name: 'flux-kontext-apps/change-haircut', desc: 'Change hairstyles with AI', nsfw: true, isHaircut: true },
+  { id: 'zsxkib/ic-light:d41bcb10d8c159868f4cfbd7c6a2ca01484f7d39e4613419d5952c61562f1ba7', name: 'zsxkib/ic-light', desc: 'AI relighting & enhancement', nsfw: true, useVersion: true, isICLight: true },
 ];
 const V2V_MODELS = [
-  { id: 'kwaivgi/kling-o1', name: 'Kling O1', desc: '$0.084-$0.168/sec (~₹7.04-₹14.07/sec)', nsfw: false, isKlingO1: true },
-  { id: 'zsxkib/hunyuan-video2video:d550f226f28b1030c2fedd2947f39f19b4b0233b50364904538caaf037fb18d3', name: 'Hunyuan Video2Video', desc: '$0.65/run (~₹54.44/run)', nsfw: false, isHunyuan: true, useVersion: true },
-  { id: 'luma/modify-video', name: 'Luma Modify Video', desc: '~$0.42/sec 720p (~₹35.18/sec)', nsfw: false, isLumaModify: true },
-  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: '$0.05/sec (~₹4.20/sec)', nsfw: false, isGrokV2V: true },
+  { id: 'kwaivgi/kling-o1', name: 'Kling O1', desc: 'Advanced video transformation', nsfw: false, isKlingO1: true },
+  { id: 'zsxkib/hunyuan-video2video:d550f226f28b1030c2fedd2947f39f19b4b0233b50364904538caaf037fb18d3', name: 'Hunyuan Video2Video', desc: 'Hunyuan video editing', nsfw: false, isHunyuan: true, useVersion: true },
+  { id: 'luma/modify-video', name: 'Luma Modify Video', desc: 'Luma AI video editing', nsfw: false, isLumaModify: true },
+  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: 'xAI video generation', nsfw: false, isGrokV2V: true },
 ];
 const VIDEOFS_MODELS = [
-  { id: 'xrunda/hello:104b4a39315349db50880757bc8c1c996c5309e3aa11286b0a3c84dab81fd440', name: 'Video Face Swap', desc: '~$0.12/run (~₹10.05/run)', price: '$0.12', useVersion: true },
-  { id: 'okaris/roop:8c1e100ecabb3151cf1e6c62879b6de7a4b84602de464ed249b6cff0b86211d8', name: 'Roop Face Swap', desc: '$0.074/run (~₹6.20/run)', useVersion: true, isRoop: true },
+  { id: 'xrunda/hello:104b4a39315349db50880757bc8c1c996c5309e3aa11286b0a3c84dab81fd440', name: 'Video Face Swap', desc: 'Swap faces in videos', useVersion: true },
+  { id: 'okaris/roop:8c1e100ecabb3151cf1e6c62879b6de7a4b84602de464ed249b6cff0b86211d8', name: 'Roop Face Swap', desc: 'Classic video face swap', useVersion: true, isRoop: true },
 ];
 const REPLACECHAR_MODELS = [
-  { id: 'wan-video/wan-2.2-animate-replace', name: 'Wan 2.2 Animate Replace', desc: '$0.02-$0.05/sec (~₹1.68-₹4.19/sec)', nsfw: false },
+  { id: 'wan-video/wan-2.2-animate-replace', name: 'Wan 2.2 Animate Replace', desc: 'Replace characters in video', nsfw: false },
 ];
 // I2V models with per-model config
 const I2V_MODELS = [
-  { id: 'wan-video/wan-2.2-i2v-fast', name: 'Wan 2.2 I2V Fast', desc: '$0.05-$0.145/vid (~₹4.19-₹12.14/vid)', nsfw: true, price: '$0.05-0.145',
+  { id: 'wan-video/wan-2.2-i2v-fast', name: 'Wan 2.2 I2V Fast', desc: 'Fast image-to-video', nsfw: true,
     params: { prompt: true, last_frame: true, num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true } },
-  { id: 'wavespeedai/wan-2.1-i2v-720p', name: 'Wan 2.1 I2V 720p', desc: '$0.25/sec (~₹20.93/sec)', nsfw: true,
+  { id: 'wavespeedai/wan-2.1-i2v-720p', name: 'Wan 2.1 I2V 720p', desc: '720p image-to-video', nsfw: true,
     params: { prompt: true, aspect_ratio: ['16:9','9:16'], negative_prompt: true, sample_shift: { min: 0, max: 10, default: 3 }, sample_steps: { min: 1, max: 40, default: 30 }, sample_guide_scale: { min: 1, max: 10, default: 5 }, fast_mode: ['Off','Balanced','Fast'], seed: true, disable_safety_checker: true, lora: true } },
-  { id: 'wan-video/wan-2.5-i2v', name: 'Wan 2.5 I2V', desc: '$0.05-$0.15/sec (~₹4.19-₹12.55/sec)', nsfw: false,
+  { id: 'wan-video/wan-2.5-i2v', name: 'Wan 2.5 I2V', desc: 'Latest Wan image-to-video', nsfw: false,
     params: { prompt: true, duration: [5,10], resolution: ['480p','720p','1080p'], negative_prompt: true, enable_prompt_expansion: true, seed: true, audio_upload: true } },
-  { id: 'wan-video/wan-2.5-i2v-fast', name: 'Wan 2.5 I2V Fast', desc: '$0.068-$0.102/sec (~₹5.69-₹8.54/sec)', nsfw: false,
+  { id: 'wan-video/wan-2.5-i2v-fast', name: 'Wan 2.5 I2V Fast', desc: 'Fast Wan 2.5 image-to-video', nsfw: false,
     params: { prompt: true, duration: [5,10], resolution: ['720p','1080p'], negative_prompt: true, enable_prompt_expansion: true, seed: true, audio_upload: true } },
-  { id: 'google/veo-3.1-fast', name: 'Google Veo 3.1 Fast', desc: '$0.10-$0.15/sec (~₹8.37-₹12.55/sec)', nsfw: false, price: '$0.10-0.15/s',
+  { id: 'google/veo-3.1-fast', name: 'Google Veo 3.1 Fast', desc: 'Google\'s video model with audio', nsfw: false,
     params: { prompt: true, duration: [4,6,8], resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16'], generate_audio: true, first_frame: true, last_frame: true, negative_prompt: true, seed: true } },
-  { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: '$0.07/sec (~₹5.86/sec)', nsfw: false, price: '$0.07/s',
+  { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: 'Kling turbo video generation', nsfw: false,
     params: { prompt: true, duration: [5,10], aspect_ratio: ['16:9','9:16','1:1'], negative_prompt: true, first_frame: true, last_frame: true } },
-  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: '$0.05/sec (~₹4.20/sec)', nsfw: false, isGrokI2V: true,
+  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: 'xAI video generation', nsfw: false, isGrokI2V: true,
     params: { prompt: true, duration: { min: 1, max: 15, default: 5 }, resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16','1:1'] } },
 ];
 // T2V models with per-model config
 const T2V_MODELS = [
-  { id: 'wan-video/wan-2.2-t2v-fast', name: 'Wan 2.2 T2V Fast', desc: '$0.05-0.145/vid', nsfw: true, price: '$0.05-0.145',
+  { id: 'wan-video/wan-2.2-t2v-fast', name: 'Wan 2.2 T2V Fast', desc: 'Fast text-to-video', nsfw: true,
     params: { num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], aspect_ratio: ['16:9','9:16'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true, optimize_prompt: true } },
-  { id: 'wavespeedai/wan-2.1-t2v-720p', name: 'Wan 2.1 T2V 720p', desc: '$0.24/sec (~₹20.10/sec)', nsfw: true,
+  { id: 'wavespeedai/wan-2.1-t2v-720p', name: 'Wan 2.1 T2V 720p', desc: '720p text-to-video', nsfw: true,
     params: { prompt: true, aspect_ratio: ['16:9','9:16'], negative_prompt: true, sample_shift: { min: 0, max: 10, default: 3 }, sample_steps: { min: 1, max: 40, default: 30 }, sample_guide_scale: { min: 1, max: 10, default: 5 }, fast_mode: ['Off','Balanced','Fast'], seed: true, disable_safety_checker: true, lora: true } },
-  { id: 'wan-video/wan-2.5-t2v', name: 'Wan 2.5 T2V', desc: '$0.05-$0.15/sec (~₹4.19-₹12.55/sec)', nsfw: false,
+  { id: 'wan-video/wan-2.5-t2v', name: 'Wan 2.5 T2V', desc: 'Latest Wan text-to-video', nsfw: false,
     params: { size: ['1280*720','720*1280','1920*1080','1080*1920'], duration: [5,10], negative_prompt: true, enable_prompt_expansion: true, seed: true, audio_upload: true } },
-  { id: 'wan-video/wan-2.5-t2v-fast', name: 'Wan 2.5 T2V Fast', desc: '$0.068-$0.102/sec (~₹5.69-₹8.54/sec)', nsfw: false,
+  { id: 'wan-video/wan-2.5-t2v-fast', name: 'Wan 2.5 T2V Fast', desc: 'Fast Wan 2.5 text-to-video', nsfw: false,
     params: { size: ['1280*720','720*1280','1920*1080','1080*1920'], duration: [5,10], negative_prompt: true, enable_prompt_expansion: true, seed: true, audio_upload: true } },
-  { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: '$0.07/sec (~₹5.86/sec)', nsfw: false, price: '$0.07/s',
+  { id: 'kwaivgi/kling-v2.5-turbo-pro', name: 'Kling V2.5 Turbo Pro', desc: 'Kling turbo video generation', nsfw: false,
     params: { duration: [5,10], aspect_ratio: ['16:9','9:16','1:1'], negative_prompt: true } },
-  { id: 'openai/sora-2-pro', name: 'OpenAI Sora 2 Pro', desc: '$0.30-$0.50/sec (~₹25.13-₹41.88/sec)', nsfw: false,
+  { id: 'openai/sora-2-pro', name: 'OpenAI Sora 2 Pro', desc: 'OpenAI\'s premium video model', nsfw: false,
     params: { seconds: [4,8,12], resolution: ['standard','high'], aspect_ratio: ['landscape','portrait'], first_frame: true } },
-  { id: 'google/veo-3.1-fast', name: 'Google Veo 3.1 Fast', desc: '$0.10-$0.15/sec (~₹8.37-₹12.55/sec)', nsfw: false, price: '$0.10-0.15/s',
+  { id: 'google/veo-3.1-fast', name: 'Google Veo 3.1 Fast', desc: 'Google\'s video model with audio', nsfw: false,
     params: { duration: [4,6,8], resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16'], generate_audio: true, negative_prompt: true, seed: true } },
-  { id: 'minimax/video-01', name: 'MiniMax Video-01', desc: '$0.50/vid (~₹41.88/vid)', nsfw: false,
+  { id: 'minimax/video-01', name: 'MiniMax Video-01', desc: 'MiniMax video generation', nsfw: false,
     params: { prompt_optimizer: true, first_frame: true } },
-  { id: 'minimax/video-01-live', name: 'MiniMax Video-01 Live', desc: '$0.50/vid (~₹41.88/vid)', nsfw: false,
+  { id: 'minimax/video-01-live', name: 'MiniMax Video-01 Live', desc: 'MiniMax live-action video', nsfw: false,
     params: { prompt_optimizer: true, first_frame: true } },
   // haiper-ai/haiper-video-2 removed - model 404'd
-  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: '$0.05/sec (~₹4.20/sec)', nsfw: false,
+  { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: 'xAI video generation', nsfw: false,
     params: { duration: { min: 1, max: 15, default: 5 }, resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16','1:1'] } },
 ];
 const ASPECTS = [
@@ -192,7 +192,7 @@ const AUDIO_MODELS = [
     params: { voice: ['Rachel','Drew','Clyde','Paul','Aria','Domi','Dave','Roger','Fin','Sarah','James','Jane','Juniper','Arabella','Hope','Bradford','Reginald','Gaming','Austin','Kuon','Blondie','Priyanka','Alexandra','Monika','Mark','Grimblewood'], stability: { min: 0, max: 1, default: 0.5 }, similarity_boost: { min: 0, max: 1, default: 0.75 }, style: { min: 0, max: 1, default: 0 }, speed: { min: 0.7, max: 1.2, default: 1 }, language_code: true } },
   { id: 'elevenlabs/turbo-v2.5', name: 'ElevenLabs Turbo V2.5', desc: 'Fast TTS',
     params: { voice: ['Rachel','Drew','Clyde','Paul','Aria','Domi','Dave','Roger','Fin','Sarah','James','Jane','Juniper','Arabella','Hope','Bradford','Reginald','Gaming','Austin','Kuon','Blondie','Priyanka','Alexandra','Monika','Mark','Grimblewood'], stability: { min: 0, max: 1, default: 0.5 }, similarity_boost: { min: 0, max: 1, default: 0.75 }, style: { min: 0, max: 1, default: 0 }, speed: { min: 0.7, max: 1.2, default: 1 }, language_code: true } },
-  { id: 'minimax/speech-02-turbo', name: 'MiniMax Speech 02 Turbo', desc: '$0.06/1K tokens (~\u20b95.03/1K tokens)', isMiniMaxTTS: true,
+  { id: 'minimax/speech-02-turbo', name: 'MiniMax Speech 02 Turbo', desc: 'Fast text-to-speech', isMiniMaxTTS: true,
     params: { voice_id: ['Wise_Woman','Young_Man','Calm_Woman','Energetic_Girl','Deep_Voice_Man','Sweet_Girl','Cute_Boy','Gentle_Woman','Narrator_Man','Newscaster_Woman'], speed: { min: 0.5, max: 2, default: 1 }, pitch: { min: -12, max: 12, default: 0 }, emotion: ['auto','happy','sad','angry','fearful','disgusted','surprised','calm','fluent','neutral'] } },
   { id: 'google/lyria-2', name: 'Google Lyria 2', desc: 'AI music generation',
     params: { negative_prompt: true, seed: true } },
@@ -200,9 +200,9 @@ const AUDIO_MODELS = [
     params: { video: true, image: true, negative_prompt: true, duration: { min: 1, max: 30, default: 8 }, num_steps: { min: 1, max: 50, default: 25 }, cfg_strength: { min: 1, max: 10, default: 4.5 }, seed: true } },
 ];
 const VOICECLONE_MODELS = [
-  { id: 'lucataco/xtts-v2:684bc3855b37866c0c65add2ff39c78f3dea3f4ff103a436465326e0f438d55e', name: 'XTTS V2', desc: '$0.13/run (~\u20b910.89/run)', useVersion: true },
-  { id: 'resemble-ai/chatterbox', name: 'Chatterbox', desc: '$0.025/1K chars (~\u20b92.09/1K chars)', isChatterbox: true },
-  { id: 'minimax/voice-cloning', name: 'MiniMax Voice Clone', desc: '$3.00/clone (~\u20b9251.25/clone)', isMiniMaxClone: true },
+  { id: 'lucataco/xtts-v2:684bc3855b37866c0c65add2ff39c78f3dea3f4ff103a436465326e0f438d55e', name: 'XTTS V2', desc: 'Multi-language voice cloning', useVersion: true },
+  { id: 'resemble-ai/chatterbox', name: 'Chatterbox', desc: 'Expressive voice cloning', isChatterbox: true },
+  { id: 'minimax/voice-cloning', name: 'MiniMax Voice Clone', desc: 'High quality voice cloning', isMiniMaxClone: true },
 ];
 // Models restricted to yearly/lifetime subscribers only
 const YEARLY_ONLY_MODELS = [
