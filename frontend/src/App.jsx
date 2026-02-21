@@ -13,7 +13,7 @@ const getModelLogo = (modelId) => {
 };
 
 // ─── Custom Model Selector with Logos ───
-const ModelSelector = ({ models, value, onChange, extraOptions, style, userPlan, onLockedClick }) => {
+const ModelSelector = ({ models, value, onChange, extraOptions, style, userPlan, onLockedClick, showNsfwBadge }) => {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
   const selected = models.find(m => m.id === value);
@@ -72,6 +72,7 @@ const ModelSelector = ({ models, value, onChange, extraOptions, style, userPlan,
                 <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{m.desc}</div>
               </div>
               {locked && <span style={{ fontSize: 12, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 10, border: '1px solid rgba(245,158,11,0.2)', whiteSpace: 'nowrap' }}>🔒 Yearly</span>}
+              {showNsfwBadge && m.nsfw && !locked && <span style={{ fontSize: 10, color: '#f472b6', background: 'rgba(244,114,182,0.1)', padding: '2px 7px', borderRadius: 8, border: '1px solid rgba(244,114,182,0.2)', whiteSpace: 'nowrap', fontWeight: 600, letterSpacing: '0.03em' }}>18+</span>}
               {!locked && m.id === value && <span style={{ color: '#22d47b', fontSize: 14 }}>✓</span>}
             </div>
             );
@@ -2578,7 +2579,7 @@ function App() {
         {/* ══ IMAGE TAB ══ */}
         {tab === 'image' && (
           <div>
-            <ModelSelector models={IMAGE_MODELS} value={model} onChange={v => { setModel(v); if (v.includes('schnell')) setSteps(4); else setSteps(20); }}
+            <ModelSelector models={IMAGE_MODELS} value={model} onChange={v => { setModel(v); if (v.includes('schnell')) setSteps(4); else setSteps(20); }} showNsfwBadge
               extraOptions={trainHistory.length > 0 ? (<>
                 <div style={{ padding: '8px 14px', color: 'rgba(255,255,255,0.3)', fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', borderTop: '1px solid rgba(255,255,255,0.08)' }}>Your Trained Models</div>
                 {trainHistory.map(m => (
@@ -2633,7 +2634,7 @@ function App() {
         {/* ══ IMAGE TO IMAGE TAB ══ */}
         {tab === 'i2i' && (
           <div>
-            <ModelSelector models={I2I_MODELS} value={i2iModel} onChange={v => setI2iModel(v)} userPlan={user?.paymentPlan} onLockedClick={() => setShowUpgrade(true)} />
+            <ModelSelector models={I2I_MODELS} value={i2iModel} onChange={v => setI2iModel(v)} userPlan={user?.paymentPlan} onLockedClick={() => setShowUpgrade(true)} showNsfwBadge />
 
             <div style={{ marginBottom: 12 }}>
               <label style={S.label}>Source Image</label>
@@ -2680,7 +2681,7 @@ function App() {
         {/* ══ IMAGE TO VIDEO TAB ══ */}
         {tab === 'i2v' && (
           <div>
-            <ModelSelector models={I2V_MODELS} value={i2vModel} onChange={v => { setI2vModel(v); setI2vOpts({}); }} userPlan={user?.paymentPlan} onLockedClick={() => setShowUpgrade(true)} />
+            <ModelSelector models={I2V_MODELS} value={i2vModel} onChange={v => { setI2vModel(v); setI2vOpts({}); }} userPlan={user?.paymentPlan} onLockedClick={() => setShowUpgrade(true)} showNsfwBadge />
 
             <div style={{ marginBottom: 12 }}>
               <label style={S.label}>Source Image (Start Frame)</label>
@@ -2730,7 +2731,7 @@ function App() {
         {/* ══ TEXT TO VIDEO TAB ══ */}
         {tab === 't2v' && (
           <div>
-            <ModelSelector models={T2V_MODELS} value={t2vModel} onChange={v => { setT2vModel(v); setT2vOpts({}); }} userPlan={user?.paymentPlan} onLockedClick={() => setShowUpgrade(true)} />
+            <ModelSelector models={T2V_MODELS} value={t2vModel} onChange={v => { setT2vModel(v); setT2vOpts({}); }} userPlan={user?.paymentPlan} onLockedClick={() => setShowUpgrade(true)} showNsfwBadge />
 
             <textarea style={{ ...S.input, minHeight: 80, marginBottom: 12 }} placeholder="Describe the video you want to create..." value={t2vPrompt} onChange={e => setT2vPrompt(e.target.value)} />
 
