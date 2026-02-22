@@ -1205,13 +1205,14 @@ function App() {
   // ─── Pre-generate Check ───
   // Pre-generate check: returns a Promise that resolves true if ok to proceed.
   // In credit mode, shows a confirmation dialog the user must accept.
-  const canGenerate = (modelId, params = {}) => {
+  const canGenerate = (modelId, opts = {}, modelCfg = null) => {
     // Developer mode: need subscription + API key
     if (isDeveloperMode) {
       if (!user?.isPaid) { setShowPaywall(true); return Promise.resolve(false); }
       return Promise.resolve(true);
     }
     // Credit mode: need enough credits
+    const params = getCreditParams(modelId, opts, modelCfg);
     const cost = getModelCreditCost(modelId, params);
     if (cost != null && credits < cost) {
       setError(`Insufficient credits. Need ${cost} but you have ${credits}.`);
@@ -1235,6 +1236,39 @@ function App() {
     if (data?._creditsRefunded) {
       setError(prev => prev ? `${prev} (${data._creditsRefunded} credits refunded)` : '');
     }
+  };
+
+  // Extract credit params from video model config + user opts
+  const getCreditParams = (modelId, opts = {}, modelCfg = null) => {
+    const p = modelCfg?.params || {};
+    const params = {};
+    // Resolution: from opts, model defaults, or derive from size
+    if (opts.resolution) params.resolution = opts.resolution;
+    else if (Array.isArray(p.resolution)) params.resolution = p.resolution[0];
+    else if (opts.size) {
+      // Size like '1280*720' → '720p', '1920*1080' → '1080p'
+      const h = parseInt((opts.size || '').split('*')[1] || '0');
+      params.resolution = h >= 1080 ? '1080p' : h >= 720 ? '720p' : '480p';
+    } else if (Array.isArray(p.size)) {
+      const h = parseInt((p.size[0] || '').split('*')[1] || '0');
+      params.resolution = h >= 1080 ? '1080p' : h >= 720 ? '720p' : '480p';
+    }
+    // Duration: from opts or model defaults
+    if (opts.duration != null) params.duration = opts.duration;
+    else if (Array.isArray(p.duration)) params.duration = p.duration[0];
+    else if (p.duration?.default != null) params.duration = p.duration.default;
+    // Seconds (Sora)
+    if (opts.seconds != null) params.seconds = opts.seconds;
+    else if (Array.isArray(p.seconds)) params.seconds = p.seconds[0];
+    return params;
+  };
+
+  // Credit cost label for generate buttons (returns '' in developer mode)
+  const creditLabel = (modelId, opts = {}, modelCfg = null) => {
+    if (isDeveloperMode) return '';
+    const params = getCreditParams(modelId, opts, modelCfg);
+    const c = getModelCreditCost(modelId, params);
+    return c != null ? ` (${c} cr)` : '';
   };
 
   // Build headers for Replicate API calls (handles developer vs credit mode)
@@ -1691,7 +1725,7 @@ function App() {
   const generateI2V = async () => {
     if (user?.paymentPlan === 'monthly' && isYearlyOnlyModel(i2vModel)) { setShowUpgrade(true); return; }
     if (!i2vImage) return setError('Upload a source image');
-    if (!await canGenerate(i2vModel)) return;
+    if (!await canGenerate(i2vModel, i2vOpts, I2V_MODELS.find(m => m.id === i2vModel))) return;
     const modelCfg = I2V_MODELS.find(m => m.id === i2vModel);
     const jobId = addJob('i2v', i2vModel, i2vPrompt.trim());
     setError('');
@@ -1727,7 +1761,7 @@ function App() {
   const generateT2V = async () => {
     if (user?.paymentPlan === 'monthly' && isYearlyOnlyModel(t2vModel)) { setShowUpgrade(true); return; }
     if (!t2vPrompt.trim()) return setError('Enter a prompt');
-    if (!await canGenerate(t2vModel)) return;
+    if (!await canGenerate(t2vModel, t2vOpts, T2V_MODELS.find(m => m.id === t2vModel))) return;
     const modelCfg = T2V_MODELS.find(m => m.id === t2vModel);
     const jobId = addJob('t2v', t2vModel, t2vPrompt.trim());
     setError('');
@@ -2011,7 +2045,7 @@ function App() {
   };
   // ─── Generate Motion Control ───
   const generateMotion = async () => {
-    if (!await canGenerate(motionModel)) return;
+    if (!await canGenerate(motionModel, motionOpts, MOTION_MODELS.find(m => m.id === motionModel))) return;
     const modelCfg = MOTION_MODELS.find(m => m.id === motionModel);
     const isKling = motionModel.includes('kling');
     const isAnimate = motionModel.includes('animate');
@@ -2841,7 +2875,7 @@ function App() {
             </div>
 
             <button onClick={generateImage} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>
-              ✨ Generate Image
+              ✨ Generate Image{creditLabel(model)}
             </button>
 
           </div>
@@ -2887,7 +2921,7 @@ function App() {
             </div>
 
             <button onClick={generateI2I} style={S.btn}>
-              🔄 Generate Image to Image
+              🔄 Generate Image to Image{creditLabel(i2iModel)}
             </button>
 
 
@@ -2937,7 +2971,7 @@ function App() {
             {renderVideoOpts(I2V_MODELS.find(m => m.id === i2vModel), i2vOpts, setI2vOpts, i2vOpts.negative_prompt, (v) => setI2vOpts(o => ({ ...o, negative_prompt: v })))}
 
             <button onClick={generateI2V} style={S.btn}>
-              🖼️ Generate Image to Video
+              🖼️ Generate Image to Video{creditLabel(i2vModel, i2vOpts, I2V_MODELS.find(m => m.id === i2vModel))}
             </button>
 
 
@@ -2954,7 +2988,7 @@ function App() {
             {renderVideoOpts(T2V_MODELS.find(m => m.id === t2vModel), t2vOpts, setT2vOpts, t2vNegPrompt, setT2vNegPrompt)}
 
             <button onClick={generateT2V} style={S.btn}>
-              🎬 Generate Text to Video
+              🎬 Generate Text to Video{creditLabel(t2vModel, t2vOpts, T2V_MODELS.find(m => m.id === t2vModel))}
             </button>
 
 
@@ -3052,7 +3086,7 @@ function App() {
             </div>
 
             <button onClick={generateMotion} style={S.btn}>
-              🎭 Generate Motion Control
+              🎭 Generate Motion Control{creditLabel(motionModel, motionOpts, MOTION_MODELS.find(m => m.id === motionModel))}
             </button>
 
 
@@ -3201,7 +3235,7 @@ function App() {
               </div>
             )}
             <button onClick={generateAudio} style={{ ...S.btn, marginTop: 12 }}>
-              🔊 Generate Audio
+              🔊 Generate Audio{creditLabel(audioModel)}
             </button>
 
 
@@ -3228,7 +3262,7 @@ function App() {
                 ) : (
                   <textarea style={{ ...S.input, minHeight: 80, marginBottom: 14 }} placeholder="Enter text to speak in the cloned voice..." value={voicecloneText} onChange={e => setVoicecloneText(e.target.value)} />
                 )}
-                <button onClick={generateVoiceClone} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : isMiniMaxClone ? '🎤 Create Voice Clone ($3)' : '🎤 Clone Voice'}</button>
+                <button onClick={generateVoiceClone} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : isMiniMaxClone ? '🎤 Create Voice Clone' + creditLabel(voicecloneModel) : '🎤 Clone Voice' + creditLabel(voicecloneModel)}</button>
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}><div style={{ fontSize: 48, marginBottom: 12 }}>&#x1f6a7;</div><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Coming Soon</div><div style={{ fontSize: 13 }}>Voice clone models will be available shortly.</div></div>
@@ -3300,7 +3334,7 @@ function App() {
             </div>
 
             <button onClick={generateTranscribe} style={S.btn}>
-              🎙️ Transcribe Audio
+              🎙️ Transcribe Audio{creditLabel(transcribeModel)}
             </button>
 
             {/* Transcription result */}
@@ -3423,7 +3457,7 @@ function App() {
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateChat(); } }}
               />
               <button onClick={generateChat} disabled={loading || (!chatInput.trim() && !chatImage)} style={{ ...S.btn, width: 'auto', padding: '10px 20px', opacity: (loading || (!chatInput.trim() && !chatImage)) ? 0.5 : 1, flexShrink: 0 }}>
-                {loading ? '⏳' : '➤'}
+                {loading ? '⏳' : '➤'}{creditLabel(chatModel) ? <span style={{ fontSize: 10, fontWeight: 500 }}>{creditLabel(chatModel)}</span> : ''}
               </button>
             </div>
           </div>
@@ -3544,7 +3578,7 @@ function App() {
                 {faceswapTarget ? (<div style={{ position: 'relative', display: 'inline-block' }}><img src={faceswapTarget} alt="" style={{ maxHeight: 160, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setFaceswapTarget(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '30px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)' }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f600;</div>Face photo<br/><span style={{ fontSize: 11, color: '#555' }}>Clear face to swap in</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setFaceswapTarget(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
               </div>
             </div>
-            <button onClick={generateFaceSwap} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Swap Faces'}</button>
+            <button onClick={generateFaceSwap} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Swap Faces' + creditLabel(faceswapModel)}</button>
           </div>
         )}
         {/* ══ IMAGE UPSCALE TAB ══ */}
@@ -3554,7 +3588,7 @@ function App() {
             <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Image to Upscale</label>
             {upscaleImage ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><img src={upscaleImage} alt="" style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setUpscaleImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f50d;</div>Upload image to upscale<br/><span style={{ fontSize: 11, color: '#555' }}>Enhance resolution up to 10x</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setUpscaleImage(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
             <div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Scale Factor: {upscaleScale}x</label><input type="range" min="2" max="10" value={upscaleScale} onChange={e => setUpscaleScale(Number(e.target.value))} style={{ width: '100%' }} /></div>
-            <button onClick={generateUpscale} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Upscale Image'}</button>
+            <button onClick={generateUpscale} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Upscale Image' + creditLabel(upscaleModel)}</button>
           </div>
         )}
         {/* ══ PORTRAIT STUDIO TAB ══ */}
@@ -3564,7 +3598,7 @@ function App() {
             <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Portrait Image</label>
             {skinImage ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><img src={skinImage} alt="" style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setSkinImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f464;</div>Upload portrait<br/><span style={{ fontSize: 11, color: '#555' }}>Face photo for enhancement</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setSkinImage(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
             {(() => { const curSkinM = SKIN_MODELS.find(m => m.id === skinModel); if (curSkinM?.isHaircut) { return (<div><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Haircut Style</label><select value={skinHaircut} onChange={e => setSkinHaircut(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option key='No change' value='No change'>No change</option><option key='Random' value='Random'>Random</option><option key='Straight' value='Straight'>Straight</option><option key='Wavy' value='Wavy'>Wavy</option><option key='Curly' value='Curly'>Curly</option><option key='Bob' value='Bob'>Bob</option><option key='Pixie Cut' value='Pixie Cut'>Pixie Cut</option><option key='Layered' value='Layered'>Layered</option><option key='Messy Bun' value='Messy Bun'>Messy Bun</option><option key='High Ponytail' value='High Ponytail'>High Ponytail</option><option key='Low Ponytail' value='Low Ponytail'>Low Ponytail</option><option key='Braided Ponytail' value='Braided Ponytail'>Braided Ponytail</option><option key='French Braid' value='French Braid'>French Braid</option><option key='Dutch Braid' value='Dutch Braid'>Dutch Braid</option><option key='Fishtail Braid' value='Fishtail Braid'>Fishtail Braid</option><option key='Space Buns' value='Space Buns'>Space Buns</option><option key='Top Knot' value='Top Knot'>Top Knot</option><option key='Undercut' value='Undercut'>Undercut</option><option key='Mohawk' value='Mohawk'>Mohawk</option><option key='Crew Cut' value='Crew Cut'>Crew Cut</option><option key='Faux Hawk' value='Faux Hawk'>Faux Hawk</option><option key='Slicked Back' value='Slicked Back'>Slicked Back</option><option key='Side-Parted' value='Side-Parted'>Side-Parted</option><option key='Center-Parted' value='Center-Parted'>Center-Parted</option><option key='Blunt Bangs' value='Blunt Bangs'>Blunt Bangs</option><option key='Side-Swept Bangs' value='Side-Swept Bangs'>Side-Swept Bangs</option><option key='Shag' value='Shag'>Shag</option><option key='Lob' value='Lob'>Lob</option><option key='Angled Bob' value='Angled Bob'>Angled Bob</option><option key='A-Line Bob' value='A-Line Bob'>A-Line Bob</option><option key='Asymmetrical Bob' value='Asymmetrical Bob'>Asymmetrical Bob</option><option key='Graduated Bob' value='Graduated Bob'>Graduated Bob</option><option key='Inverted Bob' value='Inverted Bob'>Inverted Bob</option><option key='Layered Shag' value='Layered Shag'>Layered Shag</option><option key='Choppy Layers' value='Choppy Layers'>Choppy Layers</option><option key='Razor Cut' value='Razor Cut'>Razor Cut</option><option key='Perm' value='Perm'>Perm</option><option key='Soft Waves' value='Soft Waves'>Soft Waves</option><option key='Glamorous Waves' value='Glamorous Waves'>Glamorous Waves</option><option key='Hollywood Waves' value='Hollywood Waves'>Hollywood Waves</option><option key='Finger Waves' value='Finger Waves'>Finger Waves</option><option key='Tousled' value='Tousled'>Tousled</option><option key='Feathered' value='Feathered'>Feathered</option><option key='Pageboy' value='Pageboy'>Pageboy</option><option key='Pigtails' value='Pigtails'>Pigtails</option><option key='Pin Curls' value='Pin Curls'>Pin Curls</option><option key='Rollerset' value='Rollerset'>Rollerset</option><option key='Twist Out' value='Twist Out'>Twist Out</option><option key='Bantu Knots' value='Bantu Knots'>Bantu Knots</option><option key='Dreadlocks' value='Dreadlocks'>Dreadlocks</option><option key='Cornrows' value='Cornrows'>Cornrows</option><option key='Box Braids' value='Box Braids'>Box Braids</option><option key='Crochet Braids' value='Crochet Braids'>Crochet Braids</option><option key='Double Dutch Braids' value='Double Dutch Braids'>Double Dutch Braids</option><option key='French Fishtail Braid' value='French Fishtail Braid'>French Fishtail Braid</option><option key='Waterfall Braid' value='Waterfall Braid'>Waterfall Braid</option><option key='Rope Braid' value='Rope Braid'>Rope Braid</option><option key='Heart Braid' value='Heart Braid'>Heart Braid</option><option key='Halo Braid' value='Halo Braid'>Halo Braid</option><option key='Crown Braid' value='Crown Braid'>Crown Braid</option><option key='Braided Crown' value='Braided Crown'>Braided Crown</option><option key='Bubble Braid' value='Bubble Braid'>Bubble Braid</option><option key='Bubble Ponytail' value='Bubble Ponytail'>Bubble Ponytail</option><option key='Chignon' value='Chignon'>Chignon</option><option key='French Twist' value='French Twist'>French Twist</option><option key='Updo' value='Updo'>Updo</option><option key='Messy Updo' value='Messy Updo'>Messy Updo</option><option key='Beehive' value='Beehive'>Beehive</option><option key='Bouffant' value='Bouffant'>Bouffant</option><option key='Half-Up Half-Down' value='Half-Up Half-Down'>Half-Up Half-Down</option><option key='Victory Rolls' value='Victory Rolls'>Victory Rolls</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Hair Color</label><select value={skinHairColor} onChange={e => setSkinHairColor(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option key='No change' value='No change'>No change</option><option key='Random' value='Random'>Random</option><option key='Blonde' value='Blonde'>Blonde</option><option key='Brunette' value='Brunette'>Brunette</option><option key='Black' value='Black'>Black</option><option key='Dark Brown' value='Dark Brown'>Dark Brown</option><option key='Medium Brown' value='Medium Brown'>Medium Brown</option><option key='Light Brown' value='Light Brown'>Light Brown</option><option key='Auburn' value='Auburn'>Auburn</option><option key='Copper' value='Copper'>Copper</option><option key='Red' value='Red'>Red</option><option key='Strawberry Blonde' value='Strawberry Blonde'>Strawberry Blonde</option><option key='Platinum Blonde' value='Platinum Blonde'>Platinum Blonde</option><option key='Silver' value='Silver'>Silver</option><option key='White' value='White'>White</option><option key='Blue' value='Blue'>Blue</option><option key='Purple' value='Purple'>Purple</option><option key='Pink' value='Pink'>Pink</option><option key='Green' value='Green'>Green</option><option key='Blue-Black' value='Blue-Black'>Blue-Black</option><option key='Golden Blonde' value='Golden Blonde'>Golden Blonde</option><option key='Honey Blonde' value='Honey Blonde'>Honey Blonde</option><option key='Caramel' value='Caramel'>Caramel</option><option key='Chestnut' value='Chestnut'>Chestnut</option><option key='Mahogany' value='Mahogany'>Mahogany</option><option key='Burgundy' value='Burgundy'>Burgundy</option><option key='Jet Black' value='Jet Black'>Jet Black</option><option key='Ash Brown' value='Ash Brown'>Ash Brown</option><option key='Ash Blonde' value='Ash Blonde'>Ash Blonde</option><option key='Rose Gold' value='Rose Gold'>Rose Gold</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Gender</label><select value={skinGender} onChange={e => setSkinGender(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option value="none">Auto Detect</option><option value="male">Male</option><option value="female">Female</option></select></div>); } else if (curSkinM?.isICLight) { return (<div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Light Source</label><select value={skinLightSource} onChange={e => setSkinLightSource(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option value="None">None (Auto)</option><option value="Left Light">Left Light</option><option value="Right Light">Right Light</option><option value="Top Light">Top Light</option><option value="Bottom Light">Bottom Light</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Lighting Prompt</label><textarea style={{ ...S.input, minHeight: 80, width: '100%' }} placeholder='e.g. professional studio lighting, warm sunset glow...' value={skinPrompt} onChange={e => setSkinPrompt(e.target.value)} /></div>); } else { return (<div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Enhancement Prompt</label><textarea style={{ ...S.input, minHeight: 80, width: '100%' }} placeholder='e.g. make this person look photorealistic...' value={skinPrompt} onChange={e => setSkinPrompt(e.target.value)} /></div>); } })()}
-            <button onClick={generateSkin} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : SKIN_MODELS.find(m => m.id === skinModel)?.isHaircut ? '✂️ Change Haircut' : SKIN_MODELS.find(m => m.id === skinModel)?.isICLight ? '💡 Relight Portrait' : '✨ Enhance Portrait'}</button>
+            <button onClick={generateSkin} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : (SKIN_MODELS.find(m => m.id === skinModel)?.isHaircut ? '✂️ Change Haircut' : SKIN_MODELS.find(m => m.id === skinModel)?.isICLight ? '💡 Relight Portrait' : '✨ Enhance Portrait') + creditLabel(skinModel)}</button>
           </div>
         )}
         {/* ══ V2V EDIT VIDEO TAB ══ */}
@@ -3574,7 +3608,7 @@ function App() {
             <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Source Video</label>
             {v2vVideo ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><video src={v2vVideo} style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} controls muted /><button onClick={() => setV2vVideo(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f3ac;</div>Upload video to edit<br/><span style={{ fontSize: 11, color: '#555', lineHeight: 1.6 }}>{V2V_MODELS.find(m => m.id === v2vModel)?.isKlingO1 ? 'MP4, MOV • 3-10s • Max 200MB • Min 720p' : V2V_MODELS.find(m => m.id === v2vModel)?.isHunyuan ? 'Any video • 768x768 output • Max 101 frames' : V2V_MODELS.find(m => m.id === v2vModel)?.isLumaModify ? 'Max 100MB • Max 30s • Mode: Adhere' : 'MP4, MOV, WebM • Max 8.7s'}</span><input type="file" accept={V2V_MODELS.find(m => m.id === v2vModel)?.isGrokV2V ? 'video/mp4,video/quicktime,video/webm' : V2V_MODELS.find(m => m.id === v2vModel)?.isKlingO1 ? 'video/mp4,video/quicktime' : V2V_MODELS.find(m => m.id === v2vModel)?.isHunyuan ? 'video/*' : 'video/mp4'} onChange={e => { const f = e.target.files?.[0]; if (f) setV2vVideo(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
             <div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Edit Prompt</label><textarea value={v2vPrompt} onChange={e => setV2vPrompt(e.target.value)} placeholder="Describe how to transform the video..." rows={3} style={{ ...S.input, width: '100%', resize: 'vertical' }} /></div>
-            <button onClick={generateV2V} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Edit Video'}</button>
+            <button onClick={generateV2V} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Edit Video' + creditLabel(v2vModel)}</button>
           </div>
         )}
         {/* ══ VIDEO FACE SWAP TAB ══ */}
@@ -3591,7 +3625,7 @@ function App() {
                 {vfsFaceImage ? (<div style={{ position: 'relative', display: 'inline-block' }}><img src={vfsFaceImage} alt="" style={{ maxHeight: 160, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setVfsFaceImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '30px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)' }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f600;</div>Face image<br/><span style={{ fontSize: 11, color: '#555' }}>Clear face photo works best</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setVfsFaceImage(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
               </div>
             </div>
-            <button onClick={generateVideoFS} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Swap Face in Video'}</button>
+            <button onClick={generateVideoFS} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Swap Face in Video' + creditLabel(vfsModel)}</button>
           </div>
         )}
         {tab === 'replacechar' && (
@@ -3609,7 +3643,7 @@ function App() {
                     {replacecharImage ? (<div style={{ position: 'relative', display: 'inline-block' }}><img src={replacecharImage} alt="" style={{ maxHeight: 160, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setReplacecharImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '30px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)' }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f9d1;</div>Character image<br/><span style={{ fontSize: 11, color: '#555' }}>New character to replace with</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setReplacecharImage(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
                   </div>
                 </div>
-                <button onClick={generateReplaceChar} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Replace Character'}</button>
+                <button onClick={generateReplaceChar} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Replace Character' + creditLabel(replacecharModel)}</button>
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}><div style={{ fontSize: 48, marginBottom: 12 }}>&#x1f6a7;</div><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Coming Soon</div><div style={{ fontSize: 13 }}>Replace character models will be available shortly.</div></div>
