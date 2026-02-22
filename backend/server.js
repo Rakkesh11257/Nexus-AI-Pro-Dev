@@ -1124,8 +1124,8 @@ app.post('/api/credits/verify', verifyToken, async (req, res) => {
     const result = await dynamoClient.send(new UpdateCommand({
       TableName: DYNAMO_TABLE,
       Key: { userId: req.user.sub },
-      UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount, isPaid = :paid',
-      ExpressionAttributeValues: { ':amount': pack.credits, ':zero': 0, ':paid': true },
+      UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount',
+      ExpressionAttributeValues: { ':amount': pack.credits, ':zero': 0 },
       ReturnValues: 'ALL_NEW',
     }));
 
@@ -1162,9 +1162,10 @@ const requireAccess = async (req, res, next) => {
     // Determine mode: if user sends Authorization header with Bearer token, it's developer mode
     const userApiKey = req.headers['authorization'];
     if (userApiKey && userApiKey.startsWith('Bearer ') && userApiKey !== `Bearer ${SERVER_REPLICATE_API_TOKEN}`) {
-      // Developer mode: user has subscription + own API key
-      if (!userData.isPaid) {
-        return res.status(403).json({ error: 'Premium access required. Subscribe or use credits.' });
+      // Developer mode: user MUST have active subscription (not just isPaid from credit purchase)
+      const hasSub = userData.isPaid && (userData.paymentPlan === 'monthly' || userData.paymentPlan === 'yearly' || userData.paymentPlan === 'lifetime');
+      if (!hasSub) {
+        return res.status(403).json({ error: 'Active subscription required for Developer Mode. Subscribe to a plan or use credits instead.' });
       }
       // Check subscription expiry
       if ((userData.paymentPlan === 'monthly' || userData.paymentPlan === 'yearly') && userData.subscriptionEnd) {

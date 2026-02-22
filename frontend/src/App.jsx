@@ -1206,9 +1206,10 @@ function App() {
   // Pre-generate check: returns a Promise that resolves true if ok to proceed.
   // In credit mode, shows a confirmation dialog the user must accept.
   const canGenerate = (modelId, opts = {}, modelCfg = null) => {
-    // Developer mode: need subscription + API key
+    // Developer mode: need ACTIVE subscription (monthly/yearly/lifetime) + API key
     if (isDeveloperMode) {
-      if (!user?.isPaid) { setShowPaywall(true); return Promise.resolve(false); }
+      const hasSub = user?.isPaid && (user?.paymentPlan === 'monthly' || user?.paymentPlan === 'yearly' || user?.paymentPlan === 'lifetime');
+      if (!hasSub) { setShowPaywall(true); return Promise.resolve(false); }
       return Promise.resolve(true);
     }
     // Credit mode: need enough credits
