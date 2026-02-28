@@ -37,8 +37,6 @@ const MODELS = {
   },
 };
 
-// Schedule: Out of 8 daily posts, mix them
-// 3x SDXL Lightning images, 3x Wan 2.2 images, 2x Wan 2.2 T2V videos
 // 8 posts/day: 3x SDXL, 3x Wan Image, 2x Wan T2V
 const POST_SCHEDULE = [
   'sdxl_lightning', 'wan_image', 'sdxl_lightning',
@@ -47,117 +45,118 @@ const POST_SCHEDULE = [
 ];
 
 // ═══════════════════════════════════════
-// NSFW PROMPTS (50+ diverse prompts)
+// INDIAN TRADITIONAL NSFW PROMPTS (50+)
 // ═══════════════════════════════════════
 const NSFW_IMAGE_PROMPTS = [
-  // Indian / South Asian women
-  "Beautiful Indian woman with long black hair, traditional gold jewelry, fully nude, standing in a luxurious palace bedroom with silk curtains, soft golden lighting, photorealistic skin texture, detailed brown nipples visible, navel visible, 8K quality, masterpiece",
-  "Gorgeous South Asian bride removing her red saree, revealing her nude body, ornate gold necklace and bangles still on, dimly lit bridal suite, candles in background, sensual pose, photorealistic, ultra detailed skin, 8K",
-  "Stunning Bollywood actress lookalike, wet body after shower, towel dropping revealing full nude figure, marble bathroom, steam effects, water droplets on skin, brown nipples and navel visible, professional photography, 8K",
-  "Beautiful Indian college girl, long hair, removing her kurta top, topless with round breasts visible, sitting on bed in hostel room, natural lighting from window, shy seductive expression, photorealistic, detailed",
-  "Gorgeous Kerala woman with jasmine flowers in hair, completely nude standing in outdoor rain shower, tropical garden background, water flowing over curves, brown skin glowing, artistic nude photography, 8K",
+  // ── Bridal / Wedding Night ──
+  "Beautiful Indian bride with red bindi on forehead, jasmine gajra flowers in long black hair, heavy gold maang tikka and jhumka earrings, removing red silk bridal saree revealing nude body, ornate gold necklace and bangles still adorning her, dimly lit bridal suite with rose petals and diyas, mehndi on hands and feet, shy seductive smile, photorealistic, 8K masterpiece",
+  "Gorgeous newly wed Indian woman, sindoor in hair parting, red bindi, jasmine flowers pinned in thick braided hair, nude body draped only in gold waist chain and anklets, sitting on red silk bedsheets in traditional bedroom, brass oil lamps glowing, wedding night atmosphere, photorealistic, ultra detailed, 8K",
+  "Stunning Indian bride after wedding ceremony, mangalsutra necklace resting between bare breasts, red bindi on forehead, jasmine gajra in hair, nude body with mehndi patterns on hands and feet, gold bangles and toe rings, lying on flower decorated bed, warm candlelight, intimate bridal boudoir, 8K",
+  "Beautiful Tamil bride with large red kumkum bindi, fresh jasmine flower strings woven in long oiled black hair, heavy temple gold jewelry on nude body, traditional kolam patterns on floor, brass deepam lamp lighting, silk saree pooled at her feet, South Indian bridal beauty, photorealistic, 8K",
+  "Gorgeous Rajasthani bride with ornate borla maang tikka, red bindi, jasmine in hair, removing ghagra choli revealing curves, gold aad necklace and ivory bangles on nude body, haveli bedroom with mirror work walls, warm lamp light, royal Rajput bridal beauty, 8K",
 
-  // Asian women
-  "Beautiful Japanese woman in hot spring onsen, standing up from water fully nude, steam rising, traditional wooden bath house, porcelain skin with water droplets, delicate features, soft natural lighting, 8K masterpiece",
-  "Stunning Korean model, flawless skin, lying on white silk sheets completely nude, minimalist modern bedroom, soft window light, elegant pose showing full body, professional boudoir photography, ultra HD",
-  "Gorgeous Thai woman on tropical beach at sunset, nude body silhouetted against orange sky, walking out of ocean waves, wet glistening skin, paradise setting, cinematic photography, 8K",
-  "Beautiful Chinese woman in traditional silk robe falling off shoulders, revealing nude body underneath, ancient Chinese pavilion background, moonlight, cherry blossoms, artistic sensual photography, 8K",
+  // ── Saree Draping / Removing ──
+  "Beautiful Indian woman with red bindi and jasmine flowers in hair, slowly unwrapping silk Kanjeevaram saree, revealing nude body underneath, gold temple jewelry adorning neck and waist, traditional Tamil Nadu home with brass decor, oil lamp light, elegant sensual moment, photorealistic, 8K",
+  "Gorgeous woman with bindi on forehead, jasmine gajra in thick braid, transparent white cotton saree clinging to wet nude body after rain, gold waist chain and anklets visible through fabric, standing in courtyard with tulsi plant, monsoon atmosphere, artistic Indian photography, 8K",
+  "Stunning Indian woman with kumkum bindi, jasmine flowers tucked behind ear, green silk saree slipping off one shoulder revealing bare breast, gold choker necklace, standing by carved wooden window in old Kerala home, natural sunlight, tasteful sensual portrait, 8K",
+  "Beautiful Bengali woman with red and white shakha pola bangles, large red bindi, jasmine in hair, red bordered white saree falling off body revealing nude figure, terracotta room with alpona floor art, Durga Puja season, warm festive lighting, photorealistic, 8K",
+  "Gorgeous Maharashtrian woman with crescent bindi, jasmine veni in hair bun, green nauvari saree unwrapping from body, gold tanmani necklace on bare chest, traditional wada house interior, Kolhapuri aesthetic, warm natural light, photorealistic, 8K",
 
-  // European / Western women  
-  "Stunning blonde woman lying on luxury yacht deck, completely nude sunbathing, Mediterranean sea in background, tanned skin with tan lines, aviator sunglasses, summer vibes, professional photography, 8K",
-  "Beautiful redhead woman with freckles, nude in a rustic countryside cottage, morning sunlight through lace curtains, lying in vintage bed with white sheets, natural beauty, soft warm tones, photorealistic, 8K",
-  "Gorgeous brunette fitness model, toned athletic body fully nude, standing in modern gym locker room, mirror reflection showing front and back, confident pose, professional lighting, ultra detailed, 8K",
-  "Elegant French woman, pixie haircut, nude in Parisian apartment with Eiffel Tower view from window, holding coffee cup, morning light, artistic nude photography, vintage aesthetic, 8K",
+  // ── Temple / Devotional Aesthetic ──
+  "Beautiful Indian temple dancer with large red bindi, elaborate jasmine gajra crown in hair, classical bharatanatyam jewelry on fully nude body, gold waist belt and ankle bells, carved granite temple pillars background, oil lamp lit, divine feminine beauty, artistic photography, 8K",
+  "Gorgeous Devadasi inspired Indian woman, ornate bindi, fresh jasmine garlands draped over nude body, heavy antique gold temple jewelry, standing in ancient stone temple corridor, warm lamplight casting shadows on carved walls, sacred feminine art, photorealistic, 8K",
+  "Stunning South Indian woman with traditional pottu bindi, jasmine flowers cascading from hair to shoulders, nude body adorned only with temple gold jewelry and flower garlands, Chola bronze statue in background, oil lamp lit sanctum aesthetic, divine beauty, 8K",
+  "Beautiful Odissi dancer with red bindi and silver tikka, jasmine in elaborate hair bun, removing dance costume revealing nude body, silver filigree jewelry, Konark temple inspired carved stone background, dramatic side lighting, classical Indian art photography, 8K",
 
-  // Latina women
-  "Beautiful Brazilian woman with curvy body, fully nude on Copacabana beach at golden hour, sand on skin, ocean waves at feet, long dark wavy hair blowing in wind, photorealistic, cinematic, 8K",
-  "Gorgeous Colombian woman with hourglass figure, nude in tropical jungle waterfall, water cascading over body, lush green foliage, natural paradise setting, exotic beauty, professional photography, 8K",
+  // ── Bath / Water Scenes ──
+  "Beautiful Indian woman with waterproof bindi, wet jasmine flowers in hair, bathing nude in traditional brass uruli tub filled with flower petals, Kerala ayurvedic bath house, coconut oil glistening on brown skin, tropical green plants around, steam rising, photorealistic, 8K",
+  "Gorgeous Indian woman with bindi, jasmine in long wet hair, standing nude under outdoor stone shower in Rajasthani haveli courtyard, water cascading over curves, gold anklets and toe rings, sandstone architecture, golden hour sunlight, artistic photography, 8K",
+  "Stunning Tamil woman with kumkum bindi, jasmine gajra in wet braid, bathing nude in temple tank pond, lotus flowers floating around, ancient stone steps and pillared mandapam, morning mist, sacred bathing ritual aesthetic, photorealistic, 8K",
+  "Beautiful Indian woman with red bindi, soaked jasmine flowers in hair, nude body emerging from river at sunrise, wet brown skin glowing golden, ghats and temple spires in background, Varanasi inspired setting, spiritual and sensual, cinematic photography, 8K",
+  "Gorgeous Kerala woman with small bindi, jasmine tucked in hair, nude body being massaged with coconut oil on wooden table, traditional ayurvedic spa setting, banana leaves and brass vessels, warm oil glistening on skin, relaxing atmosphere, photorealistic, 8K",
 
-  // African women
-  "Stunning African goddess with dark chocolate skin, fully nude, traditional gold headpiece and arm bands, standing in savanna at golden hour, powerful confident pose, artistic photography, dramatic lighting, 8K",
-  "Beautiful Ethiopian model with graceful features, nude body with oiled glowing dark skin, minimalist white studio background, elegant artistic pose, professional high fashion nude photography, 8K",
+  // ── Festival / Celebration ──
+  "Beautiful Indian woman celebrating Holi, colored powder on nude body, red bindi smeared with colors, jasmine flowers in messy hair, vibrant pink purple yellow gulal on brown skin, joyful expression, outdoor courtyard, festive energy, photorealistic, 8K",
+  "Gorgeous Indian woman during Diwali night, red bindi glowing in lamplight, jasmine in hair, nude body illuminated by rows of clay diyas, gold jewelry sparkling, rooftop celebration, sparklers and city lights in background, festive sensual atmosphere, 8K",
+  "Stunning woman with bindi and jasmine flowers, nude body decorated with turmeric and sandalwood paste for traditional haldi ceremony, gold ornaments, banana leaf and brass kalash nearby, outdoor mandap setting, warm afternoon light, ritual beauty, 8K",
+  "Beautiful Indian woman during Navratri, elaborate bindi art, jasmine and marigold flowers in hair, removing embroidered chaniya choli during garba night, nude body with dandiya sticks nearby, colorful tent with mirror work, festive lighting, 8K",
+  "Gorgeous Pongal celebration, Tamil woman with bindi and jasmine, nude body decorated with turmeric, cooking pot overflowing with rice nearby, sugarcane and kolam patterns on floor, rural South Indian home, morning sunlight, harvest festival beauty, 8K",
 
-  // Fantasy / Themed
-  "Beautiful elf queen with pointed ears, fully nude in enchanted forest, bioluminescent flowers and fireflies around her, mystical blue and green lighting, fantasy art, ethereal beauty, long silver hair, 8K ultra detailed",
-  "Gorgeous vampire queen, pale skin, nude in gothic castle throne room, red velvet drapes, candlelight, dark sensual atmosphere, ruby eyes, long black hair, dark fantasy photography, 8K",
-  "Beautiful mermaid transformation, half human emerging from ocean, nude upper body with shells in hair, moonlit ocean surface, magical water effects, fantasy art, photorealistic, 8K",
-  "Stunning angel with white feathered wings, fully nude hovering in cloudy sky, divine golden light, ethereal beauty, flowing golden hair, renaissance painting style, ultra detailed, 8K",
-  "Cyberpunk girl fully nude in neon-lit futuristic apartment, holographic displays, rain outside window, neon pink and blue lighting reflecting on skin, futuristic aesthetic, photorealistic, 8K",
+  // ── Rural / Village ──
+  "Beautiful Indian village woman with simple red bindi, fresh jasmine in oiled long braid, nude body carrying brass water pot on hip, standing by village well, mud walls and thatched roof hut, morning golden light, rural Indian beauty, photorealistic, 8K",
+  "Gorgeous tribal Indian woman with forehead bindi, wild jasmine flowers in untied hair, nude body with traditional tribal silver jewelry and tattoos, standing in forest clearing, bamboo and banana trees, natural raw beauty, documentary style photography, 8K",
+  "Stunning Rajasthani village woman with mirror work bindi, jasmine in hair under colorful odhni veil falling away, nude body with silver anklets and bangles, standing by blue painted wall in Jodhpur, desert sunlight, vibrant cultural beauty, photorealistic, 8K",
+  "Beautiful South Indian village woman with large kumkum bindi, jasmine veni in long thick hair, nude body with simple gold chain, standing in paddy field at sunset, palm trees and water channels, Kerala backwater landscape, golden hour, 8K",
 
-  // Scenarios
-  "Beautiful woman stepping out of luxury sports car at night, designer heels, removing elegant black dress revealing nude body, city lights bokeh background, glamorous photography, 8K",
-  "Gorgeous woman in artist studio, nude model posing for painting, paint splashes on body, canvas and brushes around, north-facing window light, creative artistic setting, photorealistic, 8K",
-  "Stunning woman skinny dipping in mountain lake, crystal clear water revealing nude body underwater, snow-capped mountains, pine forest, nature photography, breathtaking scenery, 8K",
-  "Beautiful librarian removing glasses and unbuttoning blouse, revealing nude body, surrounded by old books on wooden shelves, warm lamp light, intellectual seductive vibe, photorealistic, 8K",
-  "Gorgeous nurse removing uniform in hospital locker room, revealing lingerie then full nude body, clean clinical setting with warm personal moment, photorealistic, 8K",
+  // ── Royal / Palace ──  
+  "Beautiful Mughal queen with jeweled bindi, jasmine and rose in elaborate hairstyle, fully nude reclining on silk cushions in marble palace chamber, miniature painting style, ornate jali screens with moonlight, royal harem aesthetic, gold and gemstone jewelry, 8K masterpiece",
+  "Gorgeous Rajput princess with rajputi bindi, jasmine garlands in hair, nude body adorned with kundan jewelry and pearl strings, standing in palace balcony overlooking lake, Udaipur palace inspired architecture, sunset light, royal elegance, photorealistic, 8K",
+  "Stunning Chola queen with large gold bindi, jasmine crown, nude body with heavy antique gold jewelry and silk waist cloth slipping off, seated on carved wooden throne, palace durbar hall with oil paintings, regal power and beauty, 8K",
+  "Beautiful Nizam princess with crescent bindi, jasmine and mogra in hair, nude body with hyderabadi pearl jewelry, reclining in zenana palace room, chikankari fabric and ittar perfume bottles nearby, Lucknowi nawabi aesthetic, warm light, 8K",
 
-  // Artistic / Studio
-  "Professional nude photography, beautiful woman lying on black velvet, strategic lighting highlighting curves, high contrast black and white, artistic shadows, gallery quality, ultra detailed, 8K",
-  "Watercolor effect nude woman, colorful paint running down body, white studio background, abstract art meets photography, creative body art, professional quality, 8K",
-  "Oil painting style nude woman reclining on chaise lounge, classical art inspired, warm golden palette, Botticelli inspired beauty, renaissance aesthetic, ultra detailed, 8K masterpiece",
-  "Silhouette nude photography, woman behind frosted glass shower door, steam and water droplets on glass, mysterious and sensual, artistic minimalist, professional photography, 8K",
+  // ── Modern Indian ──
+  "Beautiful modern Indian woman with fashionable small bindi, jasmine tucked behind ear, nude body with contemporary gold jewelry, standing in luxury Mumbai high rise apartment, city skyline at night through glass windows, urban Indian beauty, professional photography, 8K",
+  "Gorgeous Indian yoga instructor with tilak bindi, jasmine in top knot bun, nude body in yoga pose on rooftop, Himalayan mountains in background, sunrise golden light, toned fit body, spiritual and sensual, modern wellness aesthetic, 8K",
+  "Stunning Bollywood style Indian woman with glamorous bindi, jasmine in styled waves, nude body on white luxury bedsheets, modern penthouse bedroom, vanity mirror with lights, Bollywood diva vibes, professional boudoir photography, 8K",
+  "Beautiful Indian tech girl with small trendy bindi, jasmine flower pin in hair, removing business blazer and silk blouse revealing nude body, modern Bangalore apartment, evening city lights, confident independent woman, photorealistic, 8K",
+  "Gorgeous Indian influencer with crystal bindi, jasmine chain in hair, nude body posing for self-portrait with vintage camera, aesthetic apartment with plants and fairy lights, Instagram lifestyle aesthetic, warm tones, 8K",
 
-  // Couples / Romantic  
-  "Beautiful couple in luxury penthouse, woman fully nude embracing muscular man from behind, city skyline through floor-to-ceiling windows at night, romantic intimate moment, warm lighting, cinematic, 8K",
-  "Gorgeous woman nude in bed with silk sheets partially covering, looking seductively at camera, rose petals scattered, candlelit bedroom, romantic atmosphere, photorealistic, 8K",
+  // ── Monsoon / Rain ──
+  "Beautiful Indian woman with rain-smeared red bindi, wet jasmine flowers in drenched hair, completely nude in monsoon rain on terrace, water streaming over brown curves, lightning in dark sky, old Indian building rooftop, dramatic monsoon photography, 8K",
+  "Gorgeous woman with bindi, soaked jasmine in hair, nude body dancing in courtyard rain, splashing in puddles, wet skin glistening, traditional haveli courtyard with carved arches, romantic monsoon atmosphere, cinematic Indian photography, 8K",
+  "Stunning Indian woman with kumkum bindi, wet jasmine gajra, nude body standing under waterfall in Western Ghats forest, lush green tropical vegetation, moss covered rocks, crystal clear water on brown skin, nature photography, 8K",
 
-  // Specific body focus prompts
-  "Beautiful woman with perfect hourglass figure, fully nude front view, hands in hair, confident stance, studio lighting, white background, detailed skin texture, brown nipples visible, flat tummy with navel, photorealistic, 8K",
-  "Gorgeous curvy woman, nude back view looking over shoulder, long hair cascading down back, showing full figure from behind, soft studio lighting, artistic photography, photorealistic, 8K",
-  "Stunning fitness model, toned abs and legs, fully nude in yoga pose, zen garden setting, morning light, peaceful sensual atmosphere, detailed muscle definition, photorealistic, 8K",
+  // ── Night / Moonlight ──
+  "Beautiful Indian woman with chandanbindi, jasmine flowers glowing white in moonlight, nude body on palace terrace under full moon, marble railing and mahal domes silhouetted, silver moonlight on skin, romantic Rajasthani night, 8K",
+  "Gorgeous Indian woman with bindi, jasmine in hair, nude body lying on silk bedspread on rooftop under stars, desert night sky with milky way, oil lamp flickering nearby, Jaisalmer golden sandstone, magical night photography, 8K",
 
-  // Seasonal / Themed
-  "Beautiful woman nude by Christmas fireplace, warm fire glow on skin, stockings hanging, cozy cabin, snowfall through window, festive sensual, red and gold tones, photorealistic, 8K",
-  "Gorgeous woman nude in spring flower field, cherry blossoms falling, lying in meadow of wildflowers, natural sunlight, pastoral beauty, romantic photography, 8K",
-  "Stunning woman emerging from pool at summer party, wet nude body, water dripping, pool lights creating blue glow on skin, nighttime, party vibes, photorealistic, 8K",
+  // ── Artistic / Classical ──
+  "Beautiful Indian woman with traditional bindi and jasmine, posed as Ravi Varma painting come to life, nude body with classical draping half falling, gold jewelry, oil painting texture and lighting, gallery masterpiece quality, Indian classical art meets photography, 8K",
+  "Gorgeous Indian woman with ornate bindi, jasmine in braided hair, nude body in Ajanta cave painting pose, ancient Buddhist cave interior, earth tone frescoes on walls, oil lamp lighting, historical art photography, 8K masterpiece",
+  "Stunning Indian woman with red bindi and jasmine, nude body with classical Tanjore painting gold leaf accents on skin, temple jewelry, rich red and gold color palette, South Indian art aesthetic, professional artistic photography, 8K",
+  "Beautiful Indian woman with kumkum bindi, jasmine flowers, nude body as living Chola bronze sculpture, copper skin tone, classical dance mudra hand pose, dramatic single light source, art gallery setting, sculptural beauty, 8K",
 
-  // Additional variety
-  "Beautiful twin sisters, both fully nude, mirror image poses facing each other, minimalist white studio, matching bodies, artistic symmetry, professional photography, ultra detailed, 8K",
-  "Gorgeous woman in Japanese hot spring ryokan, removing yukata robe, nude body visible, traditional wooden architecture, misty atmosphere, cultural sensual beauty, photorealistic, 8K",
-  "Stunning woman nude on motorcycle, vintage Harley Davidson in desert highway, sunset, leather boots only, badass sensual vibes, wind in hair, cinematic photography, 8K",
-  "Beautiful belly dancer removing costume piece by piece, final reveal fully nude, ornate Middle Eastern palace interior, gold accents, dramatic lighting, exotic beauty, 8K",
-  "Gorgeous woman floating nude in Dead Sea, salt crystals on skin, stark desert landscape, blue sky, unique natural setting, documentary style artistic nude, photorealistic, 8K",
-  "Stunning woman in penthouse jacuzzi, bubbles partially covering nude body, champagne glass in hand, city lights panorama, luxury lifestyle, evening photography, 8K",
-  "Beautiful woman waking up nude in luxury hotel suite, stretching in bed, morning sunlight streaming through sheer curtains, white bedding, natural beauty moment, photorealistic, 8K",
-  "Gorgeous woman nude under waterfall in tropical jungle, exotic flowers and butterflies, crystal clear water, paradise found, nature photography, vivid colors, 8K masterpiece",
-  "Stunning woman in traditional Japanese bath house, washing nude body, wooden bucket, steam rising, peaceful zen atmosphere, artistic cultural nude, photorealistic, 8K",
-  "Beautiful woman nude in Victorian clawfoot bathtub, bubbles, vintage bathroom, ornate mirror, candlelight, period aesthetic meets modern photography, warm tones, 8K",
+  // ── Intimate / Romantic ──
+  "Beautiful Indian woman with smudged bindi after lovemaking, jasmine flowers scattered on pillow, nude body tangled in silk sheets, traditional Indian bedroom with carved headboard, post-intimate afterglow, warm skin, soft romantic lighting, photorealistic, 8K",
+  "Gorgeous Indian woman with bindi, jasmine in loose hair, nude body on bed looking at camera seductively, red rose petals scattered, brass diya lamps flickering, sandalwood incense smoke, romantic suhaag raat bedroom, warm tones, 8K",
+  "Stunning newlywed Indian woman with fresh sindoor and bindi, jasmine gajra coming undone, nude body with bangles and payal anklets only, lying on marigold flower bed, first night romantic setting, intimate warm photography, 8K",
 ];
 
-// Video-specific prompts (simpler, motion-focused)
+// Video-specific prompts (Indian traditional, motion-focused)
 const NSFW_VIDEO_PROMPTS = [
-  "Beautiful woman slowly removing silk robe revealing nude body, luxury bedroom, soft lighting, sensual slow motion, cinematic",
-  "Gorgeous woman walking nude through shallow ocean waves at sunset, golden light on wet skin, slow motion hair flip, cinematic beach scene",
-  "Stunning woman in shower, water running over nude body, steam rising, slow motion water droplets, artistic bathroom scene",
-  "Beautiful woman lying on bed with silk sheets, slowly rolling over revealing nude figure, candlelit room, intimate cinematic moment",
-  "Gorgeous woman stepping into hot spring pool, nude body entering warm water, steam and mist, Japanese onsen, peaceful slow motion",
-  "Stunning woman doing yoga stretches fully nude, sunrise on rooftop, city skyline background, graceful slow movements, artistic",
-  "Beautiful woman nude swimming underwater in crystal clear pool, elegant movements, light rays through water, cinematic slow motion",
-  "Gorgeous woman applying oil to nude body, hands gliding over skin, soft studio lighting, sensual self-care moment, slow motion",
-  "Stunning woman walking nude through rain, wet city street at night, neon reflections on wet skin, cinematic noir atmosphere",
-  "Beautiful woman nude in bathtub with rose petals, water slowly overflowing, candlelight, romantic atmosphere, cinematic slow motion",
-  "Gorgeous Indian woman in silk saree slowly unwrapping to reveal nude body, traditional room with diyas, warm golden lighting, sensual dance movements",
-  "Stunning woman emerging from swimming pool at night, water cascading off nude body, pool lights creating blue glow, slow motion cinematic",
-  "Beautiful woman dancing nude by fireplace, flames casting warm shadows on body, cozy cabin, snow outside window, intimate moment",
-  "Gorgeous woman lying on beach towel, waves washing over nude body, sunset colors, tropical paradise, relaxing slow motion",
-  "Stunning fitness woman nude doing stretches, toned muscles visible, modern studio, dramatic side lighting, artistic body in motion",
+  "Beautiful Indian woman with red bindi and jasmine flowers in hair, slowly unwrapping red silk saree revealing nude body, gold jewelry glinting, traditional bedroom with diyas, warm golden lighting, sensual slow motion, cinematic",
+  "Gorgeous Indian bride with bindi and jasmine gajra, removing wedding jewelry piece by piece then bridal outfit, revealing nude figure, candlelit room with rose petals, intimate slow motion, cinematic",
+  "Stunning Indian woman with kumkum bindi, jasmine in wet hair, nude body bathing under brass shower in traditional bathroom, water cascading over brown skin, oil lamps flickering, slow motion water droplets, artistic",
+  "Beautiful Indian woman with bindi, jasmine flowers in long hair, dancing classical moves then slowly removing silk costume revealing nude body, temple pillars background, oil lamp lit, graceful slow motion",
+  "Gorgeous Indian woman with bindi and jasmine, nude body walking through monsoon rain in courtyard, wet skin glistening, sari fabric blowing in wind, romantic rainy atmosphere, cinematic slow motion",
+  "Stunning Indian woman with red bindi, jasmine in braided hair, slowly applying oil to nude body with hands, gold bangles jingling, traditional wooden room, warm afternoon light, sensual self-care slow motion",
+  "Beautiful Indian woman with bindi, jasmine tucked in hair, nude body entering flower petal filled brass bathtub, steam rising, Kerala spa setting, slow motion water and petals, peaceful cinematic",
+  "Gorgeous Indian woman with ornate bindi, jasmine crown, nude body doing slow yoga stretches on palace terrace, sunrise over Indian landscape, gold jewelry catching light, graceful body movements, artistic",
+  "Stunning Indian woman with kumkum bindi, jasmine in hair, lying nude on silk sheets slowly turning to camera, diya lamps around bed, flower garlands, intimate bedroom atmosphere, cinematic slow motion",
+  "Beautiful Indian woman with bindi and jasmine flowers, nude body dancing in Holi colors, colored powder floating in slow motion, vibrant festival atmosphere, joyful sensual expression, cinematic",
+  "Gorgeous Indian woman with red bindi, wet jasmine in hair, emerging nude from temple pond with lotus flowers, water dripping from body in slow motion, morning mist, sacred beauty, cinematic",
+  "Stunning Indian woman with bindi, jasmine gajra, removing ghagra choli garment slowly revealing nude body, Rajasthani palace room with mirror work, warm lantern light, bridal slow motion",
+  "Beautiful Indian village woman with simple bindi, jasmine in oiled braid, nude body pouring water over herself from brass pot, outdoor village bathing area, golden hour sunlight, rural beauty slow motion",
+  "Gorgeous Indian woman with crystal bindi, jasmine in styled hair, nude body reclining on luxury bed slowly pulling silk sheet, modern Mumbai apartment, city lights through window, contemporary Indian beauty",
+  "Stunning Indian woman with traditional bindi, jasmine garland, nude body performing aarti with diya lamp, flame casting warm shadows on curves, temple bell sound atmosphere, devotional sensual slow motion",
 ];
 
 // ═══════════════════════════════════════
-// CAPTION TEMPLATES
+// CAPTION TEMPLATES (with AI disclaimer)
 // ═══════════════════════════════════════
 const CAPTIONS_IMAGE = [
-  "🔥 AI Generated Masterpiece\n\n✨ Created with Nexus AI Pro\n🎨 Model: {model}\n\n👉 Create your own: {link}\n\n#AIArt #AIGenerated #NexusAIPro #NSFW #AIImage",
-  "🎨 Stunning AI Art\n\n💫 Powered by Nexus AI Pro\n🖼️ Model: {model}\n\n🚀 Try it free: {link}\n\n#AIArt #NexusAI #AIGenerated #DigitalArt #NSFW",
-  "✨ AI Magic\n\n🔮 Generated by Nexus AI Pro\n📸 Model: {model}\n\n🔗 Start creating: {link}\n\n#AIGenerated #NexusAIPro #AIArt #NSFW #Art",
-  "💎 Premium AI Generation\n\n⚡ Made with Nexus AI Pro\n🎭 Model: {model}\n\n👉 Sign up free: {link}\n\n#AIArt #NSFW #AIImage #NexusAI #Creative",
-  "🌟 AI Perfection\n\n🤖 Created using Nexus AI Pro\n💡 Model: {model}\n\n✨ Try now: {link}\n\n#NexusAIPro #AIGenerated #AIArt #NSFW #Trending",
+  "🔥 AI-Generated Indian Art\n\n🤖 100% AI Created — No real persons depicted\n✨ Powered by Nexus AI Pro\n🎨 Model: {model}\n\n👉 Create your own AI art: {link}\n\n#AIArt #AIGenerated #NexusAIPro #IndianArt #AIImage #DigitalArt",
+  "🎨 AI Indian Beauty\n\n🤖 Entirely AI Generated — Not a real person\n💫 Made with Nexus AI Pro\n🖼️ Model: {model}\n\n🚀 Try free: {link}\n\n#AIArt #NexusAI #AIGenerated #IndianBeauty #TraditionalArt",
+  "✨ AI Traditional Art\n\n🤖 This is AI art — No real humans\n🔮 Generated by Nexus AI Pro\n📸 Model: {model}\n\n🔗 Start creating: {link}\n\n#AIGenerated #NexusAIPro #AIArt #IndianCulture #DigitalArt",
+  "💎 Premium AI Creation\n\n🤖 100% AI — No real person depicted\n⚡ Created with Nexus AI Pro\n🎭 Model: {model}\n\n👉 Sign up free: {link}\n\n#AIArt #AIImage #NexusAI #IndianTraditional #Creative",
+  "🌟 AI Masterpiece\n\n🤖 Fully AI Generated Art\n🏛️ Created using Nexus AI Pro\n💡 Model: {model}\n\n✨ Try now: {link}\n\n#NexusAIPro #AIGenerated #AIArt #IndianAesthetics #Trending",
+  "🪷 AI Indian Aesthetic\n\n🤖 Not real — 100% AI generated\n🎨 Nexus AI Pro creation\n⚡ Model: {model}\n\n👉 Generate yours: {link}\n\n#AIArt #IndianArt #NexusAIPro #AIGenerated #TraditionalBeauty",
 ];
 
 const CAPTIONS_VIDEO = [
-  "🎬 AI Generated Video\n\n🎥 Created with Nexus AI Pro\n⚡ Model: {model}\n\n👉 Make your own videos: {link}\n\n#AIVideo #AIGenerated #NexusAIPro #NSFW",
-  "🔥 AI Video Magic\n\n🎞️ Powered by Nexus AI Pro\n✨ Model: {model}\n\n🚀 Try video generation: {link}\n\n#AIVideo #NexusAI #NSFW #AIGenerated",
-  "✨ Stunning AI Video\n\n🎬 Made with Nexus AI Pro\n💫 Model: {model}\n\n🔗 Create videos free: {link}\n\n#AIVideo #AIGenerated #NexusAIPro #NSFW #Trending",
+  "🎬 AI-Generated Video\n\n🤖 100% AI Created — No real persons\n🎥 Powered by Nexus AI Pro\n⚡ Model: {model}\n\n👉 Make your own AI videos: {link}\n\n#AIVideo #AIGenerated #NexusAIPro #IndianArt",
+  "🔥 AI Video Art\n\n🤖 Entirely AI Generated\n🎞️ Made with Nexus AI Pro\n✨ Model: {model}\n\n🚀 Try video generation: {link}\n\n#AIVideo #NexusAI #AIGenerated #IndianBeauty",
+  "✨ Stunning AI Video\n\n🤖 Not real — AI generated art\n🎬 Nexus AI Pro creation\n💫 Model: {model}\n\n🔗 Create videos free: {link}\n\n#AIVideo #AIGenerated #NexusAIPro #DigitalArt #Trending",
 ];
 
 // ═══════════════════════════════════════
@@ -187,14 +186,11 @@ function sleep(ms) {
 async function createPrediction(modelId, input) {
   let url, body;
 
-  // Some models need version-based endpoint, others use model-based
   if (modelId.includes(':')) {
-    // Version-based: model:version_hash
     const versionHash = modelId.split(':')[1];
     url = 'https://api.replicate.com/v1/predictions';
     body = { version: versionHash, input };
   } else {
-    // Model-based: owner/model
     url = `https://api.replicate.com/v1/models/${modelId}/predictions`;
     body = { input };
   }
@@ -229,7 +225,6 @@ async function pollPrediction(predictionId, maxWaitMs = 300000) {
     if (data.status === 'failed' || data.status === 'canceled') {
       throw new Error(`Prediction ${data.status}: ${JSON.stringify(data.error)}`);
     }
-    // Still processing, wait 3 seconds
     await sleep(3000);
   }
   throw new Error('Prediction timed out');
@@ -250,7 +245,6 @@ async function generateContent(modelConfig, prompt) {
   const output = await pollPrediction(prediction.id);
   log(`>>> Prediction complete, output: ${typeof output === 'string' ? output.substring(0, 100) : JSON.stringify(output).substring(0, 100)}`);
 
-  // Output can be a URL string or array of URLs
   if (Array.isArray(output)) {
     return output[0];
   }
@@ -294,8 +288,6 @@ async function sendTelegramVideo(videoUrl, caption) {
   });
   const data = await resp.json();
   if (!data.ok) {
-    // Sometimes video URL needs to be downloaded first
-    // Try sending as document
     log('>>> sendVideo failed, trying as animation...');
     const url2 = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendAnimation`;
     const resp2 = await fetch(url2, {
@@ -310,7 +302,6 @@ async function sendTelegramVideo(videoUrl, caption) {
     });
     const data2 = await resp2.json();
     if (!data2.ok) {
-      // Last resort: send as document
       log('>>> sendAnimation failed, trying as document...');
       const url3 = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`;
       const resp3 = await fetch(url3, {
@@ -334,27 +325,11 @@ async function sendTelegramVideo(videoUrl, caption) {
   return data;
 }
 
-async function sendTelegramMessage(text) {
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: TELEGRAM_CHANNEL_ID,
-      text: text,
-      parse_mode: 'HTML',
-      disable_web_page_preview: false,
-    }),
-  });
-  return resp.json();
-}
-
 // ═══════════════════════════════════════
 // MAIN POST FUNCTION
 // ═══════════════════════════════════════
 async function createAndPost() {
   try {
-    // Get current model from schedule
     const modelKey = POST_SCHEDULE[postIndex % POST_SCHEDULE.length];
     const modelConfig = MODELS[modelKey];
     postIndex++;
@@ -363,7 +338,6 @@ async function createAndPost() {
     log(`POST #${postIndex} - Model: ${modelKey} (${modelConfig.type})`);
     log(`${'='.repeat(50)}`);
 
-    // Pick random prompt based on content type
     let prompt;
     if (modelConfig.type === 'video') {
       prompt = getRandomItem(NSFW_VIDEO_PROMPTS);
@@ -371,19 +345,19 @@ async function createAndPost() {
       prompt = getRandomItem(NSFW_IMAGE_PROMPTS);
     }
 
-    // Add NSFW base prompt enhancement (same as server.js)
-    const nsfwBase = 'Fully nude woman with no clothing at all, completely naked body fully exposed to camera. ' +
-      'Beautiful round breasts with detailed brown areolas and erect nipples clearly visible. ' +
-      'Smooth flat stomach with attractive navel piercing visible. ' +
-      'Clean shaved intimate area fully exposed and clearly visible between slightly parted thighs. ' +
+    // NSFW base enhancement with Indian traditional elements
+    const nsfwBase = 'Fully nude Indian woman with no clothing at all, completely naked body fully exposed. ' +
+      'Red bindi on forehead, fresh jasmine gajra flowers in long black hair. ' +
+      'Beautiful round breasts with detailed dark brown areolas and nipples clearly visible. ' +
+      'Smooth flat stomach with attractive navel visible. ' +
+      'Clean shaved intimate area fully exposed between slightly parted thighs. ' +
       'Gorgeous feminine curves, hourglass figure with wide hips and slim waist. ' +
-      'Soft glowing skin with natural body highlights, photorealistic skin texture and pores. ' +
-      'Seductive confident pose looking at camera with sultry expression. ' +
-      'Professional boudoir photography lighting, soft warm golden hour tones, shallow depth of field. ' +
-      'Ultra high resolution, 8K quality, hyperdetailed, masterpiece composition. ';
+      'Rich brown Indian skin with natural glow, photorealistic skin texture. ' +
+      'Traditional gold Indian jewelry adorning body. ' +
+      'Seductive confident expression with kajal lined eyes. ' +
+      'Professional boudoir photography, soft warm golden lighting, 8K quality, masterpiece. ';
     const enhancedPrompt = nsfwBase + prompt;
 
-    // Generate content
     const contentUrl = await generateContent(modelConfig, enhancedPrompt);
 
     if (!contentUrl) {
@@ -391,7 +365,6 @@ async function createAndPost() {
       return;
     }
 
-    // Build caption
     let caption;
     const modelDisplayName = modelKey.replace(/_/g, ' ').toUpperCase();
     if (modelConfig.type === 'video') {
@@ -401,7 +374,6 @@ async function createAndPost() {
     }
     caption = caption.replace('{model}', modelDisplayName).replace('{link}', SIGNUP_LINK);
 
-    // Send to Telegram
     if (modelConfig.type === 'video') {
       await sendTelegramVideo(contentUrl, caption);
     } else {
@@ -431,13 +403,12 @@ async function startBot() {
   log(`🎨 Models: SDXL Lightning, Wan 2.2 Image, Wan 2.2 T2V`);
   log(`📝 Image prompts: ${NSFW_IMAGE_PROMPTS.length}`);
   log(`📝 Video prompts: ${NSFW_VIDEO_PROMPTS.length}`);
+  log(`🪷 Theme: Indian Traditional with Bindi & Jasmine`);
   log('═'.repeat(60));
 
-  // Post immediately on start
   log('\n>>> Creating first post...');
   await createAndPost();
 
-  // Then schedule regular posts
   const intervalMs = POST_INTERVAL_HOURS * 60 * 60 * 1000;
   setInterval(async () => {
     log('\n>>> Scheduled post triggered...');
