@@ -17,23 +17,16 @@ const SIGNUP_LINK = process.env.SIGNUP_LINK || 'https://nexusaipro.com';
 // ═══════════════════════════════════════
 const MODELS = {
   sdxl_lightning: {
-    id: 'bytedance/sdxl-lightning-4step',
+    id: 'bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe',
     type: 'image',
     inputKey: 'prompt',
-    extraParams: { width: 1024, height: 1024, num_outputs: 1 },
+    extraParams: { width: 1024, height: 1024, num_outputs: 1, num_inference_steps: 4, guidance_scale: 0, scheduler: 'K_EULER', disable_safety_checker: true },
   },
   wan_image: {
     id: 'prunaai/wan-2.2-image',
     type: 'image',
     inputKey: 'prompt',
     extraParams: { width: 1024, height: 1024 },
-  },
-  wan_video: {
-    id: 'wan-video/wan-2.2-i2v-fast',
-    type: 'video',
-    inputKey: 'prompt',
-    extraParams: { resolution: '480p', duration: '5' },
-    needsImage: true, // I2V needs a source image
   },
   wan_t2v: {
     id: 'wan-video/wan-2.2-t2v-fast',
@@ -46,9 +39,10 @@ const MODELS = {
 
 // Schedule: Out of 8 daily posts, mix them
 // 3x SDXL Lightning images, 3x Wan 2.2 images, 2x Wan 2.2 T2V videos
+// 8 posts/day: 3x SDXL, 3x Wan Image, 2x Wan T2V
 const POST_SCHEDULE = [
-  'sdxl_lightning', 'wan_image', 'wan_t2v',
   'sdxl_lightning', 'wan_image', 'sdxl_lightning',
+  'wan_t2v', 'wan_image', 'sdxl_lightning',
   'wan_image', 'wan_t2v',
 ];
 
