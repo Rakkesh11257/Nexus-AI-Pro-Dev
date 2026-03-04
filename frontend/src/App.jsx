@@ -393,7 +393,9 @@ function AuthScreen({ onAuth }) {
     setLoading(true);
     try {
       if (mode === 'login') {
-        const data = await api('/auth/login', { email, password });
+        const ref = localStorage.getItem('nexus_ref') || null;
+        const data = await api('/auth/login', { email, password, ref });
+        localStorage.removeItem('nexus_ref'); // clear after use
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         onAuth(data.user, data.accessToken);
@@ -742,6 +744,45 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
   const [success, setSuccess] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('yearly');
 
+  // ── Referral system state ──
+  const [referralData, setReferralData] = useState(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [payoutMethod, setPayoutMethod] = useState('upi');
+  const [payoutDetails, setPayoutDetails] = useState('');
+  const [payoutMsg, setPayoutMsg] = useState('');
+
+  const fetchReferralData = async () => {
+    setReferralLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/referral`, { headers: { 'x-auth-token': accessToken } });
+      if (res.ok) setReferralData(await res.json());
+    } catch (e) { console.error('Referral fetch error:', e); }
+    finally { setReferralLoading(false); }
+  };
+
+  const copyLink = () => {
+    if (!referralData) return;
+    navigator.clipboard.writeText(referralData.referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const requestPayout = async () => {
+    if (!payoutDetails.trim()) return setPayoutMsg('Enter your payout details');
+    setPayoutMsg(''); setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/referral/payout-request`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken },
+        body: JSON.stringify({ payoutMethod, payoutDetails: payoutDetails.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) { setPayoutMsg(`✅ ${data.message}`); fetchReferralData(); }
+      else setPayoutMsg(`❌ ${data.error}`);
+    } catch (e) { setPayoutMsg('❌ Request failed'); }
+    finally { setLoading(false); }
+  };
+
   // ── Subscription Plans (monthly auto-renew with credits) ──
   const subPlans = [
     { id: 'starter_monthly', name: 'Starter', price: 999, credits: 1000, color: '#60a5fa', icon: '⚡', perCredit: '$0.012', usdPrice: '$12' },
@@ -875,6 +916,7 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
         <div style={{ display: 'flex', marginBottom: 14 }}>
           <button onClick={() => { setActiveTab('subscriptions'); setError(''); }} style={tabStyle(activeTab === 'subscriptions')}>📅 Monthly Plans</button>
           <button onClick={() => { setActiveTab('credits'); setError(''); }} style={tabStyle(activeTab === 'credits')}>💳 Credit Packs</button>
+          <button onClick={() => { setActiveTab('referral'); setError(''); if (!referralData) fetchReferralData(); }} style={tabStyle(activeTab === 'referral')}>🎁 Invite & Earn</button>
           <button onClick={() => { setActiveTab('developer'); setError(''); }} style={tabStyle(activeTab === 'developer')}>🔑 Developer</button>
         </div>
 
@@ -932,6 +974,74 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
         </>}
 
         {/* ─── Developer Mode Tab ─── */}
+        {/* ── Referral / Invite & Earn Tab ── */}
+        {activeTab === 'referral' && <>
+          <div style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.08), rgba(34,212,123,0.08))', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 12, padding: 16, marginBottom: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 24, marginBottom: 4 }}>💰</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#fbbf24' }}>Earn $1 for every paid user you refer</div>
+            <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Share your link → they sign up → they pay → you earn $1 cash</div>
+          </div>
+
+          {referralLoading ? <div style={{ textAlign: 'center', color: '#888', padding: 20 }}>Loading...</div> : referralData ? <>
+            {/* Referral Link */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>Your referral link</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input readOnly value={referralData.referralLink} style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                <button onClick={copyLink} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: copied ? '#22d47b' : '#fbbf24', color: '#000', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  {copied ? '✓ Copied!' : '📋 Copy'}
+                </button>
+              </div>
+            </div>
+
+            {/* Share buttons */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <a href={`https://wa.me/?text=Check%20out%20Nexus%20AI%20Pro%20-%2063%2B%20AI%20models%20for%20image%20%26%20video!%20${encodeURIComponent(referralData.referralLink)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '8px 0', borderRadius: 8, background: '#25D366', color: '#fff', fontSize: 11, fontWeight: 600, textAlign: 'center', textDecoration: 'none' }}>WhatsApp</a>
+              <a href={`https://twitter.com/intent/tweet?text=Check%20out%20Nexus%20AI%20Pro%20-%2063%2B%20AI%20models!&url=${encodeURIComponent(referralData.referralLink)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '8px 0', borderRadius: 8, background: '#1DA1F2', color: '#fff', fontSize: 11, fontWeight: 600, textAlign: 'center', textDecoration: 'none' }}>Twitter</a>
+              <a href={`https://t.me/share/url?url=${encodeURIComponent(referralData.referralLink)}&text=Check%20out%20Nexus%20AI%20Pro%20-%2063%2B%20AI%20models!`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '8px 0', borderRadius: 8, background: '#0088cc', color: '#fff', fontSize: 11, fontWeight: 600, textAlign: 'center', textDecoration: 'none' }}>Telegram</a>
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#60a5fa' }}>{referralData.referralSignups || 0}</div>
+                <div style={{ fontSize: 10, color: '#888' }}>Signups</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#22d47b' }}>{referralData.referralPaidConversions || 0}</div>
+                <div style={{ fontSize: 10, color: '#888' }}>Paid Users</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#fbbf24' }}>${referralData.totalCommissionEarned || 0}</div>
+                <div style={{ fontSize: 10, color: '#888' }}>Total Earned</div>
+              </div>
+            </div>
+
+            {/* Commission Balance & Payout */}
+            <div style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontSize: 13, color: '#888' }}>Available balance</span>
+                <span style={{ fontSize: 20, fontWeight: 700, color: '#fbbf24' }}>${referralData.commissionBalance || 0}</span>
+              </div>
+              {(referralData.commissionBalance || 0) >= 20 ? <>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <select value={payoutMethod} onChange={e => setPayoutMethod(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', color: '#fff', fontSize: 12, outline: 'none' }}>
+                    <option value="upi">UPI</option>
+                    <option value="paypal">PayPal</option>
+                  </select>
+                  <input placeholder={payoutMethod === 'upi' ? 'your@upi' : 'paypal@email.com'} value={payoutDetails} onChange={e => setPayoutDetails(e.target.value)} style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                </div>
+                <button onClick={requestPayout} disabled={loading} style={{ width: '100%', padding: '8px 0', borderRadius: 8, border: 'none', background: '#fbbf24', color: '#000', fontSize: 12, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1 }}>
+                  {loading ? 'Processing...' : `Request Payout — $${referralData.commissionBalance}`}
+                </button>
+              </> : <div style={{ fontSize: 11, color: '#888', textAlign: 'center' }}>Minimum payout: $20 ({20 - (referralData.commissionBalance || 0)} more to go)</div>}
+              {payoutMsg && <div style={{ fontSize: 11, marginTop: 6, color: payoutMsg.startsWith('✅') ? '#22d47b' : '#ef4444', textAlign: 'center' }}>{payoutMsg}</div>}
+            </div>
+
+            <div style={{ fontSize: 10, color: '#555', textAlign: 'center' }}>Referred users also get 10 bonus credits · Payouts processed within 3-5 business days</div>
+          </> : <div style={{ textAlign: 'center', color: '#888', padding: 20 }}>Failed to load referral data</div>}
+        </>}
+
         {activeTab === 'developer' && <>
           <p style={{ color: '#888', fontSize: 12, margin: '0 0 12px', textAlign: 'center' }}>Use your own Replicate API key — unlimited generations</p>
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
@@ -1086,6 +1196,17 @@ function App() {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState('');
   const [credits, setCredits] = useState(0);
+
+  // Detect referral code from URL on first load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('nexus_ref', ref);
+      // Clean URL without reload
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Tab & Category (persist across refresh)
   const [tab, setTabRaw] = useState(() => {

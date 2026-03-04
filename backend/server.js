@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const { CognitoIdentityProviderClient, SignUpCommand, ConfirmSignUpCommand, InitiateAuthCommand, GetUserCommand, ResendConfirmationCodeCommand, ForgotPasswordCommand, ConfirmForgotPasswordCommand } = require('@aws-sdk/client-cognito-identity-provider');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const fs = require('fs');
@@ -463,6 +463,8 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
     // --- Subscription charged (renewal success - add credits for credit subscriptions) ---
     if (event.event === 'subscription.charged') {
       const sub = event.payload.subscription.entity;
+      const webhookPayment = event.payload.payment?.entity;
+      const webhookPaymentId = webhookPayment?.id || `sub-${sub.id}-${Date.now()}`;
       const userId = sub.notes?.userId;
       const planKey = sub.notes?.plan;
       const subType = sub.notes?.type;
@@ -489,6 +491,8 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
             },
           }));
           console.log(`Webhook: Subscription [${planKey}] charged - ${creditsToAdd} credits added for ${userId}`);
+          // Credit recurring referral commission ($1 per renewal, no cap)
+          await creditReferralCommission(userId, `subscription-renewal:${planKey}`, webhookPaymentId);
         } else {
           // Legacy subscription (developer mode) - just set isPaid
           await dynamoClient.send(new UpdateCommand({
@@ -591,6 +595,49 @@ const verifyToken = async (req, res, next) => {
 // ============================================
 // AUTH ROUTES
 // ============================================
+// ── Referral System: generate unique referral code ──
+function generateReferralCode(email) {
+  const prefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase();
+  const hash = require('crypto').createHash('md5').update(email + Date.now()).digest('hex').substring(0, 4).toUpperCase();
+  return `REF-${prefix}-${hash}`;
+}
+
+// ── Referral System: credit $1 commission to referrer on paid conversion ──
+// Recurring: $1 per payment (subscription + PAYG), no cap — permanent passive income for referrers
+async function creditReferralCommission(paidUserId, paymentSource, paymentId) {
+  try {
+    const paidUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: paidUserId } }));
+    const userData = paidUser.Item;
+    const referrerId = userData?.referredBy;
+    if (!referrerId) return; // not a referred user
+
+    // Deduplication: skip if this paymentId was already commissioned
+    const commissionedPayments = userData.commissionedPayments || [];
+    if (paymentId && commissionedPayments.includes(paymentId)) {
+      console.log(`Referral commission skipped: duplicate payment ${paymentId} for ${paidUserId}`);
+      return;
+    }
+
+    // Track the payment on the referred user's record (for dedup)
+    const updatedPayments = paymentId ? [...commissionedPayments, paymentId].slice(-50) : commissionedPayments;
+    await dynamoClient.send(new UpdateCommand({
+      TableName: DYNAMO_TABLE, Key: { userId: paidUserId },
+      UpdateExpression: 'SET commissionedPayments = :cp',
+      ExpressionAttributeValues: { ':cp': updatedPayments },
+    }));
+
+    // Add $1 commission to referrer
+    await dynamoClient.send(new UpdateCommand({
+      TableName: DYNAMO_TABLE, Key: { userId: referrerId },
+      UpdateExpression: 'SET commissionBalance = if_not_exists(commissionBalance, :zero) + :commission, totalCommissionEarned = if_not_exists(totalCommissionEarned, :zero) + :commission, referralCount = if_not_exists(referralCount, :zero) + :one',
+      ExpressionAttributeValues: { ':commission': 1, ':zero': 0, ':one': 1 },
+    }));
+    console.log(`Referral commission: $1 credited to ${referrerId} for ${paidUserId}'s payment (${paymentSource})`);
+  } catch (err) {
+    console.error('Referral commission error:', err.message);
+  }
+}
+
 app.post('/auth/signup', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
@@ -647,8 +694,61 @@ app.post('/auth/login', async (req, res) => {
     } catch (e) {}
 
     if (!userData) {
-      userData = { userId: sub, email: userEmail, isPaid: false, credits: 20, createdAt: new Date().toISOString(), lastLogin: new Date().toISOString() };
-      console.log('New user created with 20 free credits:', userEmail);
+      const referralCode = generateReferralCode(userEmail);
+      const refCode = req.body.ref || null; // referral code from whoever invited this user
+      let referredByUserId = null;
+      let bonusCredits = 0;
+
+      // If referred by someone, look up the referrer
+      if (refCode) {
+        try {
+          const refScan = await dynamoClient.send(new QueryCommand({
+            TableName: DYNAMO_TABLE,
+            IndexName: 'referralCode-index',
+            KeyConditionExpression: 'referralCode = :rc',
+            ExpressionAttributeValues: { ':rc': refCode },
+          }));
+          if (refScan.Items && refScan.Items.length > 0) {
+            referredByUserId = refScan.Items[0].userId;
+            bonusCredits = 10; // new user gets 30 total (20 + 10 bonus)
+            // Increment referrer's referral count
+            await dynamoClient.send(new UpdateCommand({
+              TableName: DYNAMO_TABLE, Key: { userId: referredByUserId },
+              UpdateExpression: 'SET referralSignups = if_not_exists(referralSignups, :zero) + :one',
+              ExpressionAttributeValues: { ':zero': 0, ':one': 1 },
+            }));
+            console.log(`Referral tracked: ${userEmail} referred by ${referredByUserId} (code: ${refCode})`);
+          }
+        } catch (refErr) {
+          // If GSI doesn't exist yet, fall back to scan
+          try {
+            const scanResult = await dynamoClient.send(new ScanCommand({
+              TableName: DYNAMO_TABLE,
+              FilterExpression: 'referralCode = :rc',
+              ExpressionAttributeValues: { ':rc': refCode },
+            }));
+            if (scanResult.Items && scanResult.Items.length > 0) {
+              referredByUserId = scanResult.Items[0].userId;
+              bonusCredits = 10;
+              await dynamoClient.send(new UpdateCommand({
+                TableName: DYNAMO_TABLE, Key: { userId: referredByUserId },
+                UpdateExpression: 'SET referralSignups = if_not_exists(referralSignups, :zero) + :one',
+                ExpressionAttributeValues: { ':zero': 0, ':one': 1 },
+              }));
+              console.log(`Referral tracked (scan fallback): ${userEmail} referred by ${referredByUserId}`);
+            }
+          } catch (scanErr) { console.error('Referral scan failed:', scanErr.message); }
+        }
+      }
+
+      const totalCredits = 20 + bonusCredits;
+      userData = {
+        userId: sub, email: userEmail, isPaid: false, credits: totalCredits,
+        referralCode, referredBy: referredByUserId, referralCount: 0, referralSignups: 0,
+        commissionBalance: 0, commissionPaid: 0, totalCommissionEarned: 0,
+        createdAt: new Date().toISOString(), lastLogin: new Date().toISOString()
+      };
+      console.log(`New user created with ${totalCredits} credits (${bonusCredits ? 'referred' : 'organic'}):`, userEmail, '| referralCode:', referralCode);
       await dynamoClient.send(new PutCommand({ TableName: DYNAMO_TABLE, Item: userData }));
     } else {
       // Check monthly subscription expiry
@@ -685,6 +785,10 @@ app.post('/auth/login', async (req, res) => {
         paymentPlan: userData.paymentPlan || null,
         subscriptionStatus: userData.subscriptionStatus || null,
         credits: userData.credits || 0,
+        referralCode: userData.referralCode || null,
+        referralCount: userData.referralCount || 0,
+        referralSignups: userData.referralSignups || 0,
+        commissionBalance: userData.commissionBalance || 0,
       }
     });
   } catch (err) {
@@ -930,6 +1034,8 @@ app.post('/api/payment/verify', verifyToken, async (req, res) => {
       const updatedUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
       const totalCredits = updatedUser.Item?.credits || creditsToAdd;
       console.log(`Payment verified: ${req.user.email} subscribed to ${plan}, ${creditsToAdd} credits added (total: ${totalCredits})`);
+      // Credit referral commission ($1) if this user was referred
+      await creditReferralCommission(req.user.sub, `subscription-verify:${plan}`, razorpay_payment_id);
       res.json({ success: true, message: `${creditsToAdd.toLocaleString()} credits added! Subscription active.`, isPaid: true, plan, creditsAdded: creditsToAdd, credits: totalCredits });
     }
     // Legacy monthly/yearly (developer mode)
@@ -1079,6 +1185,140 @@ app.get('/api/credits', verifyToken, async (req, res) => {
   }
 });
 
+// ── Referral System Endpoints ──
+app.get('/api/referral', verifyToken, async (req, res) => {
+  try {
+    const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+    const user = dbResult.Item;
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Generate referral code for existing users who don't have one yet
+    let referralCode = user.referralCode;
+    if (!referralCode) {
+      referralCode = generateReferralCode(user.email || req.user.email);
+      await dynamoClient.send(new UpdateCommand({
+        TableName: DYNAMO_TABLE, Key: { userId: req.user.sub },
+        UpdateExpression: 'SET referralCode = :rc',
+        ExpressionAttributeValues: { ':rc': referralCode },
+      }));
+    }
+
+    res.json({
+      referralCode,
+      referralLink: `https://nexus-ai-pro.com/?ref=${referralCode}`,
+      referralSignups: user.referralSignups || 0,
+      referralPaidConversions: user.referralCount || 0,
+      commissionBalance: user.commissionBalance || 0,
+      commissionPaid: user.commissionPaid || 0,
+      totalCommissionEarned: user.totalCommissionEarned || 0,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get referral data' });
+  }
+});
+
+// POST /api/referral/payout-request - Request commission payout
+app.post('/api/referral/payout-request', verifyToken, async (req, res) => {
+  const { payoutMethod, payoutDetails } = req.body; // payoutMethod: 'upi' | 'paypal', payoutDetails: UPI ID or PayPal email
+  if (!payoutMethod || !payoutDetails) return res.status(400).json({ error: 'Payout method and details required' });
+  if (!['upi', 'paypal'].includes(payoutMethod)) return res.status(400).json({ error: 'Payout method must be upi or paypal' });
+
+  try {
+    const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+    const user = dbResult.Item;
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const balance = user.commissionBalance || 0;
+    if (user.pendingPayout && user.pendingPayout.status === 'pending') return res.status(400).json({ error: 'You already have a pending payout request. Please wait for it to be processed.' });
+    if (balance < 20) return res.status(400).json({ error: `Minimum payout is $20. Current balance: $${balance}` });
+
+    // Move balance to pending, store payout request
+    const payoutId = `PAY-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    await dynamoClient.send(new UpdateCommand({
+      TableName: DYNAMO_TABLE, Key: { userId: req.user.sub },
+      UpdateExpression: 'SET commissionBalance = :zero, pendingPayout = :payout',
+      ExpressionAttributeValues: {
+        ':zero': 0,
+        ':payout': {
+          payoutId,
+          amount: balance,
+          method: payoutMethod,
+          details: payoutDetails,
+          status: 'pending',
+          requestedAt: new Date().toISOString(),
+        },
+      },
+    }));
+
+    console.log(`Payout requested: ${req.user.email} | $${balance} via ${payoutMethod} (${payoutDetails}) | ID: ${payoutId}`);
+    res.json({ success: true, message: `Payout of $${balance} requested via ${payoutMethod}. You'll receive it within 3-5 business days.`, payoutId, amount: balance });
+  } catch (err) {
+    console.error('Payout request error:', err);
+    res.status(500).json({ error: 'Failed to process payout request' });
+  }
+});
+
+// ── Admin: Referral Management ──
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+
+app.get('/api/admin/referrals', verifyToken, async (req, res) => {
+  if (!ADMIN_EMAILS.includes(req.user.email?.toLowerCase())) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  try {
+    const scanResult = await dynamoClient.send(new ScanCommand({
+      TableName: DYNAMO_TABLE,
+      FilterExpression: 'attribute_exists(referralCode)',
+      ProjectionExpression: 'userId, email, referralCode, referralSignups, referralCount, commissionBalance, commissionPaid, totalCommissionEarned, pendingPayout, createdAt',
+    }));
+    const referrers = (scanResult.Items || [])
+      .filter(u => (u.referralSignups || 0) > 0 || (u.commissionBalance || 0) > 0 || (u.totalCommissionEarned || 0) > 0)
+      .sort((a, b) => (b.totalCommissionEarned || 0) - (a.totalCommissionEarned || 0));
+
+    const totalPending = referrers.reduce((sum, u) => sum + (u.commissionBalance || 0), 0);
+    const totalPaid = referrers.reduce((sum, u) => sum + (u.commissionPaid || 0), 0);
+    const totalEarned = referrers.reduce((sum, u) => sum + (u.totalCommissionEarned || 0), 0);
+    const totalSignups = referrers.reduce((sum, u) => sum + (u.referralSignups || 0), 0);
+    const totalPaidConversions = referrers.reduce((sum, u) => sum + (u.referralCount || 0), 0);
+
+    res.json({
+      summary: { totalReferrers: referrers.length, totalSignups, totalPaidConversions, totalPending, totalPaid, totalEarned },
+      referrers,
+    });
+  } catch (err) {
+    console.error('Admin referrals error:', err);
+    res.status(500).json({ error: 'Failed to fetch referral data' });
+  }
+});
+
+// POST /api/admin/referrals/approve-payout - Approve a pending payout (mark as paid)
+app.post('/api/admin/referrals/approve-payout', verifyToken, async (req, res) => {
+  if (!ADMIN_EMAILS.includes(req.user.email?.toLowerCase())) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId } }));
+    const user = dbResult.Item;
+    if (!user || !user.pendingPayout) return res.status(400).json({ error: 'No pending payout for this user' });
+
+    const payoutAmount = user.pendingPayout.amount;
+    await dynamoClient.send(new UpdateCommand({
+      TableName: DYNAMO_TABLE, Key: { userId },
+      UpdateExpression: 'SET commissionPaid = if_not_exists(commissionPaid, :zero) + :amount, pendingPayout = :null',
+      ExpressionAttributeValues: { ':amount': payoutAmount, ':zero': 0, ':null': null },
+    }));
+
+    console.log(`Payout approved: $${payoutAmount} to ${user.email} (${user.pendingPayout.method}: ${user.pendingPayout.details})`);
+    res.json({ success: true, message: `Payout of $${payoutAmount} approved for ${user.email}`, amount: payoutAmount });
+  } catch (err) {
+    console.error('Approve payout error:', err);
+    res.status(500).json({ error: 'Failed to approve payout' });
+  }
+});
+
 // GET /api/credits/cost - Get credit cost for a model (supports dynamic params)
 app.get('/api/credits/cost', (req, res) => {
   const { model, resolution, duration, seconds } = req.query;
@@ -1212,6 +1452,8 @@ app.post('/api/credits/verify', verifyToken, async (req, res) => {
     }));
 
     console.log(`Credits added: ${pack.credits} to user ${req.user.sub} (payment: ${razorpay_payment_id})`);
+    // Credit referral commission ($1) if this user was referred
+    await creditReferralCommission(req.user.sub, `payg-verify:${packId}`, razorpay_payment_id);
     res.json({ success: true, credits: result.Attributes.credits, added: pack.credits });
   } catch (err) {
     console.error('Credit verify error:', err);
