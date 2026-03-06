@@ -1205,7 +1205,7 @@ app.get('/api/referral', verifyToken, async (req, res) => {
 
     res.json({
       referralCode,
-      referralLink: `https://nexus-ai-pro.com/?ref=${referralCode}`,
+      referralLink: `${req.headers.origin || req.protocol + '://' + req.get('host')}/?ref=${referralCode}`,
       referralSignups: user.referralSignups || 0,
       referralPaidConversions: user.referralCount || 0,
       commissionBalance: user.commissionBalance || 0,
