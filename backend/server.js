@@ -1381,6 +1381,14 @@ app.post('/api/admin/referrals/approve-payout', verifyToken, async (req, res) =>
   }
 });
 
+// GET /api/stats - Public generation counter
+app.get('/api/stats', async (req, res) => {
+  try {
+    const result = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: 'GLOBAL_STATS' } }));
+    res.json({ totalGenerations: (result.Item?.totalGenerations || 0) + 5000 }); // seed with base count
+  } catch (err) { res.json({ totalGenerations: 5000 }); }
+});
+
 // GET /api/credits/cost - Get credit cost for a model (supports dynamic params)
 app.get('/api/credits/cost', (req, res) => {
   const { model, resolution, duration, seconds } = req.query;
@@ -1934,6 +1942,15 @@ app.post('/api/replicate/predictions', requireAccess, async (req, res) => {
     if (req.mode === 'credits' && resp.status < 400) {
       const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
       data._remainingCredits = dbResult.Item?.credits || 0;
+    }
+
+    // Increment global generation counter on successful prediction
+    if (resp.status < 400 && data.id) {
+      dynamoClient.send(new UpdateCommand({
+        TableName: DYNAMO_TABLE, Key: { userId: 'GLOBAL_STATS' },
+        UpdateExpression: 'SET totalGenerations = if_not_exists(totalGenerations, :zero) + :one',
+        ExpressionAttributeValues: { ':zero': 0, ':one': 1 },
+      })).catch(() => {});
     }
 
     res.status(resp.status).json(data);

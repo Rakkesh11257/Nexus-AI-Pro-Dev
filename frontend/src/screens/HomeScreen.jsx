@@ -230,7 +230,12 @@ function LatestBanners({ isMobile }) {
 export default function HomeScreen({ onSelectTool, onSelectCategory }) {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [hoveredSuite, setHoveredSuite] = useState(null);
+  const [genCount, setGenCount] = useState(null);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    fetch(`${window.location.origin}/api/stats`).then(r => r.json()).then(d => setGenCount(d.totalGenerations)).catch(() => {});
+  }, []);
 
   return (
     <div style={{ padding: 0, width: '100%', overflowX: 'hidden' }}>
@@ -248,6 +253,12 @@ export default function HomeScreen({ onSelectTool, onSelectCategory }) {
           <p style={{ color: '#555', fontSize: 15, margin: '10px 0 0', fontWeight: 400, letterSpacing: '0.01em' }}>
             AI generation — images, videos, audio & more
           </p>
+        )}
+        {genCount && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '5px 14px', borderRadius: 20, background: 'rgba(34,212,123,0.06)', border: '1px solid rgba(34,212,123,0.12)' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22d47b', animation: 'pulse 2s ease-in-out infinite' }} />
+            <span style={{ fontSize: 12, color: '#888' }}><span style={{ color: '#22d47b', fontWeight: 700 }}>{genCount.toLocaleString()}</span> AI creations generated</span>
+          </div>
         )}
       </div>
 

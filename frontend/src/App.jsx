@@ -3115,6 +3115,28 @@ function App() {
       </header>
 
       <div style={{ ...S.container, maxWidth: '100%', padding: '0' }}>
+
+        {/* Low credit nudge banner */}
+        {credits <= 10 && credits >= 0 && user && (
+          <div onClick={() => setShowCreditShop(true)} style={{
+            margin: '8px 12px 0', padding: '10px 16px', borderRadius: 12, cursor: 'pointer',
+            background: credits === 0 ? 'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05))' : 'linear-gradient(135deg, rgba(251,191,36,0.1), rgba(251,191,36,0.05))',
+            border: credits === 0 ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(251,191,36,0.2)',
+            display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.2s',
+          }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>{credits === 0 ? '⚡' : '⚠️'}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: credits === 0 ? '#ef4444' : '#fbbf24' }}>
+                {credits === 0 ? 'You\'re out of credits!' : `Only ${credits} credits left!`}
+              </div>
+              <div style={{ fontSize: 11, color: '#888', marginTop: 1 }}>
+                {credits === 0 ? 'Get credits to keep creating amazing AI content' : 'Running low — top up to keep creating'}
+              </div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#22d47b', background: 'rgba(34,212,123,0.1)', padding: '4px 10px', borderRadius: 8, whiteSpace: 'nowrap', flexShrink: 0 }}>Get Credits →</span>
+          </div>
+        )}
+
         {/* Home Screen */}
         {screen === 'home' && (
           <HomeScreen
