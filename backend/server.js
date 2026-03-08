@@ -1219,9 +1219,9 @@ app.get('/api/referral', verifyToken, async (req, res) => {
 
 // POST /api/referral/payout-request - Request commission payout
 app.post('/api/referral/payout-request', verifyToken, async (req, res) => {
-  const { payoutMethod, payoutDetails } = req.body; // payoutMethod: 'upi' | 'paypal', payoutDetails: UPI ID or PayPal email
+  const { payoutMethod, payoutDetails } = req.body; // payoutMethod: 'upi' | 'paypal' | 'bank', payoutDetails: UPI ID, PayPal email, or bank details
   if (!payoutMethod || !payoutDetails) return res.status(400).json({ error: 'Payout method and details required' });
-  if (!['upi', 'paypal'].includes(payoutMethod)) return res.status(400).json({ error: 'Payout method must be upi or paypal' });
+  if (!['upi', 'paypal', 'bank'].includes(payoutMethod)) return res.status(400).json({ error: 'Payout method must be upi, paypal, or bank' });
 
   try {
     const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
@@ -1230,7 +1230,7 @@ app.post('/api/referral/payout-request', verifyToken, async (req, res) => {
 
     const balance = user.commissionBalance || 0;
     if (user.pendingPayout && user.pendingPayout.status === 'pending') return res.status(400).json({ error: 'You already have a pending payout request. Please wait for it to be processed.' });
-    if (balance < 20) return res.status(400).json({ error: `Minimum payout is $20. Current balance: $${balance}` });
+    if (balance < 1) return res.status(400).json({ error: `Minimum payout is $1. Current balance: $${balance}` });
 
     // Move balance to pending, store payout request
     const payoutId = `PAY-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;

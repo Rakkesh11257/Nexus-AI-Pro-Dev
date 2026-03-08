@@ -1065,6 +1065,9 @@ function ReferralModal({ onClose, accessToken }) {
   const [copied, setCopied] = useState(false);
   const [payoutMethod, setPayoutMethod] = useState('upi');
   const [payoutDetails, setPayoutDetails] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [bankAccount, setBankAccount] = useState('');
+  const [bankIfsc, setBankIfsc] = useState('');
   const [payoutMsg, setPayoutMsg] = useState('');
   const [payoutLoading, setPayoutLoading] = useState(false);
 
@@ -1084,12 +1087,17 @@ function ReferralModal({ onClose, accessToken }) {
   };
 
   const requestPayout = async () => {
-    if (!payoutDetails.trim()) return setPayoutMsg('Enter your payout details');
+    if (payoutMethod === 'bank') {
+      if (!bankName.trim() || !bankAccount.trim() || !bankIfsc.trim()) return setPayoutMsg('Fill all bank details');
+    } else {
+      if (!payoutDetails.trim()) return setPayoutMsg('Enter your payout details');
+    }
+    const details = payoutMethod === 'bank' ? `${bankName.trim()} | A/C: ${bankAccount.trim()} | IFSC: ${bankIfsc.trim()}` : payoutDetails.trim();
     setPayoutMsg(''); setPayoutLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/referral/payout-request`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken },
-        body: JSON.stringify({ payoutMethod, payoutDetails: payoutDetails.trim() }),
+        body: JSON.stringify({ payoutMethod, payoutDetails: details }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1142,7 +1150,7 @@ function ReferralModal({ onClose, accessToken }) {
               </div>
               <div style={{ background: 'rgba(34,212,123,0.06)', border: '1px solid rgba(34,212,123,0.15)', borderRadius: 12, padding: 14, textAlign: 'center' }}>
                 <div style={{ fontSize: 24, fontWeight: 700, color: '#22d47b' }}>{referralData.referralPaidConversions || 0}</div>
-                <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>Paid Users</div>
+                <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>Payments</div>
               </div>
               <div style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: 12, padding: 14, textAlign: 'center' }}>
                 <div style={{ fontSize: 24, fontWeight: 700, color: '#fbbf24' }}>${referralData.totalCommissionEarned || 0}</div>
@@ -1166,18 +1174,27 @@ function ReferralModal({ onClose, accessToken }) {
                 <span style={{ fontSize: 13, color: '#999' }}>Available balance</span>
                 <span style={{ fontSize: 22, fontWeight: 700, color: '#fbbf24' }}>${referralData.commissionBalance || 0}</span>
               </div>
-              {(referralData.commissionBalance || 0) >= 20 ? <>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  <select value={payoutMethod} onChange={e => setPayoutMethod(e.target.value)} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 12, outline: 'none' }}>
+              {(referralData.commissionBalance || 0) >= 1 ? <>
+                <div style={{ marginBottom: 10 }}>
+                  <select value={payoutMethod} onChange={e => { setPayoutMethod(e.target.value); setPayoutDetails(''); setBankName(''); setBankAccount(''); setBankIfsc(''); }} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 12, outline: 'none', marginBottom: 8 }}>
                     <option value="upi">UPI</option>
                     <option value="paypal">PayPal</option>
+                    <option value="bank">Bank Account</option>
                   </select>
-                  <input placeholder={payoutMethod === 'upi' ? 'your@upi' : 'paypal@email.com'} value={payoutDetails} onChange={e => setPayoutDetails(e.target.value)} style={{ flex: 1, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                  {payoutMethod === 'bank' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <input placeholder="Account holder name" value={bankName} onChange={e => setBankName(e.target.value)} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                      <input placeholder="Account number" value={bankAccount} onChange={e => setBankAccount(e.target.value)} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                      <input placeholder="IFSC code" value={bankIfsc} onChange={e => setBankIfsc(e.target.value.toUpperCase())} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 12, outline: 'none', textTransform: 'uppercase' }} />
+                    </div>
+                  ) : (
+                    <input placeholder={payoutMethod === 'upi' ? 'your@upi' : 'paypal@email.com'} value={payoutDetails} onChange={e => setPayoutDetails(e.target.value)} style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px 12px', color: '#fff', fontSize: 12, outline: 'none' }} />
+                  )}
                 </div>
                 <button onClick={requestPayout} disabled={payoutLoading} style={{ width: '100%', padding: '10px 0', borderRadius: 10, border: 'none', background: '#fbbf24', color: '#000', fontSize: 13, fontWeight: 700, cursor: payoutLoading ? 'wait' : 'pointer', opacity: payoutLoading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
                   {payoutLoading ? 'Processing...' : `Request Payout — $${referralData.commissionBalance}`}
                 </button>
-              </> : <div style={{ fontSize: 12, color: '#888', textAlign: 'center', padding: '4px 0' }}>Minimum payout: $20 ({20 - (referralData.commissionBalance || 0)} more to go)</div>}
+              </> : <div style={{ fontSize: 12, color: '#888', textAlign: 'center', padding: '4px 0' }}>No earnings yet — start sharing your link!</div>}
               {payoutMsg && <div style={{ fontSize: 12, marginTop: 8, color: payoutMsg.startsWith('✅') ? '#22d47b' : '#ef4444', textAlign: 'center' }}>{payoutMsg}</div>}
             </div>
 
