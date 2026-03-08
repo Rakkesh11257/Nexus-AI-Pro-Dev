@@ -1072,26 +1072,33 @@ app.post('/api/payment/verify', verifyToken, async (req, res) => {
     if (SUBSCRIPTION_PLANS[plan]) {
       const subEnd = new Date(now);
       subEnd.setMonth(subEnd.getMonth() + 1);
-      const creditsToAdd = SUBSCRIPTION_PLANS[plan].credits;
+      const baseCreds = SUBSCRIPTION_PLANS[plan].credits;
+
+      // Check if this is user's first subscription — give 50% bonus
+      const existingUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+      const isFirstSub = !existingUser.Item?.firstSubscriptionDone;
+      const bonusCreds = isFirstSub ? Math.floor(baseCreds * 0.5) : 0;
+      const creditsToAdd = baseCreds + bonusCreds;
 
       await dynamoClient.send(new UpdateCommand({
         TableName: DYNAMO_TABLE,
         Key: { userId: req.user.sub },
-        UpdateExpression: 'SET isPaid = :paid, paymentId = :pid, paymentPlan = :plan, paidAt = :now, razorpaySubscriptionId = :subId, subscriptionEnd = :subEnd, subscriptionStatus = :status, subscriptionPlan = :subPlan, credits = if_not_exists(credits, :zero) + :credits',
+        UpdateExpression: 'SET isPaid = :paid, paymentId = :pid, paymentPlan = :plan, paidAt = :now, razorpaySubscriptionId = :subId, subscriptionEnd = :subEnd, subscriptionStatus = :status, subscriptionPlan = :subPlan, credits = if_not_exists(credits, :zero) + :credits, firstSubscriptionDone = :fsd',
         ExpressionAttributeValues: {
           ':paid': true, ':pid': razorpay_payment_id, ':plan': plan,
           ':now': now.toISOString(), ':subId': razorpay_subscription_id,
           ':subEnd': subEnd.toISOString(), ':status': 'active',
-          ':subPlan': plan, ':credits': creditsToAdd, ':zero': 0,
+          ':subPlan': plan, ':credits': creditsToAdd, ':zero': 0, ':fsd': true,
         },
       }));
       // Fetch updated total credits
       const updatedUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
       const totalCredits = updatedUser.Item?.credits || creditsToAdd;
-      console.log(`Payment verified: ${req.user.email} subscribed to ${plan}, ${creditsToAdd} credits added (total: ${totalCredits})`);
+      console.log(`Payment verified: ${req.user.email} subscribed to ${plan}, ${creditsToAdd} credits added${isFirstSub ? ` (includes ${bonusCreds} first-month bonus)` : ''} (total: ${totalCredits})`);
       // Credit referral commission ($1) if this user was referred
       await creditReferralCommission(req.user.sub, `subscription-verify:${plan}`, razorpay_payment_id);
-      res.json({ success: true, message: `${creditsToAdd.toLocaleString()} credits added! Subscription active.`, isPaid: true, plan, creditsAdded: creditsToAdd, credits: totalCredits });
+      const bonusMsg = isFirstSub ? ` (includes ${bonusCreds} bonus credits — first month offer!)` : '';
+      res.json({ success: true, message: `${creditsToAdd.toLocaleString()} credits added!${bonusMsg} Subscription active.`, isPaid: true, plan, creditsAdded: creditsToAdd, credits: totalCredits });
     }
     // Legacy monthly/yearly (developer mode)
     else if (plan === 'monthly' || plan === 'yearly') {

@@ -895,7 +895,8 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
                 <div style={{ fontSize: 22, marginBottom: 4 }}>{plan.icon}</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 2 }}>{plan.name}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: plan.color }}>{plan.credits.toLocaleString()}</div>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>credits/month</div>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 2 }}>credits/month</div>
+                <div style={{ fontSize: 9, color: '#22d47b', fontWeight: 700, marginBottom: 4, background: 'rgba(34,212,123,0.08)', padding: '2px 6px', borderRadius: 4, display: 'inline-block' }}>1st month: {Math.floor(plan.credits * 1.5).toLocaleString()} credits</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{plan.usdPrice}</div>
                 <div style={{ fontSize: 10, color: '#888', marginBottom: 2 }}>/month</div>
                 <div style={{ fontSize: 9, color: plan.color, fontWeight: 600, marginBottom: 10 }}>{plan.perCredit}/credit</div>
