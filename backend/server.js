@@ -638,9 +638,64 @@ async function creditReferralCommission(paidUserId, paymentSource, paymentId) {
   }
 }
 
+// ── Anti-abuse: Disposable email domains list ──
+const DISPOSABLE_EMAIL_DOMAINS = new Set([
+  'tempmail.com','throwaway.email','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+  'mailinator.com','yopmail.com','sharklasers.com','guerrillamailblock.com','grr.la',
+  'dispostable.com','trashmail.com','trashmail.net','trashmail.org','10minutemail.com',
+  'temp-mail.org','tempail.com','tempr.email','tempmailo.com','tempinbox.com',
+  'fakeinbox.com','mailnesia.com','maildrop.cc','discard.email','discardmail.com',
+  'harakirimail.com','mailexpire.com','throwam.com','getnada.com','emailondeck.com',
+  'mohmal.com','burnermail.io','inboxbear.com','mailsac.com','mytemp.email',
+  'tmpmail.net','tmpmail.org','bupmail.com','crazymailing.com','disposableemailaddresses.emailmiser.com',
+  'mailcatch.com','mailscrap.com','mfasa.com','mintemail.com','mt2015.com',
+  'nobulk.com','nomail.xl.cx','otherinbox.com','ourklips.com','owlpic.com',
+  'pjjkp.com','rmqkr.net','royal.net','sharklasers.com','spamfree24.org',
+  'spamobox.com','tempomail.fr','thankyou2010.com','trash-mail.at','trashymail.com',
+  'trbvm.com','trbvn.com','tutanota.com','uggsrock.com','veryrealemail.com',
+  'wegwerfmail.de','wegwerfmail.net','wh4f.org','yopmail.fr','yopmail.net',
+  'mailnator.com','anonbox.net','binkmail.com','bobmail.info','chammy.info',
+  'devnullmail.com','dingbone.com','fakedemail.com','filzmail.com','haltospam.com',
+  'jetable.org','kasmail.com','koszmail.pl','kurzepost.de','letthemeatspam.com',
+  'lhsdv.com','mailinater.com','mailismagic.com','mailmetrash.com','mailnull.com',
+  'mailshell.com','mailzilla.com','mb.7x.ro','meltmail.com','nospam.ze.tc',
+  'pookmail.com','proxymail.eu','rcpt.at','reallymymail.com','recode.me',
+  'regbypass.com','safetymail.info','sify.com','spambox.us','spambog.com',
+  'spambog.de','spambog.ru','spamcero.com','spamday.com','spamfighter.cf',
+  'spamfighter.ga','spamfighter.gq','spamfighter.ml','spamfighter.tk',
+  'spamgourmet.com','spamherelots.com','spamhole.com','spaml.com','spamoff.de',
+  'spamstack.net','spamtrail.com','superrito.com','suremail.info','teleworm.us',
+  'tempemail.co.za','tempemail.net','tempmailer.com','tempsky.com','thankyou2010.com',
+  'thisisnotmyrealemail.com','throwawayemailaddress.com','tmail.ws','tmails.net',
+  'trashdevil.com','trashdevil.de','trashemail.de','trashmail.me','trashmail.ws',
+  'twoweirdtricks.com','tyldd.com','uggsrock.com','upliftnow.com','venompen.com',
+  'veryrealemail.com','viditag.com','viewcastmedia.com','vomoto.com','vpn.st',
+  'vsimcard.com','vubby.com','wasteland.rfc822.org','webemail.me','weg-werf-email.de',
+  'wegwerfadresse.de','wegwerfemail.com','wegwerfmail.org','wilemail.com',
+  'willhackforfood.biz','willselfdestruct.com','winemaven.info','wronghead.com',
+  'wuzup.net','wuzupmail.net','wwwnew.eu','xagloo.com','xemaps.com','xents.com',
+  'xjoi.com','xoxy.net','yapped.net','yeah.net','yogamaven.com','ypmail.webarnak.fr.eu.org',
+  'zehnminuten.de','zippymail.info','zoaxe.com','zoemail.org',
+  'guerrillamail.de','guerrillamail.biz','emailfake.com','cuvox.de','armyspy.com',
+  'dayrep.com','einrot.com','fleckens.hu','gustr.com','jourrapide.com','rhyta.com',
+  'superrito.com','teleworm.us','mailforspam.com','safetypost.de',
+]);
+
+function isDisposableEmail(email) {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return domain ? DISPOSABLE_EMAIL_DOMAINS.has(domain) : false;
+}
+
 app.post('/auth/signup', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+
+  // Block disposable/temporary email addresses
+  if (isDisposableEmail(email)) {
+    console.log(`Signup blocked: disposable email ${email}`);
+    return res.status(400).json({ error: 'Please use a valid email address. Temporary/disposable emails are not allowed.' });
+  }
+
   try {
     const result = await cognitoClient.send(new SignUpCommand({
       ClientId: CLIENT_ID, Username: email, Password: password,
@@ -741,7 +796,7 @@ app.post('/auth/login', async (req, res) => {
         }
       }
 
-      const totalCredits = 20 + bonusCredits;
+      const totalCredits = 35 + bonusCredits;
       userData = {
         userId: sub, email: userEmail, isPaid: false, credits: totalCredits,
         referralCode, referredBy: referredByUserId, referralCount: 0, referralSignups: 0,
