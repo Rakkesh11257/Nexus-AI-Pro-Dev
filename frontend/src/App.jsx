@@ -1441,7 +1441,11 @@ function App() {
 
   useEffect(() => { localStorage.setItem('nexus_history', JSON.stringify(history)); }, [history]);
 
-  const handleAuth = (u, t) => { setUser(u); setAccessToken(t); setAuthState('app'); if (u.credits != null) setCredits(u.credits); };
+  const handleAuth = (u, t) => {
+    setUser(u); setAccessToken(t); setAuthState('app'); if (u.credits != null) setCredits(u.credits);
+    // Show onboarding for first-time users
+    if (!localStorage.getItem('nexus_onboarding_done')) { setShowOnboarding(true); }
+  };
   const handleLogout = () => { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); setUser(null); setAccessToken(''); setAuthState('auth'); };
   const saveApiKey = (key) => { localStorage.setItem('replicate_api_key', key); setApiKey(key); setShowSettings(false); };
   const keyValid = apiKey.trim().startsWith('r8_') && apiKey.trim().length > 20;
@@ -1500,6 +1504,7 @@ function App() {
   const [creditConfirm, setCreditConfirm] = useState(null); // { cost, modelName, onConfirm }
   const [showCreditShop, setShowCreditShop] = useState(false);
   const [showReferral, setShowReferral] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // ─── Pre-generate Check ───
   // Pre-generate check: returns a Promise that resolves true if ok to proceed.
@@ -1901,13 +1906,40 @@ function App() {
     } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
-  const handleI2IFile = (e) => {
+  const handleI2IFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setI2iImage(URL.createObjectURL(file));
+    setI2iImage(await safeImageUrl(file));
   };
 
   // ─── Helper: convert blob URL to data URI ───
+  // Convert any image (including HEIC) to JPEG via canvas
+  const safeImageUrl = (file) => {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const type = file.type?.toLowerCase() || '';
+      // If format is supported natively, use as-is
+      if (type.includes('jpeg') || type.includes('png') || type.includes('webp') || type.includes('gif')) {
+        resolve(url);
+        return;
+      }
+      // For HEIC/HEIF or unknown formats, convert via canvas
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          resolve(blob ? URL.createObjectURL(blob) : url);
+        }, 'image/jpeg', 0.92);
+      };
+      img.onerror = () => resolve(url); // fallback to original
+      img.src = url;
+    });
+  };
+
   const toDataUri = async (blobUrl) => {
     const resp = await fetch(blobUrl);
     const blob = await resp.blob();
@@ -2181,10 +2213,10 @@ function App() {
     setChatImage(URL.createObjectURL(file));
   };
 
-  const handleI2VFile = (e) => {
+  const handleI2VFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setI2vImage(URL.createObjectURL(file));
+    setI2vImage(await safeImageUrl(file));
   };
 
   const useForVideo = (url) => { setI2vImage(url); setTab('i2v'); setI2vModel(I2V_MODELS[0].id); setViewerItem(null); };
@@ -3912,11 +3944,11 @@ function App() {
             <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
               <div style={{ flex: 1 }}>
                 <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Source Image</label>
-                {faceswapSource ? (<div style={{ position: 'relative', display: 'inline-block' }}><img src={faceswapSource} alt="" style={{ maxHeight: 160, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setFaceswapSource(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '30px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)' }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f5bc;&#xfe0f;</div>Source image<br/><span style={{ fontSize: 11, color: '#555' }}>Image with body/scene</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setFaceswapSource(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
+                {faceswapSource ? (<div style={{ position: 'relative', display: 'inline-block' }}><img src={faceswapSource} alt="" style={{ maxHeight: 160, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setFaceswapSource(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '30px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)' }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f5bc;&#xfe0f;</div>Source image<br/><span style={{ fontSize: 11, color: '#555' }}>JPG, PNG, WEBP (no HEIC)</span><input type="file" accept="image/*" onChange={async e => { const f = e.target.files?.[0]; if (f) setFaceswapSource(await safeImageUrl(f)); }} style={{ display: 'none' }} /></label>)}
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Target Face</label>
-                {faceswapTarget ? (<div style={{ position: 'relative', display: 'inline-block' }}><img src={faceswapTarget} alt="" style={{ maxHeight: 160, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setFaceswapTarget(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '30px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)' }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f600;</div>Face photo<br/><span style={{ fontSize: 11, color: '#555' }}>Clear face to swap in</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setFaceswapTarget(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
+                {faceswapTarget ? (<div style={{ position: 'relative', display: 'inline-block' }}><img src={faceswapTarget} alt="" style={{ maxHeight: 160, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setFaceswapTarget(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '30px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)' }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f600;</div>Face photo<br/><span style={{ fontSize: 11, color: '#555' }}>JPG, PNG, WEBP (no HEIC)</span><input type="file" accept="image/*" onChange={async e => { const f = e.target.files?.[0]; if (f) setFaceswapTarget(await safeImageUrl(f)); }} style={{ display: 'none' }} /></label>)}
               </div>
             </div>
             <button onClick={generateFaceSwap} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Swap Faces' + creditLabel(faceswapModel)}</button>
@@ -3927,7 +3959,7 @@ function App() {
           <div>
             <ModelSelector getCreditCost={getModelCreditCost} models={UPSCALE_MODELS} value={upscaleModel} onChange={v => setUpscaleModel(v)} />
             <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Image to Upscale</label>
-            {upscaleImage ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><img src={upscaleImage} alt="" style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setUpscaleImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f50d;</div>Upload image to upscale<br/><span style={{ fontSize: 11, color: '#555' }}>Enhance resolution up to 10x</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setUpscaleImage(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
+            {upscaleImage ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><img src={upscaleImage} alt="" style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setUpscaleImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f50d;</div>Upload image to upscale<br/><span style={{ fontSize: 11, color: '#555' }}>JPG, PNG, WEBP (no HEIC)</span><input type="file" accept="image/*" onChange={async e => { const f = e.target.files?.[0]; if (f) setUpscaleImage(await safeImageUrl(f)); }} style={{ display: 'none' }} /></label>)}
             <div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Scale Factor: {upscaleScale}x</label><input type="range" min="2" max="10" value={upscaleScale} onChange={e => setUpscaleScale(Number(e.target.value))} style={{ width: '100%' }} /></div>
             <button onClick={generateUpscale} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : 'Upscale Image' + creditLabel(upscaleModel, { resolution: String(upscaleScale) })}</button>
           </div>
@@ -3937,7 +3969,7 @@ function App() {
           <div>
             <ModelSelector getCreditCost={getModelCreditCost} models={SKIN_MODELS} value={skinModel} onChange={v => setSkinModel(v)} />
             <label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Portrait Image</label>
-            {skinImage ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><img src={skinImage} alt="" style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setSkinImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f464;</div>Upload portrait<br/><span style={{ fontSize: 11, color: '#555' }}>Face photo for enhancement</span><input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) setSkinImage(URL.createObjectURL(f)); }} style={{ display: 'none' }} /></label>)}
+            {skinImage ? (<div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}><img src={skinImage} alt="" style={{ maxHeight: 200, borderRadius: 8, border: '1px solid #333' }} /><button onClick={() => setSkinImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>&#x2715;</button></div>) : (<label style={{ display: 'block', padding: '40px 12px', border: '2px dashed rgba(138,92,246,0.4)', borderRadius: 12, textAlign: 'center', cursor: 'pointer', color: '#aaa', background: 'rgba(10,10,24,0.6)', marginBottom: 14 }}><div style={{ fontSize: 32, marginBottom: 6 }}>&#x1f464;</div>Upload portrait<br/><span style={{ fontSize: 11, color: '#555' }}>JPG, PNG, WEBP (no HEIC)</span><input type="file" accept="image/*" onChange={async e => { const f = e.target.files?.[0]; if (f) setSkinImage(await safeImageUrl(f)); }} style={{ display: 'none' }} /></label>)}
             {(() => { const curSkinM = SKIN_MODELS.find(m => m.id === skinModel); if (curSkinM?.isHaircut) { return (<div><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Haircut Style</label><select value={skinHaircut} onChange={e => setSkinHaircut(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option key='No change' value='No change'>No change</option><option key='Random' value='Random'>Random</option><option key='Straight' value='Straight'>Straight</option><option key='Wavy' value='Wavy'>Wavy</option><option key='Curly' value='Curly'>Curly</option><option key='Bob' value='Bob'>Bob</option><option key='Pixie Cut' value='Pixie Cut'>Pixie Cut</option><option key='Layered' value='Layered'>Layered</option><option key='Messy Bun' value='Messy Bun'>Messy Bun</option><option key='High Ponytail' value='High Ponytail'>High Ponytail</option><option key='Low Ponytail' value='Low Ponytail'>Low Ponytail</option><option key='Braided Ponytail' value='Braided Ponytail'>Braided Ponytail</option><option key='French Braid' value='French Braid'>French Braid</option><option key='Dutch Braid' value='Dutch Braid'>Dutch Braid</option><option key='Fishtail Braid' value='Fishtail Braid'>Fishtail Braid</option><option key='Space Buns' value='Space Buns'>Space Buns</option><option key='Top Knot' value='Top Knot'>Top Knot</option><option key='Undercut' value='Undercut'>Undercut</option><option key='Mohawk' value='Mohawk'>Mohawk</option><option key='Crew Cut' value='Crew Cut'>Crew Cut</option><option key='Faux Hawk' value='Faux Hawk'>Faux Hawk</option><option key='Slicked Back' value='Slicked Back'>Slicked Back</option><option key='Side-Parted' value='Side-Parted'>Side-Parted</option><option key='Center-Parted' value='Center-Parted'>Center-Parted</option><option key='Blunt Bangs' value='Blunt Bangs'>Blunt Bangs</option><option key='Side-Swept Bangs' value='Side-Swept Bangs'>Side-Swept Bangs</option><option key='Shag' value='Shag'>Shag</option><option key='Lob' value='Lob'>Lob</option><option key='Angled Bob' value='Angled Bob'>Angled Bob</option><option key='A-Line Bob' value='A-Line Bob'>A-Line Bob</option><option key='Asymmetrical Bob' value='Asymmetrical Bob'>Asymmetrical Bob</option><option key='Graduated Bob' value='Graduated Bob'>Graduated Bob</option><option key='Inverted Bob' value='Inverted Bob'>Inverted Bob</option><option key='Layered Shag' value='Layered Shag'>Layered Shag</option><option key='Choppy Layers' value='Choppy Layers'>Choppy Layers</option><option key='Razor Cut' value='Razor Cut'>Razor Cut</option><option key='Perm' value='Perm'>Perm</option><option key='Soft Waves' value='Soft Waves'>Soft Waves</option><option key='Glamorous Waves' value='Glamorous Waves'>Glamorous Waves</option><option key='Hollywood Waves' value='Hollywood Waves'>Hollywood Waves</option><option key='Finger Waves' value='Finger Waves'>Finger Waves</option><option key='Tousled' value='Tousled'>Tousled</option><option key='Feathered' value='Feathered'>Feathered</option><option key='Pageboy' value='Pageboy'>Pageboy</option><option key='Pigtails' value='Pigtails'>Pigtails</option><option key='Pin Curls' value='Pin Curls'>Pin Curls</option><option key='Rollerset' value='Rollerset'>Rollerset</option><option key='Twist Out' value='Twist Out'>Twist Out</option><option key='Bantu Knots' value='Bantu Knots'>Bantu Knots</option><option key='Dreadlocks' value='Dreadlocks'>Dreadlocks</option><option key='Cornrows' value='Cornrows'>Cornrows</option><option key='Box Braids' value='Box Braids'>Box Braids</option><option key='Crochet Braids' value='Crochet Braids'>Crochet Braids</option><option key='Double Dutch Braids' value='Double Dutch Braids'>Double Dutch Braids</option><option key='French Fishtail Braid' value='French Fishtail Braid'>French Fishtail Braid</option><option key='Waterfall Braid' value='Waterfall Braid'>Waterfall Braid</option><option key='Rope Braid' value='Rope Braid'>Rope Braid</option><option key='Heart Braid' value='Heart Braid'>Heart Braid</option><option key='Halo Braid' value='Halo Braid'>Halo Braid</option><option key='Crown Braid' value='Crown Braid'>Crown Braid</option><option key='Braided Crown' value='Braided Crown'>Braided Crown</option><option key='Bubble Braid' value='Bubble Braid'>Bubble Braid</option><option key='Bubble Ponytail' value='Bubble Ponytail'>Bubble Ponytail</option><option key='Chignon' value='Chignon'>Chignon</option><option key='French Twist' value='French Twist'>French Twist</option><option key='Updo' value='Updo'>Updo</option><option key='Messy Updo' value='Messy Updo'>Messy Updo</option><option key='Beehive' value='Beehive'>Beehive</option><option key='Bouffant' value='Bouffant'>Bouffant</option><option key='Half-Up Half-Down' value='Half-Up Half-Down'>Half-Up Half-Down</option><option key='Victory Rolls' value='Victory Rolls'>Victory Rolls</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Hair Color</label><select value={skinHairColor} onChange={e => setSkinHairColor(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option key='No change' value='No change'>No change</option><option key='Random' value='Random'>Random</option><option key='Blonde' value='Blonde'>Blonde</option><option key='Brunette' value='Brunette'>Brunette</option><option key='Black' value='Black'>Black</option><option key='Dark Brown' value='Dark Brown'>Dark Brown</option><option key='Medium Brown' value='Medium Brown'>Medium Brown</option><option key='Light Brown' value='Light Brown'>Light Brown</option><option key='Auburn' value='Auburn'>Auburn</option><option key='Copper' value='Copper'>Copper</option><option key='Red' value='Red'>Red</option><option key='Strawberry Blonde' value='Strawberry Blonde'>Strawberry Blonde</option><option key='Platinum Blonde' value='Platinum Blonde'>Platinum Blonde</option><option key='Silver' value='Silver'>Silver</option><option key='White' value='White'>White</option><option key='Blue' value='Blue'>Blue</option><option key='Purple' value='Purple'>Purple</option><option key='Pink' value='Pink'>Pink</option><option key='Green' value='Green'>Green</option><option key='Blue-Black' value='Blue-Black'>Blue-Black</option><option key='Golden Blonde' value='Golden Blonde'>Golden Blonde</option><option key='Honey Blonde' value='Honey Blonde'>Honey Blonde</option><option key='Caramel' value='Caramel'>Caramel</option><option key='Chestnut' value='Chestnut'>Chestnut</option><option key='Mahogany' value='Mahogany'>Mahogany</option><option key='Burgundy' value='Burgundy'>Burgundy</option><option key='Jet Black' value='Jet Black'>Jet Black</option><option key='Ash Brown' value='Ash Brown'>Ash Brown</option><option key='Ash Blonde' value='Ash Blonde'>Ash Blonde</option><option key='Rose Gold' value='Rose Gold'>Rose Gold</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Gender</label><select value={skinGender} onChange={e => setSkinGender(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option value="none">Auto Detect</option><option value="male">Male</option><option value="female">Female</option></select></div>); } else if (curSkinM?.isICLight) { return (<div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Light Source</label><select value={skinLightSource} onChange={e => setSkinLightSource(e.target.value)} style={{ ...S.input, marginBottom: 14, width: '100%' }}><option value="None">None (Auto)</option><option value="Left Light">Left Light</option><option value="Right Light">Right Light</option><option value="Top Light">Top Light</option><option value="Bottom Light">Bottom Light</option></select><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Lighting Prompt</label><textarea style={{ ...S.input, minHeight: 80, width: '100%' }} placeholder='e.g. professional studio lighting, warm sunset glow...' value={skinPrompt} onChange={e => setSkinPrompt(e.target.value)} /></div>); } else { return (<div style={{ marginBottom: 14 }}><label style={{ ...S.label, marginBottom: 6, display: 'block' }}>Enhancement Prompt</label><textarea style={{ ...S.input, minHeight: 80, width: '100%' }} placeholder='e.g. make this person look photorealistic...' value={skinPrompt} onChange={e => setSkinPrompt(e.target.value)} /></div>); } })()}
             <button onClick={generateSkin} disabled={loading} style={{ ...S.btn, width: '100%', padding: '14px', fontSize: 15, fontWeight: 600, borderRadius: 10, opacity: loading ? 0.6 : 1 }}>{loading ? (tabJobs[0]?.status || 'Processing...') : (SKIN_MODELS.find(m => m.id === skinModel)?.isHaircut ? '✂️ Change Haircut' : SKIN_MODELS.find(m => m.id === skinModel)?.isICLight ? '💡 Relight Portrait' : '✨ Enhance Portrait') + creditLabel(skinModel)}</button>
           </div>
@@ -4073,6 +4105,59 @@ function App() {
       )}
       {showCreditShop && <CreditShopModal onClose={() => setShowCreditShop(false)} accessToken={accessToken} credits={credits} onCreditsAdded={(newTotal) => setCredits(newTotal)} user={user} onPaymentSuccess={(plan) => { setUser(prev => ({ ...prev, isPaid: true, paymentPlan: plan })); setShowCreditShop(false); }} />}
       {showReferral && <ReferralModal onClose={() => setShowReferral(false)} accessToken={accessToken} />}
+
+      {/* Guided Onboarding Modal */}
+      {showOnboarding && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: 16 }} onClick={() => { setShowOnboarding(false); localStorage.setItem('nexus_onboarding_done', '1'); }}>
+          <div style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, width: '100%', maxWidth: 480, overflow: 'hidden', position: 'relative' }} onClick={e => e.stopPropagation()}>
+
+            {/* Header gradient */}
+            <div style={{ background: 'linear-gradient(135deg, #22d47b15, #a855f715, #fbbf2415)', padding: '28px 24px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>✨</div>
+              <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: '#fff' }}>Welcome to NEXUS AI Pro!</h2>
+              <p style={{ color: '#888', fontSize: 13, margin: 0 }}>You have <span style={{ color: '#22d47b', fontWeight: 700 }}>{credits} free credits</span> — try creating something!</p>
+            </div>
+
+            <div style={{ padding: '16px 24px 24px' }}>
+              {/* Quick start options */}
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quick start — tap to try</div>
+
+              {[
+                { icon: '🎨', label: 'Create an AI Image', desc: 'A cinematic sunset over a futuristic city, neon lights reflecting on wet streets', tab: 'image', type: 'prompt' },
+                { icon: '🎬', label: 'Generate a Video', desc: 'Ocean waves crashing on a tropical beach, golden hour, cinematic slow motion', tab: 't2v', type: 'prompt' },
+                { icon: '🔄', label: 'Face Swap', desc: 'Upload two photos and swap faces instantly', tab: 'faceswap', type: 'navigate' },
+                { icon: '🔍', label: 'Upscale an Image', desc: 'Enhance any image resolution up to 10x', tab: 'upscale', type: 'navigate' },
+              ].map((item, i) => (
+                <div key={i} onClick={() => {
+                  setShowOnboarding(false);
+                  localStorage.setItem('nexus_onboarding_done', '1');
+                  navigateToTool(item.tab, item.tab === 'image' || item.tab === 'faceswap' || item.tab === 'upscale' ? 'image' : 'video');
+                  if (item.type === 'prompt') { setTimeout(() => setPrompt(item.desc), 100); if (item.tab === 't2v') setTimeout(() => setT2vPrompt(item.desc), 100); }
+                }} style={{
+                  display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', marginBottom: 8,
+                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,212,123,0.06)'; e.currentTarget.style.borderColor = 'rgba(34,212,123,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                >
+                  <div style={{ fontSize: 24, flexShrink: 0 }}>{item.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{item.label}</div>
+                    <div style={{ fontSize: 11, color: '#666', marginTop: 2, lineHeight: 1.3 }}>{item.desc}</div>
+                  </div>
+                  <div style={{ marginLeft: 'auto', color: '#555', fontSize: 16, flexShrink: 0 }}>→</div>
+                </div>
+              ))}
+
+              {/* Skip */}
+              <button onClick={() => { setShowOnboarding(false); localStorage.setItem('nexus_onboarding_done', '1'); }} style={{ width: '100%', padding: '10px 0', marginTop: 8, borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: '#666', fontSize: 12, cursor: 'pointer' }}>
+                Skip — I'll explore on my own
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} accessToken={accessToken} user={user} onPaymentSuccess={(plan) => { setUser(prev => ({ ...prev, isPaid: true, paymentPlan: plan })); setShowPaywall(false); }} />}
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} accessToken={accessToken} user={user} onUpgradeSuccess={() => { setUser(prev => ({ ...prev, paymentPlan: 'yearly' })); setShowUpgrade(false); }} />}
       {showSettings && <SettingsModal apiKey={apiKey} onSave={saveApiKey} onClose={() => setShowSettings(false)} credits={credits} onOpenCreditShop={() => setShowCreditShop(true)} />}
