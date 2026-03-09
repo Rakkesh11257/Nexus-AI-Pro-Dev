@@ -953,11 +953,25 @@ const RAZORPAY_PLAN_IDS = {};
       }
     }
 
-    // Legacy: find old monthly plan for existing subscribers
-    const legacyMonthly = allPlans.items.find(p => p.item?.name === 'NEXUS AI Pro - Monthly');
-    if (legacyMonthly) MONTHLY_PLAN_ID = legacyMonthly.id;
-    const legacyYearly = allPlans.items.find(p => p.item?.name === 'NEXUS AI Pro - Yearly');
-    if (legacyYearly) YEARLY_PLAN_ID = legacyYearly.id;
+    // Developer Mode plans: find or create
+    const legacyMonthly = allPlans.items.find(p => p.item?.name === 'NEXUS AI Pro - Monthly' && p.item?.amount === 49900);
+    if (legacyMonthly) {
+      MONTHLY_PLAN_ID = legacyMonthly.id;
+      console.log('Found existing dev plan [monthly]:', legacyMonthly.id);
+    } else {
+      const mp = await razorpay.plans.create({ period: 'monthly', interval: 1, item: { name: 'NEXUS AI Pro - Monthly', amount: 49900, currency: 'INR', description: 'Developer Mode - Monthly ($6)' } });
+      MONTHLY_PLAN_ID = mp.id;
+      console.log('Created dev plan [monthly]:', mp.id);
+    }
+    const legacyYearly = allPlans.items.find(p => p.item?.name === 'NEXUS AI Pro - Yearly' && p.item?.amount === 299900);
+    if (legacyYearly) {
+      YEARLY_PLAN_ID = legacyYearly.id;
+      console.log('Found existing dev plan [yearly]:', legacyYearly.id);
+    } else {
+      const yp = await razorpay.plans.create({ period: 'yearly', interval: 1, item: { name: 'NEXUS AI Pro - Yearly', amount: 299900, currency: 'INR', description: 'Developer Mode - Yearly ($35)' } });
+      YEARLY_PLAN_ID = yp.id;
+      console.log('Created dev plan [yearly]:', yp.id);
+    }
 
     console.log('All subscription plans ready:', Object.keys(RAZORPAY_PLAN_IDS));
   } catch (err) {
