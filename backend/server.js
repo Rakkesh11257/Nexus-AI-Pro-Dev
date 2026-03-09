@@ -449,13 +449,20 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
       if (userId && type === 'credit_purchase') {
         const credits = parseInt(payment.notes?.credits) || 0;
         if (credits > 0) {
-          await dynamoClient.send(new UpdateCommand({
-            TableName: DYNAMO_TABLE,
-            Key: { userId },
-            UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount',
-            ExpressionAttributeValues: { ':amount': credits, ':zero': 0 },
-          }));
-          console.log(`Webhook: ${credits} credits added for ${userId} (payment: ${payment.id})`);
+          // Dedup: skip if this payment was already processed by verify endpoint
+          const existingUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId } }));
+          const processedPayments = existingUser.Item?.processedPaymentIds || [];
+          if (processedPayments.includes(payment.id)) {
+            console.log(`Webhook: PAYG credit skipped - payment ${payment.id} already processed by verify`);
+          } else {
+            await dynamoClient.send(new UpdateCommand({
+              TableName: DYNAMO_TABLE,
+              Key: { userId },
+              UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount',
+              ExpressionAttributeValues: { ':amount': credits, ':zero': 0 },
+            }));
+            console.log(`Webhook: ${credits} credits added for ${userId} (payment: ${payment.id})`);
+          }
         }
       }
     }
@@ -476,23 +483,31 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
         // Credit subscription: add credits on each charge
         if (subType === 'credit_subscription' && SUBSCRIPTION_PLANS[planKey]) {
           const creditsToAdd = SUBSCRIPTION_PLANS[planKey].credits;
-          await dynamoClient.send(new UpdateCommand({
-            TableName: DYNAMO_TABLE,
-            Key: { userId },
-            UpdateExpression: 'SET isPaid = :paid, subscriptionEnd = :subEnd, subscriptionStatus = :status, lastRenewal = :now, subscriptionPlan = :plan, credits = if_not_exists(credits, :zero) + :credits',
-            ExpressionAttributeValues: {
-              ':paid': true,
-              ':subEnd': subEnd.toISOString(),
-              ':status': 'active',
-              ':now': new Date().toISOString(),
-              ':plan': planKey,
-              ':credits': creditsToAdd,
-              ':zero': 0,
-            },
-          }));
-          console.log(`Webhook: Subscription [${planKey}] charged - ${creditsToAdd} credits added for ${userId}`);
-          // Credit recurring referral commission ($1 per renewal, no cap)
-          await creditReferralCommission(userId, `subscription-renewal:${planKey}`, webhookPaymentId);
+
+          // Dedup: skip if this payment was already processed by verify endpoint
+          const existingUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId } }));
+          if (existingUser.Item?.paymentId === webhookPaymentId) {
+            console.log(`Webhook: Subscription [${planKey}] skipped - payment ${webhookPaymentId} already processed by verify`);
+          } else {
+            await dynamoClient.send(new UpdateCommand({
+              TableName: DYNAMO_TABLE,
+              Key: { userId },
+              UpdateExpression: 'SET isPaid = :paid, subscriptionEnd = :subEnd, subscriptionStatus = :status, lastRenewal = :now, subscriptionPlan = :plan, credits = if_not_exists(credits, :zero) + :credits, paymentId = :pid',
+              ExpressionAttributeValues: {
+                ':paid': true,
+                ':subEnd': subEnd.toISOString(),
+                ':status': 'active',
+                ':now': new Date().toISOString(),
+                ':plan': planKey,
+                ':credits': creditsToAdd,
+                ':zero': 0,
+                ':pid': webhookPaymentId,
+              },
+            }));
+            console.log(`Webhook: Subscription [${planKey}] charged - ${creditsToAdd} credits added for ${userId} (payment: ${webhookPaymentId})`);
+            // Credit recurring referral commission ($1 per renewal, no cap)
+            await creditReferralCommission(userId, `subscription-renewal:${planKey}`, webhookPaymentId);
+          }
         } else {
           // Legacy subscription (developer mode) - just set isPaid
           await dynamoClient.send(new UpdateCommand({
@@ -1526,12 +1541,12 @@ app.post('/api/credits/verify', verifyToken, async (req, res) => {
   }
 
   try {
-    // Add credits to user
+    // Add credits to user + track paymentId for dedup against webhook
     const result = await dynamoClient.send(new UpdateCommand({
       TableName: DYNAMO_TABLE,
       Key: { userId: req.user.sub },
-      UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount',
-      ExpressionAttributeValues: { ':amount': pack.credits, ':zero': 0 },
+      UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount, processedPaymentIds = list_append(if_not_exists(processedPaymentIds, :empty), :pid)',
+      ExpressionAttributeValues: { ':amount': pack.credits, ':zero': 0, ':pid': [razorpay_payment_id], ':empty': [] },
       ReturnValues: 'ALL_NEW',
     }));
 
