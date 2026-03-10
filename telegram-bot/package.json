@@ -1,7 +1,7 @@
 {
   "name": "nexus-telegram-bot",
   "version": "1.0.0",
-  "description": "Auto-post NSFW AI content to Telegram channel",
+  "description": "Auto-post AI-generated content to Telegram channel for Nexus AI Pro",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
