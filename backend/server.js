@@ -309,7 +309,7 @@ function getCreditCost(modelId, params = {}) {
 // ═══════════════════════════════════════════════
 // SERVER-SIDE REPLICATE API KEY (for credit mode)
 // ═══════════════════════════════════════════════
-const SERVER_REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || '';
+const SERVER_REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || process.env.REPLICATE_API_KEY || '';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -379,8 +379,12 @@ const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: AW
 // ============================================
 // RAZORPAY CONFIG
 // ============================================
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_SCpCGFak928F7f';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'sAaMXrCyXwMAVxIHfqgaQFA1';
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+  console.error('FATAL: RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in .env');
+  process.exit(1);
+}
 // ── NEW SUBSCRIPTION PLANS (with monthly credit refresh) ──
 const SUBSCRIPTION_PLANS = {
   starter_monthly:  { price: 100,  credits: 1000, period: 'monthly', interval: 1, name: 'Starter - 1,000 Credits/month',  planKey: 'starter_monthly' },
@@ -471,7 +475,25 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
     if (event.event === 'subscription.charged') {
       const sub = event.payload.subscription.entity;
       const webhookPayment = event.payload.payment?.entity;
-      const webhookPaymentId = webhookPayment?.id || `sub-${sub.id}-${Date.now()}`;
+      if (!webhookPayment?.id) {
+        console.warn(`Webhook: subscription.charged for ${sub.notes?.userId} has no payment entity — skipping credit addition to prevent dedup failure`);
+        // Still update subscription status but don't add credits (verify endpoint handles initial credit grant)
+        const userId = sub.notes?.userId;
+        if (userId) {
+          const subEnd = new Date();
+          subEnd.setMonth(subEnd.getMonth() + 1);
+          await dynamoClient.send(new UpdateCommand({
+            TableName: DYNAMO_TABLE,
+            Key: { userId },
+            UpdateExpression: 'SET isPaid = :paid, subscriptionEnd = :subEnd, subscriptionStatus = :status, lastRenewal = :now',
+            ExpressionAttributeValues: {
+              ':paid': true, ':subEnd': subEnd.toISOString(), ':status': 'active', ':now': new Date().toISOString(),
+            },
+          }));
+        }
+        return res.json({ status: 'ok' });
+      }
+      const webhookPaymentId = webhookPayment.id;
       const userId = sub.notes?.userId;
       const planKey = sub.notes?.plan;
       const subType = sub.notes?.type;
