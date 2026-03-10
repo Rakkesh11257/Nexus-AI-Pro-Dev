@@ -136,7 +136,7 @@ async function doLogin() {
   if (!email || !password) { errEl.textContent = 'Enter email and password'; return; }
 
   try {
-    const res = await fetch(`${API_BASE}/api/login`, {
+    const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -144,7 +144,7 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Login failed');
 
-    authToken = data.token || data.idToken;
+    authToken = data.accessToken;
     adminEmailStr = email;
     localStorage.setItem('nexus_admin_token', authToken);
     localStorage.setItem('nexus_admin_email', email);
@@ -174,7 +174,7 @@ async function showDashboard() {
 
 async function apiGet(path) {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Authorization': `Bearer ${authToken}` },
+    headers: { 'x-auth-token': authToken },
   });
   if (res.status === 401 || res.status === 403) { doLogout(); throw new Error('Unauthorized'); }
   const data = await res.json();
@@ -292,7 +292,7 @@ async function approvePayout(userId, btn) {
   try {
     await fetch(`${API_BASE}/api/admin/referrals/approve-payout`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+      headers: { 'x-auth-token': authToken, 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     });
     await loadData();
