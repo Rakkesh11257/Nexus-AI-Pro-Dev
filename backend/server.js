@@ -1352,6 +1352,11 @@ app.post('/api/referral/payout-request', verifyToken, async (req, res) => {
 // ── Admin: Referral Management ──
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
 
+// Serve admin dashboard page
+app.get('/admin', (req, res) => {
+  res.sendFile(require('path').join(__dirname, 'admin.html'));
+});
+
 app.get('/api/admin/referrals', verifyToken, async (req, res) => {
   if (!ADMIN_EMAILS.includes(req.user.email?.toLowerCase())) {
     return res.status(403).json({ error: 'Admin access required' });

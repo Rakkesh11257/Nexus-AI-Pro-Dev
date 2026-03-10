@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS AI Pro — Admin Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0a0a0f; --bg-1: #12121a; --bg-2: #1a1a25;
+    --border: rgba(255,255,255,0.06); --accent: #22d47b;
+    --text-100: #f0f0f5; --text-300: #a0a0b0; --text-400: #6a6a7a;
+    --amber: #f59e0b; --red: #ef4444; --purple: #a78bfa;
+  }
+  body { background: var(--bg); color: var(--text-100); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  /* Login overlay */
+  .login-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .login-box { background: var(--bg-1); border: 1px solid var(--border); border-radius: 16px; padding: 40px; max-width: 400px; width: 90%; text-align: center; }
+  .login-box h1 { font-size: 1.4rem; margin-bottom: 8px; }
+  .login-box p { color: var(--text-400); font-size: 0.85rem; margin-bottom: 24px; }
+  .login-box input { width: 100%; padding: 12px 16px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-100); font-size: 0.9rem; margin-bottom: 12px; outline: none; font-family: inherit; }
+  .login-box input:focus { border-color: var(--accent); }
+  .login-box button { width: 100%; padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
+  .login-box button:hover { opacity: 0.9; }
+  .login-error { color: var(--red); font-size: 0.8rem; margin-top: 8px; }
+
+  /* Header */
+  .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header h1 { font-size: 1.1rem; font-weight: 600; }
+  .header h1 span { color: var(--accent); }
+  .badge { font-size: 0.65rem; background: rgba(34,212,123,0.1); color: var(--accent); padding: 3px 8px; border-radius: 6px; font-weight: 600; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-right .email { color: var(--text-400); font-size: 0.8rem; }
+  .logout-btn { background: none; border: 1px solid var(--border); color: var(--text-300); padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; font-family: inherit; }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* Stats bar */
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; padding: 20px 24px; }
+  .stat-card { background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .stat-label { font-size: 0.72rem; color: var(--text-400); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .stat-value { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-value.purple { color: var(--purple); }
+  .stat-value.red { color: var(--red); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; padding: 0 24px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 12px 20px; font-size: 0.85rem; color: var(--text-400); cursor: pointer; border-bottom: 2px solid transparent; font-weight: 500; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover { color: var(--text-100); }
+
+  /* Table */
+  .table-wrap { padding: 16px 24px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; padding: 10px 12px; color: var(--text-400); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
+  td { padding: 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+  .pill.green { background: rgba(34,212,123,0.1); color: var(--accent); }
+  .pill.amber { background: rgba(245,158,11,0.1); color: var(--amber); }
+  .pill.red { background: rgba(239,68,68,0.1); color: var(--red); }
+  .approve-btn { background: var(--accent); color: #000; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .approve-btn:hover { opacity: 0.85; }
+  .approve-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 60px; color: var(--text-400); }
+  .spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Refresh */
+  .refresh-btn { background: var(--bg-2); border: 1px solid var(--border); color: var(--text-300); padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .empty { text-align: center; padding: 40px; color: var(--text-400); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h1>🔒 Admin Access</h1>
+    <p>NEXUS AI Pro — Referral & Commission Dashboard</p>
+    <input type="email" id="loginEmail" placeholder="Admin email" autocomplete="email">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    <button onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" style="display:none">
+  <div class="header">
+    <div class="header-left">
+      <h1><span>NEXUS</span> Admin</h1>
+      <span class="badge">Referral Dashboard</span>
+    </div>
+    <div class="header-right">
+      <span class="email" id="adminEmail"></span>
+      <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="referrers" onclick="switchTab('referrers', this)">All Referrers</div>
+    <div class="tab" data-tab="payouts" onclick="switchTab('payouts', this)">Pending Payouts</div>
+  </div>
+
+  <div id="tabContent">
+    <div class="loading"><div class="spinner"></div><p style="margin-top:12px">Loading...</p></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+let authToken = localStorage.getItem('nexus_admin_token');
+let adminEmailStr = localStorage.getItem('nexus_admin_email');
+let allData = null;
+
+// Cognito auth
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+
+  if (!email || !password) { errEl.textContent = 'Enter email and password'; return; }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    authToken = data.token || data.idToken;
+    adminEmailStr = email;
+    localStorage.setItem('nexus_admin_token', authToken);
+    localStorage.setItem('nexus_admin_email', email);
+    showDashboard();
+  } catch (err) {
+    errEl.textContent = err.message;
+  }
+}
+
+// Enter key login
+document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function doLogout() {
+  localStorage.removeItem('nexus_admin_token');
+  localStorage.removeItem('nexus_admin_email');
+  authToken = null;
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+}
+
+async function showDashboard() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('adminEmail').textContent = adminEmailStr;
+  await loadData();
+}
+
+async function apiGet(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Authorization': `Bearer ${authToken}` },
+  });
+  if (res.status === 401 || res.status === 403) { doLogout(); throw new Error('Unauthorized'); }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'API error');
+  return data;
+}
+
+async function loadData() {
+  document.getElementById('tabContent').innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top:12px">Loading...</p></div>';
+  try {
+    allData = await apiGet('/api/admin/referrals');
+    renderStats();
+    switchTab(document.querySelector('.tab.active')?.dataset.tab || 'referrers');
+  } catch (err) {
+    document.getElementById('tabContent').innerHTML = `<div class="empty">Error: ${err.message}</div>`;
+  }
+}
+
+function renderStats() {
+  const s = allData.summary || {};
+  const referrers = allData.referrers || [];
+  const pendingPayouts = referrers.filter(r => r.pendingPayout);
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Referrers</div><div class="stat-value green">${s.totalReferrers || referrers.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Signups</div><div class="stat-value">${s.totalSignups || 0}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Paid Conversions</div><div class="stat-value purple">${s.totalPaidConversions || 0}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Commission Earned</div><div class="stat-value green">$${(s.totalCommissionEarned || 0).toFixed(2)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Paid Out</div><div class="stat-value amber">$${(s.totalCommissionPaid || 0).toFixed(2)}</div></div>
+    <div class="stat-card"><div class="stat-label">Pending Payouts</div><div class="stat-value red">${pendingPayouts.length}</div></div>
+  `;
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else document.querySelector(`.tab[data-tab="${tab}"]`)?.classList.add('active');
+
+  if (tab === 'referrers') renderReferrers();
+  else renderPayouts();
+}
+
+function renderReferrers() {
+  const referrers = allData?.referrers || [];
+  if (!referrers.length) {
+    document.getElementById('tabContent').innerHTML = '<div class="empty">No referrers yet</div>';
+    return;
+  }
+
+  let html = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Email</th><th>Referral Code</th><th>Signups</th><th>Payments</th>
+      <th>Balance</th><th>Total Earned</th><th>Total Paid</th><th>Status</th>
+    </tr></thead><tbody>`;
+
+  for (const r of referrers) {
+    const hasPending = r.pendingPayout;
+    html += `<tr>
+      <td>${r.email || '—'}</td>
+      <td class="mono">${r.referralCode || '—'}</td>
+      <td>${r.referralSignups || 0}</td>
+      <td>${r.referralCount || 0}</td>
+      <td class="mono">$${(r.commissionBalance || 0).toFixed(2)}</td>
+      <td class="mono">$${(r.totalCommissionEarned || 0).toFixed(2)}</td>
+      <td class="mono">$${(r.commissionPaid || 0).toFixed(2)}</td>
+      <td>${hasPending ? '<span class="pill amber">Payout Pending</span>' : r.totalCommissionEarned > 0 ? '<span class="pill green">Active</span>' : '<span class="pill">—</span>'}</td>
+    </tr>`;
+  }
+
+  html += '</tbody></table></div>';
+  document.getElementById('tabContent').innerHTML = html;
+}
+
+function renderPayouts() {
+  const referrers = allData?.referrers || [];
+  const pending = referrers.filter(r => r.pendingPayout);
+
+  if (!pending.length) {
+    document.getElementById('tabContent').innerHTML = '<div class="empty">No pending payouts</div>';
+    return;
+  }
+
+  let html = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Email</th><th>Method</th><th>Details</th><th>Amount</th><th>Requested At</th><th>Action</th>
+    </tr></thead><tbody>`;
+
+  for (const r of pending) {
+    const po = r.pendingPayout;
+    let details = '';
+    if (po.payoutMethod === 'upi') details = po.payoutDetails;
+    else if (po.payoutMethod === 'paypal') details = po.payoutDetails;
+    else if (po.payoutMethod === 'bank') {
+      const d = po.payoutDetails || {};
+      details = `${d.name || ''} / ${d.accountNumber || ''} / ${d.ifsc || ''}`;
+    }
+
+    html += `<tr>
+      <td>${r.email || '—'}</td>
+      <td><span class="pill green">${(po.payoutMethod || '').toUpperCase()}</span></td>
+      <td class="mono" style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${details}</td>
+      <td class="mono" style="font-weight:700;color:var(--accent)">$${(r.commissionBalance || 0).toFixed(2)}</td>
+      <td style="color:var(--text-400)">${po.requestedAt ? new Date(po.requestedAt).toLocaleDateString() : '—'}</td>
+      <td><button class="approve-btn" onclick="approvePayout('${r.userId}', this)">✓ Approve</button></td>
+    </tr>`;
+  }
+
+  html += '</tbody></table></div>';
+  document.getElementById('tabContent').innerHTML = html;
+}
+
+async function approvePayout(userId, btn) {
+  if (!confirm('Mark this payout as completed? This will zero the user\'s balance.')) return;
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    await fetch(`${API_BASE}/api/admin/referrals/approve-payout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    await loadData();
+  } catch (err) {
+    alert('Error: ' + err.message);
+    btn.disabled = false; btn.textContent = '✓ Approve';
+  }
+}
+
+// Auto-login if token exists
+if (authToken) showDashboard();
+</script>
+</body>
+</html>
