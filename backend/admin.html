@@ -202,8 +202,8 @@ function renderStats() {
     <div class="stat-card"><div class="stat-label">Total Referrers</div><div class="stat-value green">${s.totalReferrers || referrers.length}</div></div>
     <div class="stat-card"><div class="stat-label">Total Signups</div><div class="stat-value">${s.totalSignups || 0}</div></div>
     <div class="stat-card"><div class="stat-label">Total Paid Conversions</div><div class="stat-value purple">${s.totalPaidConversions || 0}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Commission Earned</div><div class="stat-value green">$${(s.totalCommissionEarned || 0).toFixed(2)}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Paid Out</div><div class="stat-value amber">$${(s.totalCommissionPaid || 0).toFixed(2)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Commission Earned</div><div class="stat-value green">${(s.totalEarned || 0).toFixed(2)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Paid Out</div><div class="stat-value amber">${(s.totalPaid || 0).toFixed(2)}</div></div>
     <div class="stat-card"><div class="stat-label">Pending Payouts</div><div class="stat-value red">${pendingPayouts.length}</div></div>
   `;
 }
