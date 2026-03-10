@@ -264,19 +264,18 @@ function renderPayouts() {
 
   for (const r of pending) {
     const po = r.pendingPayout;
-    let details = '';
-    if (po.payoutMethod === 'upi') details = po.payoutDetails;
-    else if (po.payoutMethod === 'paypal') details = po.payoutDetails;
-    else if (po.payoutMethod === 'bank') {
-      const d = po.payoutDetails || {};
-      details = `${d.name || ''} / ${d.accountNumber || ''} / ${d.ifsc || ''}`;
+    const method = po.method || po.payoutMethod || '—';
+    let details = po.details || po.payoutDetails || '';
+    if (typeof details === 'object') {
+      details = `${details.name || ''} / ${details.accountNumber || ''} / ${details.ifsc || ''}`;
     }
+    const amount = po.amount || r.commissionBalance || 0;
 
     html += `<tr>
       <td>${r.email || '—'}</td>
-      <td><span class="pill green">${(po.payoutMethod || '').toUpperCase()}</span></td>
-      <td class="mono" style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${details}</td>
-      <td class="mono" style="font-weight:700;color:var(--accent)">$${(r.commissionBalance || 0).toFixed(2)}</td>
+      <td><span class="pill green">${method.toUpperCase()}</span></td>
+      <td class="mono" style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${details}</td>
+      <td class="mono" style="font-weight:700;color:var(--accent)">${Number(amount).toFixed(2)}</td>
       <td style="color:var(--text-400)">${po.requestedAt ? new Date(po.requestedAt).toLocaleDateString() : '—'}</td>
       <td><button class="approve-btn" onclick="approvePayout('${r.userId}', this)">✓ Approve</button></td>
     </tr>`;
