@@ -459,11 +459,12 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
           if (processedPayments.includes(payment.id)) {
             console.log(`Webhook: PAYG credit skipped - payment ${payment.id} already processed by verify`);
           } else {
+            // Add credits AND track paymentId atomically (so verify won't double-add)
             await dynamoClient.send(new UpdateCommand({
               TableName: DYNAMO_TABLE,
               Key: { userId },
-              UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount',
-              ExpressionAttributeValues: { ':amount': credits, ':zero': 0 },
+              UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount, processedPaymentIds = list_append(if_not_exists(processedPaymentIds, :empty), :pid)',
+              ExpressionAttributeValues: { ':amount': credits, ':zero': 0, ':pid': [payment.id], ':empty': [] },
             }));
             console.log(`Webhook: ${credits} credits added for ${userId} (payment: ${payment.id})`);
           }
@@ -508,13 +509,14 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
 
           // Dedup: skip if this payment was already processed by verify endpoint
           const existingUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId } }));
-          if (existingUser.Item?.paymentId === webhookPaymentId) {
-            console.log(`Webhook: Subscription [${planKey}] skipped - payment ${webhookPaymentId} already processed by verify`);
+          const processedPayments = existingUser.Item?.processedPaymentIds || [];
+          if (processedPayments.includes(webhookPaymentId)) {
+            console.log(`Webhook: Subscription [${planKey}] skipped - payment ${webhookPaymentId} already processed`);
           } else {
             await dynamoClient.send(new UpdateCommand({
               TableName: DYNAMO_TABLE,
               Key: { userId },
-              UpdateExpression: 'SET isPaid = :paid, subscriptionEnd = :subEnd, subscriptionStatus = :status, lastRenewal = :now, subscriptionPlan = :plan, credits = if_not_exists(credits, :zero) + :credits, paymentId = :pid',
+              UpdateExpression: 'SET isPaid = :paid, subscriptionEnd = :subEnd, subscriptionStatus = :status, lastRenewal = :now, subscriptionPlan = :plan, credits = if_not_exists(credits, :zero) + :credits, paymentId = :pid, processedPaymentIds = list_append(if_not_exists(processedPaymentIds, :empty), :ppid)',
               ExpressionAttributeValues: {
                 ':paid': true,
                 ':subEnd': subEnd.toISOString(),
@@ -524,6 +526,7 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }), asyn
                 ':credits': creditsToAdd,
                 ':zero': 0,
                 ':pid': webhookPaymentId,
+                ':ppid': [webhookPaymentId], ':empty': [],
               },
             }));
             console.log(`Webhook: Subscription [${planKey}] charged - ${creditsToAdd} credits added for ${userId} (payment: ${webhookPaymentId})`);
@@ -1127,6 +1130,15 @@ app.post('/api/payment/verify', verifyToken, async (req, res) => {
 
       // Check if this is user's first subscription — give 50% bonus
       const existingUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+
+      // Dedup: check if this payment was already processed (by webhook or duplicate verify)
+      const processedPayments = existingUser.Item?.processedPaymentIds || [];
+      if (processedPayments.includes(razorpay_payment_id)) {
+        console.log(`Verify: Subscription credit skipped - payment ${razorpay_payment_id} already processed`);
+        const currentCredits = existingUser.Item?.credits || 0;
+        return res.json({ success: true, message: 'Subscription active! (payment already processed)', isPaid: true, plan, creditsAdded: 0, credits: currentCredits });
+      }
+
       const isFirstSub = !existingUser.Item?.firstSubscriptionDone;
       const bonusCreds = isFirstSub ? Math.floor(baseCreds * 0.5) : 0;
       const creditsToAdd = baseCreds + bonusCreds;
@@ -1134,12 +1146,13 @@ app.post('/api/payment/verify', verifyToken, async (req, res) => {
       await dynamoClient.send(new UpdateCommand({
         TableName: DYNAMO_TABLE,
         Key: { userId: req.user.sub },
-        UpdateExpression: 'SET isPaid = :paid, paymentId = :pid, paymentPlan = :plan, paidAt = :now, razorpaySubscriptionId = :subId, subscriptionEnd = :subEnd, subscriptionStatus = :status, subscriptionPlan = :subPlan, credits = if_not_exists(credits, :zero) + :credits, firstSubscriptionDone = :fsd',
+        UpdateExpression: 'SET isPaid = :paid, paymentId = :pid, paymentPlan = :plan, paidAt = :now, razorpaySubscriptionId = :subId, subscriptionEnd = :subEnd, subscriptionStatus = :status, subscriptionPlan = :subPlan, credits = if_not_exists(credits, :zero) + :credits, firstSubscriptionDone = :fsd, processedPaymentIds = list_append(if_not_exists(processedPaymentIds, :empty), :ppid)',
         ExpressionAttributeValues: {
           ':paid': true, ':pid': razorpay_payment_id, ':plan': plan,
           ':now': now.toISOString(), ':subId': razorpay_subscription_id,
           ':subEnd': subEnd.toISOString(), ':status': 'active',
           ':subPlan': plan, ':credits': creditsToAdd, ':zero': 0, ':fsd': true,
+          ':ppid': [razorpay_payment_id], ':empty': [],
         },
       }));
       // Fetch updated total credits
@@ -1568,7 +1581,16 @@ app.post('/api/credits/verify', verifyToken, async (req, res) => {
   }
 
   try {
-    // Add credits to user + track paymentId for dedup against webhook
+    // Dedup: check if this payment was already processed (by webhook or a duplicate verify call)
+    const existingUser = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+    const processedPayments = existingUser.Item?.processedPaymentIds || [];
+    if (processedPayments.includes(razorpay_payment_id)) {
+      console.log(`Verify: PAYG credit skipped - payment ${razorpay_payment_id} already processed`);
+      const currentCredits = existingUser.Item?.credits || 0;
+      return res.json({ success: true, credits: currentCredits, added: 0, message: 'Payment already processed.' });
+    }
+
+    // Add credits + track paymentId atomically for dedup
     const result = await dynamoClient.send(new UpdateCommand({
       TableName: DYNAMO_TABLE,
       Key: { userId: req.user.sub },
