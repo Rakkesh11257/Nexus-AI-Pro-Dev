@@ -39,7 +39,6 @@ const ModelSelector = ({ models, value, onChange, extraOptions, style, userPlan,
           <div style={{ color: '#fff', fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>{selected ? selected.name : value}</span>
             {showNsfwBadge && selected?.nsfw && <span style={{ fontSize: 10, color: '#f472b6', background: 'rgba(244,114,182,0.1)', padding: '2px 7px', borderRadius: 8, border: '1px solid rgba(244,114,182,0.2)', fontWeight: 600, letterSpacing: '0.03em', flexShrink: 0 }}>18+</span>}
-            {getCreditCost && selected && (() => { const c = getCreditCost(selected.id); return c != null ? <span style={{ fontSize: 10, color: '#22d47b', background: 'rgba(34,212,123,0.08)', padding: '2px 7px', borderRadius: 8, border: '1px solid rgba(34,212,123,0.15)', fontWeight: 600, flexShrink: 0 }}>{c}{c === getCreditCost(selected.id) ? '' : '+'} cr</span> : null; })()}
           </div>
           {selected && <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, marginTop: 1 }}>{selected.desc}</div>}
         </div>
@@ -75,7 +74,7 @@ const ModelSelector = ({ models, value, onChange, extraOptions, style, userPlan,
               </div>
               {locked && <span style={{ fontSize: 12, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 10, border: '1px solid rgba(245,158,11,0.2)', whiteSpace: 'nowrap' }}>🔒 Yearly</span>}
               {showNsfwBadge && m.nsfw && !locked && <span style={{ fontSize: 10, color: '#f472b6', background: 'rgba(244,114,182,0.1)', padding: '2px 7px', borderRadius: 8, border: '1px solid rgba(244,114,182,0.2)', whiteSpace: 'nowrap', fontWeight: 600, letterSpacing: '0.03em' }}>18+</span>}
-              {getCreditCost && !locked && (() => { const c = getCreditCost(m.id); return c != null ? <span style={{ fontSize: 10, color: 'rgba(34,212,123,0.7)', whiteSpace: 'nowrap', fontWeight: 500 }}>{c} cr</span> : null; })()}
+
               {!locked && m.id === value && <span style={{ color: '#22d47b', fontSize: 14 }}>✓</span>}
             </div>
             );
