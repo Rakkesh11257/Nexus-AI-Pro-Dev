@@ -743,6 +743,10 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
   const [success, setSuccess] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('yearly');
 
+  // Detect if user is from India (for INR) or international (for USD + PayPal)
+  const isIndia = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone?.startsWith('Asia/Kolkata') || Intl.DateTimeFormat().resolvedOptions().timeZone?.startsWith('Asia/Calcutta'); } catch { return true; } })();
+  const paymentCurrency = isIndia ? 'INR' : 'USD';
+
   // ── Subscription Plans (monthly auto-renew with credits) ──
   const subPlans = [
     { id: 'starter_monthly', name: 'Starter', price: 999, credits: 1000, color: '#60a5fa', icon: '⚡', perCredit: '$0.012', usdPrice: '$12' },
@@ -769,12 +773,12 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
       const res = await fetch(`${API_BASE}/api/credits/purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken },
-        body: JSON.stringify({ packId: pack.id }),
+        body: JSON.stringify({ packId: pack.id, currency: paymentCurrency }),
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Failed to create order');
       const order = await res.json();
       const options = {
-        key: order.keyId, amount: order.amount, currency: 'INR',
+        key: order.keyId, amount: order.amount, currency: order.currency || 'INR',
         name: 'NEXUS AI Pro', description: order.name, order_id: order.orderId,
         prefill: { email: user?.email || '' }, theme: { color: '#22d47b' },
         modal: { ondismiss: () => setLoading(false) },

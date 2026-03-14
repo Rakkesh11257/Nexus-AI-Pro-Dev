@@ -1518,25 +1518,31 @@ app.post('/api/credits/add', (req, res) => {
 });
 
 // POST /api/credits/purchase - Create Razorpay order for credit pack
+// Supports dual currency: INR (default for India) or USD (for international + PayPal)
 app.post('/api/credits/purchase', verifyToken, async (req, res) => {
-  const { packId } = req.body;
+  const { packId, currency: reqCurrency } = req.body;
+  const isUSD = reqCurrency === 'USD';
+
   const CREDIT_PACKS = {
-    large:    { credits: 1500, price: 149900, name: 'Large Pack - 1,500 Credits' },   // ₹1,499
-    mega:     { credits: 3500, price: 299900, name: 'Mega Pack - 3,500 Credits' },   // ₹2,999
-    // Legacy packs (honor old purchases)
-    starter:  { credits: 100,  price: 14900,  name: 'Starter Pack - 100 Credits' },
-    popular:  { credits: 500,  price: 49900,  name: 'Popular Pack - 500 Credits' },
-    pro:      { credits: 1500, price: 99900,  name: 'Pro Pack - 1,500 Credits' },
-    ultimate: { credits: 5000, price: 249900, name: 'Ultimate Pack - 5,000 Credits' },
+    large:    { credits: 1500, price: 149900, priceUSD: 1800, name: 'Large Pack - 1,500 Credits' },   // ₹1,499 / $18
+    mega:     { credits: 3500, price: 299900, priceUSD: 3500, name: 'Mega Pack - 3,500 Credits' },   // ₹2,999 / $35
+    // Legacy packs (honor old purchases, INR only)
+    starter:  { credits: 100,  price: 14900,  priceUSD: 200,  name: 'Starter Pack - 100 Credits' },
+    popular:  { credits: 500,  price: 49900,  priceUSD: 600,  name: 'Popular Pack - 500 Credits' },
+    pro:      { credits: 1500, price: 99900,  priceUSD: 1200, name: 'Pro Pack - 1,500 Credits' },
+    ultimate: { credits: 5000, price: 249900, priceUSD: 3000, name: 'Ultimate Pack - 5,000 Credits' },
   };
 
   const pack = CREDIT_PACKS[packId];
   if (!pack) return res.status(400).json({ error: 'Invalid pack' });
 
+  const orderCurrency = isUSD ? 'USD' : 'INR';
+  const orderAmount = isUSD ? pack.priceUSD : pack.price; // USD in cents, INR in paise
+
   try {
     const order = await razorpay.orders.create({
-      amount: pack.price, // in paise
-      currency: 'INR',
+      amount: orderAmount,
+      currency: orderCurrency,
       receipt: `cr_${req.user.sub.slice(-8)}_${Date.now()}`,
       notes: {
         userId: req.user.sub,
@@ -1544,9 +1550,11 @@ app.post('/api/credits/purchase', verifyToken, async (req, res) => {
         type: 'credit_purchase',
         packId,
         credits: String(pack.credits),
+        currency: orderCurrency,
       },
     });
-    res.json({ orderId: order.id, amount: pack.price, credits: pack.credits, name: pack.name, keyId: RAZORPAY_KEY_ID });
+    console.log(`Credit order created: ${packId} in ${orderCurrency} for ${orderAmount} (${pack.credits} credits)`);
+    res.json({ orderId: order.id, amount: orderAmount, currency: orderCurrency, credits: pack.credits, name: pack.name, keyId: RAZORPAY_KEY_ID });
   } catch (err) {
     console.error('Credit purchase error:', err);
     res.status(500).json({ error: 'Failed to create order' });
