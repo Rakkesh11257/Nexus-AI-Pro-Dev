@@ -3101,16 +3101,16 @@ function App() {
           <NexusLogo size={32} />
           <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.02em' }}><span style={{ color: '#22d47b' }}>N</span><span style={{ color: '#f0f0f5' }}>EXUS AI Pro</span></span>
         </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {user?.isPaid ? <span style={{ fontSize: 10, color: '#4ade80', background: 'rgba(74,222,128,0.1)', padding: '3px 8px', borderRadius: 20, border: '1px solid rgba(74,222,128,0.2)' }}>✓ Pro</span>
             : <span onClick={() => setShowPaywall(true)} style={{ fontSize: 10, color: '#fbbf24', background: 'rgba(251,191,36,0.1)', padding: '3px 8px', borderRadius: 20, border: '1px solid rgba(251,191,36,0.2)', cursor: 'pointer' }}>🔒 Free</span>}
           <span onClick={() => setShowCreditShop(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 20, background: credits > 0 ? 'rgba(34,212,123,0.08)' : 'rgba(255,255,255,0.04)', border: credits > 0 ? '1px solid rgba(34,212,123,0.2)' : '1px solid rgba(255,255,255,0.08)', fontSize: 12, fontWeight: 600, color: credits > 0 ? '#22d47b' : '#666', cursor: 'pointer', transition: 'all 0.2s' }} title={`${credits} credits remaining • Click to buy more`}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" stroke={credits > 0 ? '#22d47b' : '#555'} strokeWidth="2" /><text x="12" y="16" textAnchor="middle" fill={credits > 0 ? '#22d47b' : '#555'} fontSize="12" fontWeight="700">C</text></svg>
             {credits.toLocaleString()}
           </span>
-          <button onClick={() => setShowReferral(true)} style={{ padding: '3px 10px', borderRadius: 20, border: '1px solid rgba(251,191,36,0.25)', background: 'rgba(251,191,36,0.08)', color: '#fbbf24', fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>🎁 Invite</button>
-          <button onClick={() => setShowSettings(true)} style={{ ...S.btnSm, padding: '5px 10px', fontSize: 12, position: 'relative' }}>⚙{isDeveloperMode && <span style={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', background: '#60a5fa', border: '1px solid #0d1117' }} title="Developer Mode" />}</button>
-          <button onClick={handleLogout} style={{ ...S.btnSm, padding: '5px 10px', fontSize: 12 }}>Sign Out</button>
+          <button onClick={() => setShowReferral(true)} style={{ padding: '3px 8px', borderRadius: 20, border: '1px solid rgba(251,191,36,0.25)', background: 'rgba(251,191,36,0.08)', color: '#fbbf24', fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>🎁 Invite</button>
+          <button onClick={() => setShowSettings(true)} style={{ ...S.btnSm, padding: '5px 8px', fontSize: 12, position: 'relative' }}>⚙{isDeveloperMode && <span style={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', background: '#60a5fa', border: '1px solid #0d1117' }} title="Developer Mode" />}</button>
+          <button onClick={handleLogout} title="Sign Out" style={{ ...S.btnSm, padding: '5px 8px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg><span style={{ color: '#ef4444', fontSize: 11, fontWeight: 600 }} className="signout-text">Sign Out</span></button>
         </div>
       </header>
 

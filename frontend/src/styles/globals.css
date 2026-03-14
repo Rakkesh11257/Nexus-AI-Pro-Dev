@@ -57,3 +57,10 @@ input[type="range"]::-webkit-slider-thumb {
 textarea:focus, input:focus {
   border-color: rgba(34, 212, 123, 0.4) !important;
 }
+
+/* Mobile: hide Sign Out text, show only icon */
+@media (max-width: 480px) {
+  .signout-text {
+    display: none !important;
+  }
+}

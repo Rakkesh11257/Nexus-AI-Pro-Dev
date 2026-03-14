@@ -387,9 +387,9 @@ if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
 }
 // ── NEW SUBSCRIPTION PLANS (with monthly credit refresh) ──
 const SUBSCRIPTION_PLANS = {
-  starter_monthly:  { price: 100,  credits: 1000, period: 'monthly', interval: 1, name: 'Starter - 1,000 Credits/month',  planKey: 'starter_monthly' },
-  pro_monthly:      { price: 200, credits: 2500, period: 'monthly', interval: 1, name: 'Pro - 2,500 Credits/month',     planKey: 'pro_monthly' },
-  ultra_monthly:    { price: 300, credits: 5000, period: 'monthly', interval: 1, name: 'Ultra - 5,000 Credits/month',   planKey: 'ultra_monthly' },
+  starter_monthly:  { price: 99900,  credits: 1000, period: 'monthly', interval: 1, name: 'Starter - 1,000 Credits/month',  planKey: 'starter_monthly' },
+  pro_monthly:      { price: 199900, credits: 2500, period: 'monthly', interval: 1, name: 'Pro - 2,500 Credits/month',     planKey: 'pro_monthly' },
+  ultra_monthly:    { price: 299900, credits: 5000, period: 'monthly', interval: 1, name: 'Ultra - 5,000 Credits/month',   planKey: 'ultra_monthly' },
 };
 
 // Legacy prices kept for backwards compat
@@ -1521,8 +1521,8 @@ app.post('/api/credits/add', (req, res) => {
 app.post('/api/credits/purchase', verifyToken, async (req, res) => {
   const { packId } = req.body;
   const CREDIT_PACKS = {
-    large:    { credits: 1500, price: 100, name: 'Large Pack - 1,500 Credits' },   // ₹1,499 ($17.99)
-    mega:     { credits: 3500, price: 200, name: 'Mega Pack - 3,500 Credits' },   // ₹2,999 ($34.99)
+    large:    { credits: 1500, price: 149900, name: 'Large Pack - 1,500 Credits' },   // ₹1,499
+    mega:     { credits: 3500, price: 299900, name: 'Mega Pack - 3,500 Credits' },   // ₹2,999
     // Legacy packs (honor old purchases)
     starter:  { credits: 100,  price: 14900,  name: 'Starter Pack - 100 Credits' },
     popular:  { credits: 500,  price: 49900,  name: 'Popular Pack - 500 Credits' },
@@ -1826,7 +1826,7 @@ app.post('/api/upload-temp', requireAccess, async (req, res) => {
     console.log('>>> Temp file saved:', filename, content_type, buffer.length, 'bytes');
 
     // Build public URL - must be externally accessible for models like Runway
-    const PUBLIC_HOST = process.env.PUBLIC_HOST || 'https://test.nexus-ai-pro.com';
+    const PUBLIC_HOST = process.env.PUBLIC_HOST || 'https://app.nexus-ai-pro.com';
     const publicUrl = `${PUBLIC_HOST}/tmp-uploads/${filename}`;
 
     res.json({ url: publicUrl, filename });
