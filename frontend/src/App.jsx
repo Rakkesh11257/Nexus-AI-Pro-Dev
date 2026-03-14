@@ -737,7 +737,7 @@ function UpgradeModal({ onClose, accessToken, user, onUpgradeSuccess }) {
 }
 // ─── Credit Shop Modal ───
 function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, onPaymentSuccess }) {
-  const [activeTab, setActiveTab] = useState('subscriptions');
+  const [activeTab, setActiveTab] = useState((() => { try { const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; return (tz?.startsWith('Asia/Kolkata') || tz?.startsWith('Asia/Calcutta')) ? 'subscriptions' : 'credits'; } catch { return 'subscriptions'; } })());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -749,15 +749,15 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
 
   // ── Subscription Plans (monthly auto-renew with credits) ──
   const subPlans = [
-    { id: 'starter_monthly', name: 'Starter', price: 999, credits: 1000, color: '#60a5fa', icon: '⚡', perCredit: '$0.012', usdPrice: '$12' },
-    { id: 'pro_monthly', name: 'Pro', price: 1999, credits: 2500, color: '#a78bfa', icon: '🚀', badge: 'POPULAR', perCredit: '$0.010', usdPrice: '$24' },
-    { id: 'ultra_monthly', name: 'Ultra', price: 2999, credits: 5000, color: '#fbbf24', icon: '💎', perCredit: '$0.007', usdPrice: '$35' },
+    { id: 'starter_monthly', name: 'Starter', price: 999, credits: 1000, color: '#60a5fa', icon: '⚡', perCredit: isIndia ? '₹0.99' : '$0.012', displayPrice: isIndia ? '₹999' : '$12' },
+    { id: 'pro_monthly', name: 'Pro', price: 1999, credits: 2500, color: '#a78bfa', icon: '🚀', badge: 'POPULAR', perCredit: isIndia ? '₹0.80' : '$0.010', displayPrice: isIndia ? '₹1,999' : '$24' },
+    { id: 'ultra_monthly', name: 'Ultra', price: 2999, credits: 5000, color: '#fbbf24', icon: '💎', perCredit: isIndia ? '₹0.60' : '$0.007', displayPrice: isIndia ? '₹2,999' : '$35' },
   ];
 
   // ── Pay-as-you-go Credit Packs (one-time, no expiry) ──
   const packs = [
-    { id: 'large', credits: 1500, price: 1499, label: 'Large', color: '#22d47b', icon: '🔥', perCredit: '$0.012', usdPrice: '$18' },
-    { id: 'mega', credits: 3500, price: 2999, label: 'Mega', color: '#f59e0b', icon: '💰', badge: 'BEST VALUE', perCredit: '$0.010', usdPrice: '$35' },
+    { id: 'large', credits: 1500, price: 1499, label: 'Large', color: '#22d47b', icon: '🔥', perCredit: isIndia ? '₹0.99' : '$0.012', displayPrice: isIndia ? '₹1,499' : '$18' },
+    { id: 'mega', credits: 3500, price: 2999, label: 'Mega', color: '#f59e0b', icon: '💰', badge: 'BEST VALUE', perCredit: isIndia ? '₹0.86' : '$0.010', displayPrice: isIndia ? '₹2,999' : '$35' },
   ];
 
   // ── Developer Mode Plans (BYOK) ──
@@ -878,9 +878,9 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
 
         {/* Tabs */}
         <div style={{ display: 'flex', marginBottom: 14 }}>
-          <button onClick={() => { setActiveTab('subscriptions'); setError(''); }} style={tabStyle(activeTab === 'subscriptions')}>📅 Monthly Plans</button>
+          {isIndia && <button onClick={() => { setActiveTab('subscriptions'); setError(''); }} style={tabStyle(activeTab === 'subscriptions')}>📅 Monthly Plans</button>}
           <button onClick={() => { setActiveTab('credits'); setError(''); }} style={tabStyle(activeTab === 'credits')}>💳 Credit Packs</button>
-          <button onClick={() => { setActiveTab('developer'); setError(''); }} style={tabStyle(activeTab === 'developer')}>🔑 Developer</button>
+          {isIndia && <button onClick={() => { setActiveTab('developer'); setError(''); }} style={tabStyle(activeTab === 'developer')}>🔑 Developer</button>}
         </div>
 
         {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, color: '#ef4444', fontSize: 13 }}>{error}</div>}
@@ -900,7 +900,7 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
                 <div style={{ fontSize: 22, fontWeight: 700, color: plan.color }}>{plan.credits.toLocaleString()}</div>
                 <div style={{ fontSize: 10, color: '#888', marginBottom: 2 }}>credits/month</div>
                 <div style={{ fontSize: 9, color: '#22d47b', fontWeight: 700, marginBottom: 4, background: 'rgba(34,212,123,0.08)', padding: '2px 6px', borderRadius: 4, display: 'inline-block' }}>1st month: {Math.floor(plan.credits * 1.5).toLocaleString()} credits</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{plan.usdPrice}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{plan.displayPrice}</div>
                 <div style={{ fontSize: 10, color: '#888', marginBottom: 2 }}>/month</div>
                 <div style={{ fontSize: 9, color: plan.color, fontWeight: 600, marginBottom: 10 }}>{plan.perCredit}/credit</div>
                 <button onClick={() => !loading && handleSubscribe(plan.id)} disabled={loading}
@@ -926,13 +926,13 @@ function CreditShopModal({ onClose, accessToken, credits, onCreditsAdded, user, 
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{p.label}</div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: p.color, marginBottom: 2 }}>{p.credits.toLocaleString()}</div>
                 <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>credits</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{p.usdPrice}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{p.displayPrice}</div>
                 <div style={{ fontSize: 10, color: p.color, marginTop: 4, fontWeight: 600 }}>{p.perCredit}/credit</div>
               </div>
             ))}
           </div>
           <div style={{ background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.15)', borderRadius: 8, padding: '8px 12px', marginBottom: 8 }}>
-            <p style={{ color: '#a78bfa', fontSize: 11, margin: 0, textAlign: 'center' }}>💡 Tip: Monthly plans offer better value — Starter gives 1,000 credits for $12 ($0.012/credit)</p>
+            <p style={{ color: '#a78bfa', fontSize: 11, margin: 0, textAlign: 'center' }}>💡 Tip: Monthly plans offer better value — Starter gives 1,000 credits for {isIndia ? '₹999' : '$12'} ({isIndia ? '₹0.99' : '$0.012'}/credit)</p>
           </div>
           <p style={{ color: '#555', fontSize: 10, textAlign: 'center', margin: 0 }}>Pay once · Credits never expire · Razorpay secure</p>
         </>}
