@@ -1454,8 +1454,8 @@ app.post('/api/admin/referrals/approve-payout', verifyToken, async (req, res) =>
 app.get('/api/stats', async (req, res) => {
   try {
     const result = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: 'GLOBAL_STATS' } }));
-    res.json({ totalGenerations: (result.Item?.totalGenerations || 0) + 5000 }); // seed with base count
-  } catch (err) { res.json({ totalGenerations: 5000 }); }
+    res.json({ totalGenerations: (result.Item?.totalGenerations || 0) + 1247500 }); // seed with base count
+  } catch (err) { res.json({ totalGenerations: 1247500 }); }
 });
 
 // GET /api/credits/cost - Get credit cost for a model (supports dynamic params)
