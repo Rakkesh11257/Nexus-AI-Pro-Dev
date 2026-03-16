@@ -719,11 +719,58 @@ const DISPOSABLE_EMAIL_DOMAINS = new Set([
   'guerrillamail.de','guerrillamail.biz','emailfake.com','cuvox.de','armyspy.com',
   'dayrep.com','einrot.com','fleckens.hu','gustr.com','jourrapide.com','rhyta.com',
   'superrito.com','teleworm.us','mailforspam.com','safetypost.de',
+  // Actively abused domains (detected from user data)
+  'kaoing.com','netoiu.com','pckage.com','7novels.com','him6.com','dolofan.com',
+  'medevsa.com','fentaoba.com','iaciu.com','daerdy.com','feriwor.com','cslua.com',
+  'amiralty.com','keecs.com','bitonc.com','bigonla.com','pazuric.com','ostahie.com',
+  'esyline.com','hlkes.com','flosek.com','indevgo.com','deposin.com','advarm.com',
+  'alibto.com','3dkai.com','lotbrush.com','zordeo.com','seaswar.com','penesta.com',
+  '2insp.com','ujoice.com','dollicons.com','wnbaldwy.com','enotj.com','emlhub.com',
+  'getairmail.com','hidingmail.com','contaco.org','forexzig.com','ruutukf.com',
+  'xfavaj.com','fxavaj.com','mrotzis.com','bltiwd.com','mailpwr.com','minitts.net',
+  'hutudns.com','aminating.com','denipl.net','nikora.biz.st','mail4.uk','o2cr.com',
+  'kjh.mailings.live','rulersonline.com','mailba.uk','ymeli.com',
 ]);
 
 function isDisposableEmail(email) {
   const domain = email.split('@')[1]?.toLowerCase();
   return domain ? DISPOSABLE_EMAIL_DOMAINS.has(domain) : false;
+}
+
+// Normalize Gmail: remove dots and +suffix from local part
+// Gmail ignores dots (a.b.c@gmail.com = abc@gmail.com) and everything after +
+// Used for duplicate detection — the stored email stays as-is
+function normalizeEmail(email) {
+  const parts = email.toLowerCase().split('@');
+  if (parts.length !== 2) return email.toLowerCase();
+  let [local, domain] = parts;
+  if (domain === 'gmail.com' || domain === 'googlemail.com') {
+    local = local.split('+')[0]; // remove +suffix
+    local = local.replace(/\./g, ''); // remove dots
+  }
+  return `${local}@${domain}`;
+}
+
+// Check if a normalized email already exists in the database
+async function isDuplicateEmail(email) {
+  const normalized = normalizeEmail(email);
+  try {
+    const result = await dynamoClient.send(new ScanCommand({
+      TableName: DYNAMO_TABLE,
+      ProjectionExpression: 'email',
+      FilterExpression: 'attribute_exists(email)',
+    }));
+    if (result.Items) {
+      for (const item of result.Items) {
+        if (item.email && normalizeEmail(item.email) === normalized) {
+          return true;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Duplicate email check failed:', e.message);
+  }
+  return false;
 }
 
 app.post('/auth/signup', async (req, res) => {
@@ -734,6 +781,12 @@ app.post('/auth/signup', async (req, res) => {
   if (isDisposableEmail(email)) {
     console.log(`Signup blocked: disposable email ${email}`);
     return res.status(400).json({ error: 'Please use a valid email address. Temporary/disposable emails are not allowed.' });
+  }
+
+  // Block Gmail dot-trick duplicates (e.g. m.otivateddudes = motivateddudes)
+  if (await isDuplicateEmail(email)) {
+    console.log(`Signup blocked: duplicate Gmail detected ${email} (normalized: ${normalizeEmail(email)})`);
+    return res.status(400).json({ error: 'An account with this email already exists. Please log in instead.' });
   }
 
   try {
