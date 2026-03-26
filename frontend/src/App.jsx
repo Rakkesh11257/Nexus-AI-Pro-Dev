@@ -105,7 +105,7 @@ const I2I_MODELS = [
   { id: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789', name: 'Instant-ID Pro', desc: 'Face-preserving generation', nsfw: true, useVersion: true },
   { id: 'minimax/image-01', name: 'minimax/image-01', desc: 'MiniMax image generation', nsfw: false, isMinimax: true },
   { id: 'zedge/instantid:ba2d5293be8794a05841a6f6eed81e810340142c3c25fab4838ff2b5d9574420', name: 'InstantID', desc: 'Fast face-preserving generation', nsfw: true, useVersion: true },
-  { id: 'qwen/qwen-image', name: 'Qwen Image', desc: 'Qwen AI image editing', nsfw: false },
+  { id: 'qwen/qwen-image-edit-plus', name: 'Qwen Image Edit+', desc: 'Advanced AI image editing', nsfw: false },
 ];
 const FACESWAP_MODELS = [
   { id: 'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111', name: 'cdingram/face-swap', desc: 'High quality face swap', nsfw: true, useVersion: true },
@@ -1447,7 +1447,8 @@ function App() {
 
   const handleAuth = (u, t) => {
     setUser(u); setAccessToken(t); setAuthState('app'); if (u.credits != null) setCredits(u.credits);
-
+    // Show onboarding for first-time users
+    if (!localStorage.getItem('nexus_onboarding_done')) { setShowOnboarding(true); }
   };
   const handleLogout = () => { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); setUser(null); setAccessToken(''); setAuthState('auth'); };
   const saveApiKey = (key) => { localStorage.setItem('replicate_api_key', key); setApiKey(key); setShowSettings(false); };
@@ -1507,7 +1508,7 @@ function App() {
   const [creditConfirm, setCreditConfirm] = useState(null); // { cost, modelName, onConfirm }
   const [showCreditShop, setShowCreditShop] = useState(false);
   const [showReferral, setShowReferral] = useState(false);
-
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // ─── Pre-generate Check ───
   // Pre-generate check: returns a Promise that resolves true if ok to proceed.
@@ -1826,16 +1827,13 @@ function App() {
         input.prompt_strength = i2iStrength;
         if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
       } else if (i2iModel.includes('qwen')) {
+        // qwen/qwen-image-edit-plus takes image as array of URIs
+        input.image = [dataUri];
         input.go_fast = true;
-        input.guidance = guidance;
-        input.strength = i2iStrength;
-        input.image_size = 'optimize_for_quality';
-        input.aspect_ratio = aspect;
+        input.aspect_ratio = 'match_input_image';
         input.output_format = 'png';
-        input.output_quality = 90;
-        input.num_inference_steps = steps;
+        input.output_quality = 95;
         input.disable_safety_checker = true;
-        if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
       } else if (i2iModel.includes('stability-ai/sdxl')) {
         input.prompt_strength = i2iStrength;
         input.width = ASPECTS.find(a => a.id === aspect)?.w || 1024;
@@ -4133,6 +4131,57 @@ function App() {
       {showReferral && <ReferralModal onClose={() => setShowReferral(false)} accessToken={accessToken} />}
 
       {/* Guided Onboarding Modal */}
+      {showOnboarding && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: 16 }} onClick={() => { setShowOnboarding(false); localStorage.setItem('nexus_onboarding_done', '1'); }}>
+          <div style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, width: '100%', maxWidth: 480, overflow: 'hidden', position: 'relative' }} onClick={e => e.stopPropagation()}>
+
+            {/* Header gradient */}
+            <div style={{ background: 'linear-gradient(135deg, #22d47b15, #a855f715, #fbbf2415)', padding: '28px 24px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>✨</div>
+              <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: '#fff' }}>Welcome to NEXUS AI Pro!</h2>
+              <p style={{ color: '#888', fontSize: 13, margin: 0 }}>You have <span style={{ color: '#22d47b', fontWeight: 700 }}>{credits} free credits</span> — try creating something!</p>
+            </div>
+
+            <div style={{ padding: '16px 24px 24px' }}>
+              {/* Quick start options */}
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quick start — tap to try</div>
+
+              {[
+                { icon: '🎨', label: 'Create an AI Image', desc: 'A cinematic sunset over a futuristic city, neon lights reflecting on wet streets', tab: 'image', type: 'prompt' },
+                { icon: '🎬', label: 'Generate a Video', desc: 'Ocean waves crashing on a tropical beach, golden hour, cinematic slow motion', tab: 't2v', type: 'prompt' },
+                { icon: '🔄', label: 'Face Swap', desc: 'Upload two photos and swap faces instantly', tab: 'faceswap', type: 'navigate' },
+                { icon: '🔍', label: 'Upscale an Image', desc: 'Enhance any image resolution up to 10x', tab: 'upscale', type: 'navigate' },
+              ].map((item, i) => (
+                <div key={i} onClick={() => {
+                  setShowOnboarding(false);
+                  localStorage.setItem('nexus_onboarding_done', '1');
+                  navigateToTool(item.tab, item.tab === 'image' || item.tab === 'faceswap' || item.tab === 'upscale' ? 'image' : 'video');
+                  if (item.type === 'prompt') { setTimeout(() => setPrompt(item.desc), 100); if (item.tab === 't2v') setTimeout(() => setT2vPrompt(item.desc), 100); }
+                }} style={{
+                  display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', marginBottom: 8,
+                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,212,123,0.06)'; e.currentTarget.style.borderColor = 'rgba(34,212,123,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                >
+                  <div style={{ fontSize: 24, flexShrink: 0 }}>{item.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{item.label}</div>
+                    <div style={{ fontSize: 11, color: '#666', marginTop: 2, lineHeight: 1.3 }}>{item.desc}</div>
+                  </div>
+                  <div style={{ marginLeft: 'auto', color: '#555', fontSize: 16, flexShrink: 0 }}>→</div>
+                </div>
+              ))}
+
+              {/* Skip */}
+              <button onClick={() => { setShowOnboarding(false); localStorage.setItem('nexus_onboarding_done', '1'); }} style={{ width: '100%', padding: '10px 0', marginTop: 8, borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: '#666', fontSize: 12, cursor: 'pointer' }}>
+                Skip — I'll explore on my own
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} accessToken={accessToken} user={user} onPaymentSuccess={(plan) => { setUser(prev => ({ ...prev, isPaid: true, paymentPlan: plan })); setShowPaywall(false); }} />}
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} accessToken={accessToken} user={user} onUpgradeSuccess={() => { setUser(prev => ({ ...prev, paymentPlan: 'yearly' })); setShowUpgrade(false); }} />}
       {showSettings && <SettingsModal apiKey={apiKey} onSave={saveApiKey} onClose={() => setShowSettings(false)} credits={credits} onOpenCreditShop={() => setShowCreditShop(true)} />}

@@ -57,7 +57,7 @@ const CREDIT_COSTS = {
   'zsxkib/instant-id': { type: 'fixed', credits: 20 },                   // $0.029/img
   'zedge/instantid': { type: 'fixed', credits: 2 },                      // $0.0015/img
   'minimax/image-01': { type: 'fixed', credits: 7 },                     // $0.01/img
-  'qwen/qwen-image': { type: 'fixed', credits: 17 },                     // $0.025/img
+  'qwen/qwen-image-edit-plus': { type: 'fixed', credits: 25 },            // image editing
 
   // ── FACE SWAP (4x) ──
   'cdingram/face-swap': { type: 'fixed', credits: 10 },                  // $0.014/run
