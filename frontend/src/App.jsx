@@ -101,11 +101,10 @@ const IMAGE_MODELS = [
   { id: 'stability-ai/stable-diffusion-3.5-large', name: 'SD 3.5 Large', desc: 'Latest Stable Diffusion', maxSteps: 50, nsfw: false },
 ];
 const I2I_MODELS = [
+  { id: 'qwen/qwen-image-edit-2511', name: 'Qwen Image Edit', desc: 'Latest Qwen AI image editing', nsfw: true },
+  { id: 'qwen/qwen-edit-multiangle', name: 'Qwen Multi-Angle', desc: 'Camera angle control + editing', nsfw: true },
   { id: 'sdxl-based/consistent-character:9c77a3c2f884193fcee4d89645f02a0b9def9434f9e03cb98460456b831c8772', name: 'Consistent Character', desc: 'Same character, different scenes', nsfw: true, useVersion: true },
-  { id: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789', name: 'Instant-ID Pro', desc: 'Face-preserving generation', nsfw: true, useVersion: true },
   { id: 'minimax/image-01', name: 'minimax/image-01', desc: 'MiniMax image generation', nsfw: false, isMinimax: true },
-  { id: 'zedge/instantid:ba2d5293be8794a05841a6f6eed81e810340142c3c25fab4838ff2b5d9574420', name: 'InstantID', desc: 'Fast face-preserving generation', nsfw: true, useVersion: true },
-  { id: 'qwen/qwen-image-edit-2511', name: 'Qwen Image Edit', desc: 'Latest Qwen AI image editing', nsfw: false },
 ];
 const FACESWAP_MODELS = [
   { id: 'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111', name: 'cdingram/face-swap', desc: 'High quality face swap', nsfw: true, useVersion: true },
@@ -1287,6 +1286,10 @@ function App() {
   const [i2iStrength, setI2iStrength] = useState(0.8);
   const [i2iNegPrompt, setI2iNegPrompt] = useState('');
   const [i2iNumOutputs, setI2iNumOutputs] = useState(1);
+  const [i2iRotate, setI2iRotate] = useState(0);
+  const [i2iMoveForward, setI2iMoveForward] = useState(0);
+  const [i2iVerticalTilt, setI2iVerticalTilt] = useState(0);
+  const [i2iWideAngle, setI2iWideAngle] = useState(false);
 
   // Video (I2V)
   const [i2vPrompt, setI2vPrompt] = useState('');
@@ -1826,6 +1829,20 @@ function App() {
       if (i2iModel.includes('nano-banana')) {
         input.prompt_strength = i2iStrength;
         if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
+      } else if (i2iModel.includes('qwen/qwen-edit-multiangle')) {
+        // qwen/qwen-edit-multiangle — single image URI, camera angle controls
+        input.image = dataUri;
+        input.go_fast = true;
+        input.aspect_ratio = 'match_input_image';
+        input.output_format = 'png';
+        input.output_quality = 95;
+        input.rotate_degrees = i2iRotate;
+        input.move_forward = i2iMoveForward;
+        input.vertical_tilt = i2iVerticalTilt;
+        input.use_wide_angle = i2iWideAngle;
+        input.lora_scale = 1.25;
+        input.true_guidance_scale = 1;
+        input.disable_safety_checker = true;
       } else if (i2iModel.includes('qwen')) {
         // qwen/qwen-image-edit-2511 takes image as array of URIs
         input.image = [dataUri];
@@ -3311,6 +3328,44 @@ function App() {
                       {isCreditMode && <div style={{ fontSize: 10, color: i2iNumOutputs === n ? '#22d47b' : '#555', marginTop: 2 }}>{n * 14} cr</div>}
                     </button>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {i2iModel.includes('qwen/qwen-edit-multiangle') && (
+              <div style={{ marginBottom: 14, padding: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}>
+                <label style={{ ...S.label, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>🎥 Camera Controls</label>
+                
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ ...S.label, fontSize: 12 }}>Rotation: {i2iRotate}°</label>
+                  <input type="range" min={-90} max={90} step={5} value={i2iRotate} onChange={e => setI2iRotate(+e.target.value)} style={{ width: '100%' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#555' }}><span>← Left (-90°)</span><span>Center</span><span>Right (90°) →</span></div>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ ...S.label, fontSize: 12 }}>Zoom / Move Forward: {i2iMoveForward}</label>
+                  <input type="range" min={0} max={10} step={1} value={i2iMoveForward} onChange={e => setI2iMoveForward(+e.target.value)} style={{ width: '100%' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#555' }}><span>No zoom</span><span>Close-up</span></div>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ ...S.label, fontSize: 12 }}>Vertical Tilt: {i2iVerticalTilt === -1 ? "Bird's Eye" : i2iVerticalTilt === 0 ? "Level" : "Worm's Eye"}</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[{ val: -1, label: "🦅 Bird's Eye" }, { val: 0, label: "➡️ Level" }, { val: 1, label: "🐛 Worm's Eye" }].map(t => (
+                      <button key={t.val} onClick={() => setI2iVerticalTilt(t.val)} style={{
+                        flex: 1, padding: '8px 4px', background: i2iVerticalTilt === t.val ? 'rgba(34,212,123,0.15)' : '#111827',
+                        border: i2iVerticalTilt === t.val ? '1px solid rgba(34,212,123,0.5)' : '1px solid #333',
+                        borderRadius: 6, color: i2iVerticalTilt === t.val ? '#fff' : '#888', cursor: 'pointer', fontSize: 11, fontWeight: 500
+                      }}>{t.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#ccc', fontSize: 13 }}>
+                    <input type="checkbox" checked={i2iWideAngle} onChange={e => setI2iWideAngle(e.target.checked)} style={{ accentColor: '#22d47b' }} />
+                    📐 Wide Angle Lens
+                  </label>
                 </div>
               </div>
             )}
