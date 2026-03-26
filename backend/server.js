@@ -58,6 +58,7 @@ const CREDIT_COSTS = {
   'zedge/instantid': { type: 'fixed', credits: 2 },                      // $0.0015/img
   'minimax/image-01': { type: 'fixed', credits: 7 },                     // $0.01/img
   'qwen/qwen-image-edit-2511': { type: 'fixed', credits: 20 },            // image editing
+  'qwen/qwen-edit-multiangle': { type: 'fixed', credits: 20 },           // camera angle editing
 
   // ── FACE SWAP (4x) ──
   'cdingram/face-swap': { type: 'fixed', credits: 10 },                  // $0.014/run
