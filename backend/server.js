@@ -679,62 +679,34 @@ async function creditReferralCommission(paidUserId, paymentSource, paymentId) {
 }
 
 // ── Anti-abuse: Disposable email domains list ──
-const DISPOSABLE_EMAIL_DOMAINS = new Set([
-  'tempmail.com','throwaway.email','guerrillamail.com','guerrillamail.net','guerrillamail.org',
-  'mailinator.com','yopmail.com','sharklasers.com','guerrillamailblock.com','grr.la',
-  'dispostable.com','trashmail.com','trashmail.net','trashmail.org','10minutemail.com',
-  'temp-mail.org','tempail.com','tempr.email','tempmailo.com','tempinbox.com',
-  'fakeinbox.com','mailnesia.com','maildrop.cc','discard.email','discardmail.com',
-  'harakirimail.com','mailexpire.com','throwam.com','getnada.com','emailondeck.com',
-  'mohmal.com','burnermail.io','inboxbear.com','mailsac.com','mytemp.email',
-  'tmpmail.net','tmpmail.org','bupmail.com','crazymailing.com','disposableemailaddresses.emailmiser.com',
-  'mailcatch.com','mailscrap.com','mfasa.com','mintemail.com','mt2015.com',
-  'nobulk.com','nomail.xl.cx','otherinbox.com','ourklips.com','owlpic.com',
-  'pjjkp.com','rmqkr.net','royal.net','sharklasers.com','spamfree24.org',
-  'spamobox.com','tempomail.fr','thankyou2010.com','trash-mail.at','trashymail.com',
-  'trbvm.com','trbvn.com','tutanota.com','uggsrock.com','veryrealemail.com',
-  'wegwerfmail.de','wegwerfmail.net','wh4f.org','yopmail.fr','yopmail.net',
-  'mailnator.com','anonbox.net','binkmail.com','bobmail.info','chammy.info',
-  'devnullmail.com','dingbone.com','fakedemail.com','filzmail.com','haltospam.com',
-  'jetable.org','kasmail.com','koszmail.pl','kurzepost.de','letthemeatspam.com',
-  'lhsdv.com','mailinater.com','mailismagic.com','mailmetrash.com','mailnull.com',
-  'mailshell.com','mailzilla.com','mb.7x.ro','meltmail.com','nospam.ze.tc',
-  'pookmail.com','proxymail.eu','rcpt.at','reallymymail.com','recode.me',
-  'regbypass.com','safetymail.info','sify.com','spambox.us','spambog.com',
-  'spambog.de','spambog.ru','spamcero.com','spamday.com','spamfighter.cf',
-  'spamfighter.ga','spamfighter.gq','spamfighter.ml','spamfighter.tk',
-  'spamgourmet.com','spamherelots.com','spamhole.com','spaml.com','spamoff.de',
-  'spamstack.net','spamtrail.com','superrito.com','suremail.info','teleworm.us',
-  'tempemail.co.za','tempemail.net','tempmailer.com','tempsky.com','thankyou2010.com',
-  'thisisnotmyrealemail.com','throwawayemailaddress.com','tmail.ws','tmails.net',
-  'trashdevil.com','trashdevil.de','trashemail.de','trashmail.me','trashmail.ws',
-  'twoweirdtricks.com','tyldd.com','uggsrock.com','upliftnow.com','venompen.com',
-  'veryrealemail.com','viditag.com','viewcastmedia.com','vomoto.com','vpn.st',
-  'vsimcard.com','vubby.com','wasteland.rfc822.org','webemail.me','weg-werf-email.de',
-  'wegwerfadresse.de','wegwerfemail.com','wegwerfmail.org','wilemail.com',
-  'willhackforfood.biz','willselfdestruct.com','winemaven.info','wronghead.com',
-  'wuzup.net','wuzupmail.net','wwwnew.eu','xagloo.com','xemaps.com','xents.com',
-  'xjoi.com','xoxy.net','yapped.net','yeah.net','yogamaven.com','ypmail.webarnak.fr.eu.org',
-  'zehnminuten.de','zippymail.info','zoaxe.com','zoemail.org',
-  'guerrillamail.de','guerrillamail.biz','emailfake.com','cuvox.de','armyspy.com',
-  'dayrep.com','einrot.com','fleckens.hu','gustr.com','jourrapide.com','rhyta.com',
-  'superrito.com','teleworm.us','mailforspam.com','safetypost.de',
-  // Actively abused domains (detected from user data)
-  'kaoing.com','netoiu.com','pckage.com','7novels.com','him6.com','dolofan.com',
-  'medevsa.com','fentaoba.com','iaciu.com','daerdy.com','feriwor.com','cslua.com',
-  'amiralty.com','keecs.com','bitonc.com','bigonla.com','pazuric.com','ostahie.com',
-  'esyline.com','hlkes.com','flosek.com','indevgo.com','deposin.com','advarm.com',
-  'alibto.com','3dkai.com','lotbrush.com','zordeo.com','seaswar.com','penesta.com',
-  '2insp.com','ujoice.com','dollicons.com','wnbaldwy.com','enotj.com','emlhub.com',
-  'getairmail.com','hidingmail.com','contaco.org','forexzig.com','ruutukf.com',
-  'xfavaj.com','fxavaj.com','mrotzis.com','bltiwd.com','mailpwr.com','minitts.net',
-  'hutudns.com','aminating.com','denipl.net','nikora.biz.st','mail4.uk','o2cr.com',
-  'kjh.mailings.live','rulersonline.com','mailba.uk','ymeli.com',
+// ── Email validation: whitelist approach ──
+// Only allow signups from trusted email providers
+// This blocks ALL disposable/temporary emails without maintaining a blocklist
+const ALLOWED_EMAIL_DOMAINS = new Set([
+  // Google
+  'gmail.com', 'googlemail.com',
+  // Microsoft
+  'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+  // Yahoo
+  'yahoo.com', 'yahoo.in', 'yahoo.co.in', 'ymail.com', 'yahoo.co.uk', 'yahoo.com.br',
+  // Apple
+  'icloud.com', 'me.com', 'mac.com',
+  // ProtonMail
+  'protonmail.com', 'proton.me', 'pm.me',
+  // AOL
+  'aol.com',
+  // India popular
+  'rediffmail.com', 'rediff.com',
+  // Yandex
+  'yandex.com', 'yandex.ru',
+  // Zoho
+  'zoho.com', 'zohomail.com',
 ]);
 
-function isDisposableEmail(email) {
+function isAllowedEmail(email) {
   const domain = email.split('@')[1]?.toLowerCase();
-  return domain ? DISPOSABLE_EMAIL_DOMAINS.has(domain) : false;
+  if (!domain) return false;
+  return ALLOWED_EMAIL_DOMAINS.has(domain);
 }
 
 // Normalize Gmail: remove dots and +suffix from local part
@@ -777,10 +749,10 @@ app.post('/auth/signup', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
-  // Block disposable/temporary email addresses
-  if (isDisposableEmail(email)) {
-    console.log(`Signup blocked: disposable email ${email}`);
-    return res.status(400).json({ error: 'Please use a valid email address. Temporary/disposable emails are not allowed.' });
+  // Only allow signups from trusted email providers (Gmail, Outlook, Yahoo, iCloud, etc.)
+  if (!isAllowedEmail(email)) {
+    console.log(`Signup blocked: non-whitelisted email domain ${email}`);
+    return res.status(400).json({ error: 'Please sign up with Gmail, Outlook, Yahoo, or iCloud email. Other email providers are not supported.' });
   }
 
   // Block Gmail dot-trick duplicates (e.g. m.otivateddudes = motivateddudes)
