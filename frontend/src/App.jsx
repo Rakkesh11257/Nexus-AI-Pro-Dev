@@ -105,7 +105,7 @@ const I2I_MODELS = [
   { id: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789', name: 'Instant-ID Pro', desc: 'Face-preserving generation', nsfw: true, useVersion: true },
   { id: 'minimax/image-01', name: 'minimax/image-01', desc: 'MiniMax image generation', nsfw: false, isMinimax: true },
   { id: 'zedge/instantid:ba2d5293be8794a05841a6f6eed81e810340142c3c25fab4838ff2b5d9574420', name: 'InstantID', desc: 'Fast face-preserving generation', nsfw: true, useVersion: true },
-  { id: 'qwen/qwen-image-edit-plus', name: 'Qwen Image Edit+', desc: 'Advanced AI image editing', nsfw: false },
+  { id: 'qwen/qwen-image-edit-2511', name: 'Qwen Image Edit', desc: 'Latest Qwen AI image editing', nsfw: false },
 ];
 const FACESWAP_MODELS = [
   { id: 'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111', name: 'cdingram/face-swap', desc: 'High quality face swap', nsfw: true, useVersion: true },
@@ -1827,7 +1827,7 @@ function App() {
         input.prompt_strength = i2iStrength;
         if (i2iNegPrompt.trim()) input.negative_prompt = i2iNegPrompt.trim();
       } else if (i2iModel.includes('qwen')) {
-        // qwen/qwen-image-edit-plus takes image as array of URIs
+        // qwen/qwen-image-edit-2511 takes image as array of URIs
         input.image = [dataUri];
         input.go_fast = true;
         input.aspect_ratio = 'match_input_image';
