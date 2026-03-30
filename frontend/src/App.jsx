@@ -3605,7 +3605,7 @@ function App() {
 
               {/* Generate Button */}
               <button onClick={generateNSFW} disabled={!nsfwSelectedTemplate || !nsfwImage} style={{ ...S.btn, background: (!nsfwSelectedTemplate || !nsfwImage) ? '#333' : '#f472b6', color: (!nsfwSelectedTemplate || !nsfwImage) ? '#666' : '#fff', boxShadow: (!nsfwSelectedTemplate || !nsfwImage) ? 'none' : '0 0 20px rgba(244,114,182,0.3)' }}>
-                🔞 Generate NSFW Video ({NSFW_TEMPLATE_CREDITS} cr)
+                Generate NSFW Video ({NSFW_TEMPLATE_CREDITS} cr)
               </button>
             </div></>
             )}
