@@ -2490,8 +2490,8 @@ app.get('/api/replicate/account', requirePaid, async (req, res) => {
 // Endpoint: g7urwu4013wh2d  
 // Fixed: 5s, 480p, 4 steps, 50 credits per job
 // ============================================
-const RUNPOD_ENDPOINT_ID = 'g7urwu4013wh2d';
-const RUNPOD_API_KEY = 'rpa_UZ5AYUBZBA13CJI4RI58ZX8AUS55IZZHV3ZC9MGDmol6ku';
+const RUNPOD_ENDPOINT_ID = process.env.RUNPOD_ENDPOINT_ID || 'g7urwu4013wh2d';
+const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || '';
 const RUNPOD_BASE_URL = 'https://api.runpod.ai/v2/' + RUNPOD_ENDPOINT_ID;
 const NSFW_TEMPLATE_CREDITS = 50;
 

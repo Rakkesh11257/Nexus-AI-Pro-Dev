@@ -4,8 +4,8 @@
 // No LoRA - base NSFW model only, positions handled by prompt
 // Thumbnails: place preview.gif inside /public/templates/<folder>/
 
-export const RUNPOD_ENDPOINT_ID = 'g7urwu4013wh2d';
-export const RUNPOD_API_KEY = 'rpa_UZ5AYUBZBA13CJI4RI58ZX8AUS55IZZHV3ZC9MGDmol6ku';
+export const RUNPOD_ENDPOINT_ID = 'configured-in-env';  // actual value in server .env
+export const RUNPOD_API_KEY = 'configured-in-env';  // actual value in server .env
 export const NSFW_TEMPLATE_CREDITS = 50;
 
 export const NSFW_DEFAULTS = {
