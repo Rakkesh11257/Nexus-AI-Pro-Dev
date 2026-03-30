@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { NSFW_TEMPLATES } from '../nsfw_templates.js';
 
 // ─── Category definitions with sub-tools ───
 const CATEGORIES = [
@@ -227,7 +228,7 @@ function LatestBanners({ isMobile }) {
 }
 
 // ─── Home Screen ───
-export default function HomeScreen({ onSelectTool, onSelectCategory }) {
+export default function HomeScreen({ onSelectTool, onSelectCategory, onSelectNSFW }) {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [hoveredSuite, setHoveredSuite] = useState(null);
   const [genCount, setGenCount] = useState(null);
@@ -358,6 +359,29 @@ export default function HomeScreen({ onSelectTool, onSelectCategory }) {
           })}
         </div>
       )}
+
+      {/* ── NSFW Templates ── */}
+      <div style={{ padding: '0 12px', marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={{ fontSize: isMobile ? 20 : 22, fontWeight: 700, color: '#f472b6', margin: 0, fontFamily: "'Outfit', sans-serif" }}>NSFW Templates</h2>
+            <span style={{ fontSize: 10, color: '#f472b6', background: 'rgba(244,114,182,0.1)', padding: '2px 8px', borderRadius: 8, border: '1px solid rgba(244,114,182,0.2)', fontWeight: 600 }}>18+</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {NSFW_TEMPLATES.map(t => (
+            <div key={t.id} onClick={() => onSelectNSFW?.(t)}
+              style={{ minWidth: isMobile ? 120 : 140, maxWidth: isMobile ? 120 : 140, background: '#111827', border: '1px solid #1f2937', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, transition: 'border-color 0.2s' }}>
+              <div style={{ width: '100%', aspectRatio: '9/16', background: '#0a0a18', overflow: 'hidden' }}>
+                <img src={t.previewVideo} alt={t.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ padding: '6px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#ddd' }}>{t.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ── Latest ── */}
       <div style={{ padding: '0 12px', marginBottom: 32 }}>
