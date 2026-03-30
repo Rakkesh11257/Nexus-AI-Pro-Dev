@@ -102,8 +102,7 @@ const IMAGE_MODELS = [
   { id: 'stability-ai/stable-diffusion-3.5-large', name: 'SD 3.5 Large', desc: 'Latest Stable Diffusion', maxSteps: 50, nsfw: false },
 ];
 const I2I_MODELS = [
-  { id: 'qwen/qwen-image-edit-2511', name: 'Qwen Image Edit', desc: 'Latest Qwen AI image editing', nsfw: true },
-  { id: 'qwen/qwen-edit-multiangle', name: 'Qwen Multi-Angle', desc: 'Camera angle control + editing', nsfw: true },
+  { id: 'qwen/qwen-edit-multiangle', name: 'Qwen Image Edit', desc: 'AI image editing with camera controls', nsfw: true },
   { id: 'sdxl-based/consistent-character:9c77a3c2f884193fcee4d89645f02a0b9def9434f9e03cb98460456b831c8772', name: 'Consistent Character', desc: 'Same character, different scenes', nsfw: true, useVersion: true },
   { id: 'minimax/image-01', name: 'minimax/image-01', desc: 'MiniMax image generation', nsfw: false, isMinimax: true },
 ];
@@ -1850,7 +1849,7 @@ function App() {
         input.true_guidance_scale = 1;
         input.disable_safety_checker = true;
       } else if (i2iModel.includes('qwen')) {
-        // qwen/qwen-image-edit-2511 takes image as array of URIs
+        // Fallback for any other Qwen model
         input.image = [dataUri];
         input.go_fast = true;
         input.aspect_ratio = 'match_input_image';
