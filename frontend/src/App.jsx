@@ -28,6 +28,7 @@ const ModelSelector = ({ models, value, onChange, extraOptions, style, userPlan,
 
   return (
     <div ref={ref} style={{ position: 'relative', width: '100%', marginBottom: 14, ...style }}>
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>Select a model from below</div>
       <div onClick={() => setOpen(!open)} style={{
         display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
         background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
