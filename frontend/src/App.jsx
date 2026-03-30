@@ -2185,6 +2185,12 @@ function App() {
         if (status === 'COMPLETED') {
           // Extract video from RunPod output (base64 format)
           const out = pollData.output;
+          // Check for ComfyUI errors inside a COMPLETED response
+          const outStr = typeof out === 'string' ? out : JSON.stringify(out || '');
+          if (outStr.includes('execution_error') || outStr.includes('cannot mmap') || (out && out.error)) {
+            const errMsg = out?.error || 'Worker error during generation';
+            throw new Error(errMsg);
+          }
           let outputUrl = null;
           if (out && out.video) {
             // Worker returns base64 video — convert to blob URL
