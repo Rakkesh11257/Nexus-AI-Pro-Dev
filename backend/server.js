@@ -2519,7 +2519,9 @@ app.post('/api/runpod/generate', verifyToken, async (req, res) => {
       }
       throw deductErr;
     }
-    const jobPayload = { input: { image, prompt, position: position || 'general_nsfw', quality: 480, duration: 5, steps: 4, split_step: 2, lora_strength: 0.85, blocks_to_swap: 0, return_format: 'base64' } };
+    // Strip data URI prefix - RunPod worker expects raw base64 only
+    const rawImage = image.includes('base64,') ? image.split('base64,')[1] : image;
+    const jobPayload = { input: { image: rawImage, prompt, position: position || 'general_nsfw', quality: 480, duration: 5, steps: 4, split_step: 2, lora_strength: 0.85, blocks_to_swap: 0, return_format: 'base64' } };
     const runpodRes = await fetch(RUNPOD_BASE_URL + '/run', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + RUNPOD_API_KEY },
