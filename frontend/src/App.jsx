@@ -135,6 +135,7 @@ const REPLACECHAR_MODELS = [
 ];
 // I2V models with per-model config
 const I2V_MODELS = [
+  { id: "wan-video/wan-2.2-nsfw", name: "Wan 2.2 NSFW", desc: "NSFW template generation", nsfw: true, isRunPodNSFW: true, params: {} },
   { id: 'wan-video/wan-2.2-i2v-fast', name: 'Wan 2.2 I2V Fast', desc: 'Fast image-to-video', nsfw: true,
     params: { prompt: true, last_frame: true, num_frames: { min: 81, max: 121, default: 81 }, resolution: ['480p','720p'], fps: { min: 5, max: 30, default: 16 }, go_fast: true, sample_shift: { min: 1, max: 10, default: 8 }, seed: true, interpolate_output: true, disable_safety_checker: true, lora: true } },
   { id: 'wavespeedai/wan-2.1-i2v-720p', name: 'Wan 2.1 I2V 720p', desc: '720p image-to-video', nsfw: true,
@@ -149,7 +150,6 @@ const I2V_MODELS = [
     params: { prompt: true, duration: [5,10], aspect_ratio: ['16:9','9:16','1:1'], negative_prompt: true, first_frame: true, last_frame: true } },
   { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: 'xAI video generation', nsfw: false, isGrokI2V: true,
     params: { prompt: true, duration: { min: 1, max: 15, default: 5 }, resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16','1:1'] } },
-  { id: "wan-video/wan-2.2-nsfw", name: "Wan 2.2 NSFW", desc: "NSFW template generation (RunPod)", nsfw: true, isRunPodNSFW: true, params: {} },
 ];
 // T2V models with per-model config
 const T2V_MODELS = [
@@ -3605,11 +3605,7 @@ function App() {
                 </div>
               )}
 
-              {/* Info Badge */}
-              <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(244,114,182,0.06)', border: '1px solid rgba(244,114,182,0.15)', borderRadius: 8, marginBottom: 12, fontSize: 12, color: '#ccc', alignItems: 'center' }}>
-                <span>⚡</span>
-                <span>Fixed settings: 5 seconds • 480p • 4 steps • Powered by RunPod</span>
-              </div>
+
 
               {/* Generate Button */}
               <button onClick={generateNSFW} disabled={!nsfwSelectedTemplate || !nsfwImage} style={{ ...S.btn, background: (!nsfwSelectedTemplate || !nsfwImage) ? '#333' : '#f472b6', color: (!nsfwSelectedTemplate || !nsfwImage) ? '#666' : '#fff', boxShadow: (!nsfwSelectedTemplate || !nsfwImage) ? 'none' : '0 0 20px rgba(244,114,182,0.3)' }}>
