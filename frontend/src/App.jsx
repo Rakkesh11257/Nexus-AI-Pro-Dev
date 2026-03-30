@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import HomeScreen from './screens/HomeScreen.jsx';
 import CategoryScreen from './screens/CategoryScreen.jsx';
 import ToolScreen from './screens/ToolScreen.jsx';
+import { NSFW_TEMPLATES, NSFW_TEMPLATE_CREDITS, NSFW_DEFAULTS } from './nsfw_templates.js';
 
 const API_BASE = window.location.origin;
 
@@ -148,6 +149,7 @@ const I2V_MODELS = [
     params: { prompt: true, duration: [5,10], aspect_ratio: ['16:9','9:16','1:1'], negative_prompt: true, first_frame: true, last_frame: true } },
   { id: 'xai/grok-imagine-video', name: 'Grok Imagine Video', desc: 'xAI video generation', nsfw: false, isGrokI2V: true,
     params: { prompt: true, duration: { min: 1, max: 15, default: 5 }, resolution: ['720p','1080p'], aspect_ratio: ['16:9','9:16','1:1'] } },
+  { id: "wan-video/wan-2.2-nsfw", name: "Wan 2.2 NSFW", desc: "NSFW template generation (RunPod)", nsfw: true, isRunPodNSFW: true, params: {} },
 ];
 // T2V models with per-model config
 const T2V_MODELS = [
@@ -1297,6 +1299,10 @@ function App() {
   const [i2vImage, setI2vImage] = useState(null);
   const [i2vLastFrame, setI2vLastFrame] = useState(null);
   const [i2vOpts, setI2vOpts] = useState({});
+  // NSFW Template state
+  const [nsfwSelectedTemplate, setNsfwSelectedTemplate] = useState(null);
+  const [nsfwImage, setNsfwImage] = useState(null);
+  const [nsfwPrompt, setNsfwPrompt] = useState('');
 
   // Video (T2V)
   const [t2vPrompt, setT2vPrompt] = useState('');
@@ -2115,6 +2121,77 @@ function App() {
       setResults(prev => [item, ...prev]);
       setHistory(prev => ({ ...prev, videos: [item, ...prev.videos].slice(0, 50) }));
       finishJob(jobId);
+    } catch (err) { setError(err.message); finishJob(jobId, err.message); }
+  };
+
+  // ─── Generate NSFW (RunPod) ───
+  const generateNSFW = async () => {
+    if (!nsfwImage) return setError('Upload a source image');
+    if (!nsfwPrompt.trim()) return setError('Select a template or enter a prompt');
+    // Credit check (50 credits)
+    if (!isDeveloperMode) {
+      if (credits < NSFW_TEMPLATE_CREDITS) {
+        setError('Insufficient credits. Need ' + NSFW_TEMPLATE_CREDITS + ' but you have ' + credits + '.');
+        setShowCreditShop(true);
+        return;
+      }
+      const ok = await new Promise(resolve => {
+        setCreditConfirm({ cost: NSFW_TEMPLATE_CREDITS, modelName: 'Wan 2.2 NSFW', onConfirm: () => resolve(true), onCancel: () => resolve(false) });
+      });
+      if (!ok) return;
+    }
+    const jobId = addJob('i2v', 'Wan 2.2 NSFW', nsfwPrompt.trim().slice(0, 60) + '...');
+    setError('');
+    try {
+      updateJob(jobId, { status: 'Uploading image...' });
+      // Convert image to base64
+      let base64Image = nsfwImage;
+      if (nsfwImage.startsWith('blob:')) {
+        const resp = await fetch(nsfwImage);
+        const blob = await resp.blob();
+        base64Image = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      }
+      updateJob(jobId, { status: 'Submitting to RunPod...' });
+      const position = nsfwSelectedTemplate?.position || 'general_nsfw';
+      const res = await fetch(API_BASE + '/api/runpod/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken },
+        body: JSON.stringify({ image: base64Image, prompt: nsfwPrompt.trim(), position }),
+      });
+      if (res.status === 402) { const errData = await res.json().catch(() => ({})); setError(errData.error || 'Insufficient credits'); finishJob(jobId); return; }
+      if (!res.ok) { const errData = await res.json().catch(() => ({})); throw new Error(errData.error || 'Failed to submit job'); }
+      const data = await res.json();
+      if (data.remainingCredits != null) setCredits(data.remainingCredits);
+      const rpJobId = data.jobId;
+      // Poll RunPod status
+      let status = data.status || 'IN_QUEUE';
+      while (status !== 'COMPLETED' && status !== 'FAILED') {
+        updateJob(jobId, { status: status === 'IN_QUEUE' ? 'Queued...' : status === 'IN_PROGRESS' ? 'Generating video...' : status + '...' });
+        await new Promise(r => setTimeout(r, 3000));
+        const pollRes = await fetch(API_BASE + '/api/runpod/status/' + rpJobId, {
+          headers: { 'x-auth-token': accessToken },
+        });
+        const pollData = await pollRes.json();
+        status = pollData.status;
+        if (pollData._remainingCredits != null) setCredits(pollData._remainingCredits);
+        if (status === 'FAILED') {
+          if (pollData._creditsRefunded) setError('Generation failed. ' + pollData._creditsRefunded + ' credits refunded.');
+          throw new Error(pollData.error || 'RunPod generation failed');
+        }
+        if (status === 'COMPLETED') {
+          const outputUrl = pollData.output?.video_url || pollData.output?.url || (typeof pollData.output === 'string' ? pollData.output : null);
+          if (!outputUrl) throw new Error('No video URL in response');
+          const item = { type: 'video', url: outputUrl, prompt: nsfwPrompt.trim(), model: 'wan-video/wan-2.2-nsfw', ts: Date.now() };
+          setResults(prev => [item, ...prev]);
+          setHistory(prev => ({ ...prev, videos: [item, ...prev.videos].slice(0, 50) }));
+          finishJob(jobId);
+          return;
+        }
+      }
     } catch (err) { setError(err.message); finishJob(jobId, err.message); }
   };
 
@@ -3382,6 +3459,7 @@ function App() {
         {tab === 'i2v' && (
           <div>
             <ModelSelector getCreditCost={getModelCreditCost} models={I2V_MODELS} value={i2vModel} onChange={v => { setI2vModel(v); setI2vOpts({}); }} userPlan={user?.paymentPlan} onLockedClick={() => setShowUpgrade(true)} showNsfwBadge />
+            {i2vModel !== 'wan-video/wan-2.2-nsfw' ? (<>
 
             <div style={{ marginBottom: 12 }}>
               <label style={S.label}>Source Image (Start Frame)</label>
@@ -3422,7 +3500,77 @@ function App() {
 
             <button onClick={generateI2V} style={S.btn}>
               🖼️ Generate Image to Video{creditLabel(i2vModel, i2vOpts, I2V_MODELS.find(m => m.id === i2vModel))}
-            </button>
+            </button></>) : (<>
+            {/* ── NSFW Template Mode ── */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: 14, color: '#f472b6', fontWeight: 600 }}>🔞 NSFW Templates</span>
+                <span style={{ fontSize: 11, color: '#888' }}>50 credits • 5s • 480p</span>
+              </div>
+
+              {/* Template Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+                {NSFW_TEMPLATES.map(t => (
+                  <div key={t.id} onClick={() => { setNsfwSelectedTemplate(t); setNsfwPrompt(t.prompt); }}
+                    style={{
+                      background: nsfwSelectedTemplate?.id === t.id ? 'rgba(244,114,182,0.15)' : '#111827',
+                      border: nsfwSelectedTemplate?.id === t.id ? '2px solid rgba(244,114,182,0.5)' : '1px solid #1f2937',
+                      borderRadius: 12, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s',
+                    }}>
+                    <div style={{ position: 'relative', width: '100%', aspectRatio: '9/16', background: '#0a0a18', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <video src={t.previewVideo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted loop playsInline
+                        onMouseEnter={e => { try { e.target.play(); } catch(ex){} }}
+                        onMouseLeave={e => { try { e.target.pause(); e.target.currentTime = 0; } catch(ex){} }}
+                        onError={e => { e.target.style.display = 'none'; }}
+                      />
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, pointerEvents: 'none', opacity: 0.5 }}>{t.emoji}</div>
+                    </div>
+                    <div style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: nsfwSelectedTemplate?.id === t.id ? '#f472b6' : '#ddd' }}>{t.label}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center', marginTop: 4 }}>
+                        {t.tags.map(tag => <span key={tag} style={{ fontSize: 10, color: '#888', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: 6 }}>{tag}</span>)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Upload Image */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.label}>Your Image (face will be used)</label>
+                {nsfwImage ? (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img src={nsfwImage} alt="" style={{ maxHeight: 180, borderRadius: 8, border: '1px solid #333' }} />
+                    <button onClick={() => setNsfwImage(null)} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>✕</button>
+                  </div>
+                ) : (
+                  <label style={{ display: 'block', padding: '40px 16px', border: '2px dashed rgba(244,114,182,0.3)', borderRadius: 8, textAlign: 'center', cursor: 'pointer', color: '#888', background: '#0a0a18' }}>
+                    🖼️ Upload your image<br/><span style={{ fontSize: 12, color: '#555' }}>JPG, PNG • Your face will be applied to the template</span>
+                    <input type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const url = URL.createObjectURL(file); setNsfwImage(url); }} style={{ display: 'none' }} />
+                  </label>
+                )}
+              </div>
+
+              {/* Prompt (pre-filled from template, editable) */}
+              {nsfwSelectedTemplate && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={S.label}>Prompt <span style={{ color: '#555', fontWeight: 400 }}>(auto-filled from template, editable)</span></label>
+                  <textarea style={{ ...S.input, minHeight: 70 }} value={nsfwPrompt} onChange={e => setNsfwPrompt(e.target.value)} />
+                </div>
+              )}
+
+              {/* Info Badge */}
+              <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(244,114,182,0.06)', border: '1px solid rgba(244,114,182,0.15)', borderRadius: 8, marginBottom: 12, fontSize: 12, color: '#ccc', alignItems: 'center' }}>
+                <span>⚡</span>
+                <span>Fixed settings: 5 seconds • 480p • 4 steps • Powered by RunPod</span>
+              </div>
+
+              {/* Generate Button */}
+              <button onClick={generateNSFW} disabled={!nsfwSelectedTemplate || !nsfwImage} style={{ ...S.btn, background: (!nsfwSelectedTemplate || !nsfwImage) ? '#333' : '#f472b6', color: (!nsfwSelectedTemplate || !nsfwImage) ? '#666' : '#fff', boxShadow: (!nsfwSelectedTemplate || !nsfwImage) ? 'none' : '0 0 20px rgba(244,114,182,0.3)' }}>
+                🔞 Generate NSFW Video ({NSFW_TEMPLATE_CREDITS} cr)
+              </button>
+            </div></>
+            )}
 
 
           </div>

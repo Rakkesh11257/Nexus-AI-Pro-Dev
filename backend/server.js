@@ -2485,6 +2485,86 @@ app.get('/api/replicate/account', requirePaid, async (req, res) => {
 });
 
 // ============================================
+// ============================================
+// RUNPOD NSFW GENERATION (Wan 2.2 NSFW Templates)
+// Endpoint: g7urwu4013wh2d  
+// Fixed: 5s, 480p, 4 steps, 50 credits per job
+// ============================================
+const RUNPOD_ENDPOINT_ID = 'g7urwu4013wh2d';
+const RUNPOD_API_KEY = 'rpa_UZ5AYUBZBA13CJI4RI58ZX8AUS55IZZHV3ZC9MGDmol6ku';
+const RUNPOD_BASE_URL = 'https://api.runpod.ai/v2/' + RUNPOD_ENDPOINT_ID;
+const NSFW_TEMPLATE_CREDITS = 50;
+
+// POST /api/runpod/generate - Submit NSFW job to RunPod, deduct 50 credits upfront
+app.post('/api/runpod/generate', verifyToken, async (req, res) => {
+  const { image, prompt, position } = req.body;
+  if (!image) return res.status(400).json({ error: 'Missing required field: image (base64)' });
+  if (!prompt) return res.status(400).json({ error: 'Missing required field: prompt' });
+  try {
+    let remainingCredits;
+    try {
+      const deductResult = await dynamoClient.send(new UpdateCommand({
+        TableName: DYNAMO_TABLE, Key: { userId: req.user.sub },
+        UpdateExpression: 'SET credits = credits - :cost',
+        ConditionExpression: 'credits >= :cost',
+        ExpressionAttributeValues: { ':cost': NSFW_TEMPLATE_CREDITS },
+        ReturnValues: 'ALL_NEW',
+      }));
+      remainingCredits = deductResult.Attributes?.credits ?? 0;
+      console.log('[RunPod] Deducted ' + NSFW_TEMPLATE_CREDITS + ' credits from ' + req.user.sub + '. Remaining: ' + remainingCredits);
+    } catch (deductErr) {
+      if (deductErr.name === 'ConditionalCheckFailedException') {
+        const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+        return res.status(402).json({ error: 'Insufficient credits', required: NSFW_TEMPLATE_CREDITS, current: dbResult.Item?.credits || 0 });
+      }
+      throw deductErr;
+    }
+    const jobPayload = { input: { image, prompt, position: position || 'general_nsfw', quality: 480, duration: 5, steps: 4, split_step: 2, lora_strength: 0.85, blocks_to_swap: 0 } };
+    const runpodRes = await fetch(RUNPOD_BASE_URL + '/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + RUNPOD_API_KEY },
+      body: JSON.stringify(jobPayload),
+    });
+    const runpodData = await runpodRes.json();
+    if (!runpodRes.ok || !runpodData.id) {
+      await dynamoClient.send(new UpdateCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub }, UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount', ExpressionAttributeValues: { ':amount': NSFW_TEMPLATE_CREDITS, ':zero': 0 } }));
+      console.log('[RunPod] Job failed, refunded ' + NSFW_TEMPLATE_CREDITS + ' credits to ' + req.user.sub);
+      return res.status(502).json({ error: runpodData.error || 'Failed to submit RunPod job' });
+    }
+    console.log('[RunPod] Job submitted: ' + runpodData.id + ' for ' + req.user.sub + ' | position=' + position);
+    dynamoClient.send(new UpdateCommand({ TableName: DYNAMO_TABLE, Key: { userId: 'GLOBAL_STATS' }, UpdateExpression: 'SET totalGenerations = if_not_exists(totalGenerations, :zero) + :one', ExpressionAttributeValues: { ':zero': 0, ':one': 1 } })).catch(() => {});
+    res.json({ jobId: runpodData.id, status: runpodData.status || 'IN_QUEUE', remainingCredits, creditsDeducted: NSFW_TEMPLATE_CREDITS });
+  } catch (err) {
+    console.error('[RunPod] Generate error:', err.message);
+    res.status(500).json({ error: 'Failed to submit job: ' + err.message });
+  }
+});
+
+// GET /api/runpod/status/:jobId - Poll RunPod job status, refund on failure
+app.get('/api/runpod/status/:jobId', verifyToken, async (req, res) => {
+  const { jobId } = req.params;
+  try {
+    const statusRes = await fetch(RUNPOD_BASE_URL + '/status/' + jobId, { headers: { 'Authorization': 'Bearer ' + RUNPOD_API_KEY } });
+    const data = await statusRes.json();
+    if (!statusRes.ok) return res.status(502).json({ error: data.error || 'Failed to get job status' });
+    if (data.status === 'FAILED') {
+      console.log('[RunPod] Job ' + jobId + ' FAILED - refunding ' + NSFW_TEMPLATE_CREDITS + ' credits to ' + req.user.sub);
+      await dynamoClient.send(new UpdateCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub }, UpdateExpression: 'SET credits = if_not_exists(credits, :zero) + :amount', ExpressionAttributeValues: { ':amount': NSFW_TEMPLATE_CREDITS, ':zero': 0 } }));
+      const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+      data._creditsRefunded = NSFW_TEMPLATE_CREDITS;
+      data._remainingCredits = dbResult.Item?.credits || 0;
+    }
+    if (data.status === 'COMPLETED') {
+      const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+      data._remainingCredits = dbResult.Item?.credits || 0;
+    }
+    res.json(data);
+  } catch (err) {
+    console.error('[RunPod] Status poll error:', err.message);
+    res.status(502).json({ error: 'Failed to poll job: ' + err.message });
+  }
+});
+
 // STATIC FILES (PWA)
 // ============================================
 app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
