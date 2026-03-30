@@ -2171,7 +2171,7 @@ function App() {
           });
         }
       }
-      updateJob(jobId, { status: 'Submitting to RunPod...' });
+      updateJob(jobId, { status: 'Submitting to server... First run may take 2-3 mins while the server warms up. Next runs will be much faster.' });
       const position = nsfwSelectedTemplate?.position || 'general_nsfw';
       const res = await fetch(API_BASE + '/api/runpod/generate', {
         method: 'POST',
@@ -3552,9 +3552,6 @@ function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <span style={{ fontSize: 14, color: '#f472b6', fontWeight: 600 }}>NSFW Templates</span>
                 <span style={{ fontSize: 11, color: '#666', fontStyle: 'italic' }}>(customize prompt for better results)</span>
-              </div>
-              <div style={{ padding: '8px 12px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 8, marginBottom: 12, fontSize: 11, color: '#8bb4f0', lineHeight: 1.5 }}>
-                First run may take 2-3 minutes while the server warms up. Next runs will be much faster.
               </div>
 
               {/* Template Grid */}
