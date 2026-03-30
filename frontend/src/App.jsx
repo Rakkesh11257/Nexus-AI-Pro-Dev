@@ -3550,8 +3550,11 @@ function App() {
             {/* ── NSFW Template Mode ── */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <span style={{ fontSize: 14, color: '#f472b6', fontWeight: 600 }}>🔞 NSFW Templates</span>
-                <span style={{ fontSize: 11, color: '#888' }}>50 credits • 5s • 480p</span>
+                <span style={{ fontSize: 14, color: '#f472b6', fontWeight: 600 }}>NSFW Templates</span>
+                <span style={{ fontSize: 11, color: '#666', fontStyle: 'italic' }}>(customize prompt for better results)</span>
+              </div>
+              <div style={{ padding: '8px 12px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 8, marginBottom: 12, fontSize: 11, color: '#8bb4f0', lineHeight: 1.5 }}>
+                First run may take 2-3 minutes while the server warms up. Next runs will be much faster.
               </div>
 
               {/* Template Grid */}
