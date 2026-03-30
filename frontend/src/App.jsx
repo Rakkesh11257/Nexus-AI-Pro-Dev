@@ -2143,17 +2143,34 @@ function App() {
     const jobId = addJob('i2v', 'Wan 2.2 NSFW', nsfwPrompt.trim().slice(0, 60) + '...');
     setError('');
     try {
-      updateJob(jobId, { status: 'Uploading image...' });
-      // Convert image to base64
+      updateJob(jobId, { status: 'Resizing image...' });
+      // Resize image to max 1024px and compress to JPEG to stay under RunPod 10MB limit
       let base64Image = nsfwImage;
-      if (nsfwImage.startsWith('blob:')) {
-        const resp = await fetch(nsfwImage);
-        const blob = await resp.blob();
-        base64Image = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        });
+      try {
+        const imgSrc = nsfwImage.startsWith('blob:') ? nsfwImage : nsfwImage;
+        const img = new Image();
+        await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = imgSrc; });
+        const MAX = 1024;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        base64Image = canvas.toDataURL('image/jpeg', 0.85);
+      } catch (resizeErr) {
+        console.warn('[NSFW] Image resize failed, using original', resizeErr);
+        if (nsfwImage.startsWith('blob:')) {
+          const resp = await fetch(nsfwImage);
+          const blob = await resp.blob();
+          base64Image = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+        }
       }
       updateJob(jobId, { status: 'Submitting to RunPod...' });
       const position = nsfwSelectedTemplate?.position || 'general_nsfw';
