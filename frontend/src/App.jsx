@@ -2183,8 +2183,22 @@ function App() {
           throw new Error(pollData.error || 'RunPod generation failed');
         }
         if (status === 'COMPLETED') {
-          const outputUrl = pollData.output?.video_url || pollData.output?.url || (typeof pollData.output === 'string' ? pollData.output : null);
-          if (!outputUrl) throw new Error('No video URL in response');
+          // Extract video URL from RunPod output (handles multiple formats)
+          let outputUrl = null;
+          const out = pollData.output;
+          if (typeof out === 'string') {
+            outputUrl = out;
+          } else if (out && typeof out === 'object') {
+            outputUrl = out.video_url || out.url || out.result || out.video || out.file_url || out.output;
+            if (!outputUrl && Array.isArray(out)) outputUrl = out[0];
+            if (!outputUrl) {
+              const vals = Object.values(out);
+              const strVal = vals.find(v => typeof v === 'string' && (v.startsWith('http') || v.startsWith('data:')));
+              if (strVal) outputUrl = strVal;
+            }
+          }
+          console.log('[NSFW Debug] RunPod output type:', typeof out, 'keys:', out && typeof out === 'object' ? Object.keys(out) : 'N/A', 'extracted:', outputUrl ? outputUrl.slice(0, 80) : 'null');
+          if (!outputUrl) throw new Error('No video URL in RunPod response. Raw output: ' + JSON.stringify(out).slice(0, 200));
           const item = { type: 'video', url: outputUrl, prompt: nsfwPrompt.trim(), model: 'wan-video/wan-2.2-nsfw', ts: Date.now() };
           setResults(prev => [item, ...prev]);
           setHistory(prev => ({ ...prev, videos: [item, ...prev.videos].slice(0, 50) }));
