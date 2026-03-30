@@ -2212,14 +2212,18 @@ function App() {
           if (out && out.video) {
             // Worker returns base64 video — convert to blob URL
             try {
-              const raw = atob(out.video.replace(/\s/g, ''));
+              // Fix URL-safe base64 (replace -_ with +/) and add padding
+              let b64 = out.video.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+              while (b64.length % 4 !== 0) b64 += '=';
+              const raw = atob(b64);
               const arr = new Uint8Array(raw.length);
               for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
               const blob = new Blob([arr], { type: 'video/mp4' });
               outputUrl = URL.createObjectURL(blob);
             } catch (blobErr) {
-              console.error('[NSFW] base64 decode failed, trying as URL', blobErr);
-              outputUrl = out.video;
+              console.error('[NSFW] base64 decode failed, trying data URI', blobErr);
+              // Fallback: try as data URI directly
+              outputUrl = 'data:video/mp4;base64,' + out.video;
             }
           } else if (out && (out.video_url || out.url || out.result)) {
             outputUrl = out.video_url || out.url || out.result;
