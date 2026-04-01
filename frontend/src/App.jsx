@@ -3327,7 +3327,7 @@ function App() {
         {error && <div style={S.errorBox}><span>⚠ {error}</span><span onClick={() => setError('')} style={{ cursor: 'pointer', opacity: 0.7 }}>✕</span></div>}
 
         {/* Loading Bar */}
-        {loading && (
+        {loading && !(tab === 'i2v' && i2vModel === 'wan-video/wan-2.2-nsfw') && (
           <div style={{ padding: '16px 20px', background: 'rgba(34,212,123,0.1)', border: '1px solid rgba(34,212,123,0.2)', borderRadius: 10, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
             <div className="animate-spin" style={{ width: 20, height: 20, border: '2px solid #333', borderTopColor: '#22d47b', borderRadius: '50%', flexShrink: 0 }} />
             <span style={{ color: '#aaa', fontSize: 14 }}>{loadingStatus || 'Generating...'}</span>
