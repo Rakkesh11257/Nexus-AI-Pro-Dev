@@ -5,6 +5,7 @@ const cors = require('cors');
 const { CognitoIdentityProviderClient, SignUpCommand, ConfirmSignUpCommand, InitiateAuthCommand, GetUserCommand, ResendConfirmationCodeCommand, ForgotPasswordCommand, ConfirmForgotPasswordCommand } = require('@aws-sdk/client-cognito-identity-provider');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const fs = require('fs');
@@ -376,6 +377,9 @@ const DYNAMO_TABLE = 'nexus-ai-pro-users';
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: AWS_REGION });
 const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: AWS_REGION }));
+const s3Client = new S3Client({ region: AWS_REGION });
+const S3_BUCKET = 'nexus-user-outputs';
+const CDN_BASE = 'https://d33i0s6ttlli6p.cloudfront.net';
 
 // ============================================
 // RAZORPAY CONFIG
@@ -2565,6 +2569,36 @@ app.get('/api/runpod/status/:jobId', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('[RunPod] Status poll error:', err.message);
     res.status(502).json({ error: 'Failed to poll job: ' + err.message });
+  }
+});
+
+
+// POST /api/upload-output - Upload generated output to S3 for persistent storage
+app.post("/api/upload-output", verifyToken, async (req, res) => {
+  try {
+    const { base64Data, contentType, fileExt } = req.body;
+    if (!base64Data) return res.status(400).json({ error: "Missing base64Data" });
+    const userId = req.user.sub;
+    const timestamp = Date.now();
+    const rand = Math.random().toString(36).slice(2, 8);
+    const ext = fileExt || "mp4";
+    const key = userId + "/" + timestamp + "_" + rand + "." + ext;
+    // Decode base64
+    let b64 = base64Data.replace(/\s/g, "").replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4 !== 0) b64 += "=";
+    const buffer = Buffer.from(b64, "base64");
+    await s3Client.send(new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType || "video/mp4",
+    }));
+    const url = CDN_BASE + "/" + key;
+    console.log("[S3] Uploaded output for " + userId + ": " + key + " (" + (buffer.length / 1024 / 1024).toFixed(2) + " MB)");
+    res.json({ url });
+  } catch (err) {
+    console.error("[S3] Upload error:", err.message);
+    res.status(500).json({ error: "Failed to upload: " + err.message });
   }
 });
 

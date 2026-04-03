@@ -2211,9 +2211,30 @@ function App() {
           }
           let outputUrl = null;
           if (out && out.video) {
-            // Worker returns base64 video — convert to blob URL
+            // Upload base64 video to S3 for persistent storage
             try {
-              // Fix URL-safe base64 (replace -_ with +/) and add padding
+              updateJob(jobId, { status: 'Saving video...' });
+              const uploadRes = await fetch(API_BASE + '/api/upload-output', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-auth-token': accessToken },
+                body: JSON.stringify({ base64Data: out.video, contentType: 'video/mp4', fileExt: 'mp4' }),
+              });
+              if (uploadRes.ok) {
+                const uploadData = await uploadRes.json();
+                outputUrl = uploadData.url;
+              } else {
+                // Fallback: create blob URL if S3 upload fails
+                console.warn('[NSFW] S3 upload failed, falling back to blob URL');
+                let b64 = out.video.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+                while (b64.length % 4 !== 0) b64 += '=';
+                const raw = atob(b64);
+                const arr = new Uint8Array(raw.length);
+                for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+                const blob = new Blob([arr], { type: 'video/mp4' });
+                outputUrl = URL.createObjectURL(blob);
+              }
+            } catch (uploadErr) {
+              console.error('[NSFW] Upload failed, using blob URL', uploadErr);
               let b64 = out.video.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
               while (b64.length % 4 !== 0) b64 += '=';
               const raw = atob(b64);
@@ -2221,10 +2242,6 @@ function App() {
               for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
               const blob = new Blob([arr], { type: 'video/mp4' });
               outputUrl = URL.createObjectURL(blob);
-            } catch (blobErr) {
-              console.error('[NSFW] base64 decode failed, trying data URI', blobErr);
-              // Fallback: try as data URI directly
-              outputUrl = 'data:video/mp4;base64,' + out.video;
             }
           } else if (out && (out.video_url || out.url || out.result)) {
             outputUrl = out.video_url || out.url || out.result;
