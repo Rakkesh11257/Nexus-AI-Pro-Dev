@@ -3498,8 +3498,8 @@ function App() {
             <button onClick={generateI2I} style={S.btn}>
               🔄 Generate Image to Image{creditLabel(i2iModel, i2iModel.includes('consistent-character') ? { num_outputs: i2iNumOutputs } : {})}
             </button>
-
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+
 
           </div>
         )}
@@ -3549,10 +3549,11 @@ function App() {
 
             <button onClick={generateI2V} style={S.btn}>
               🖼️ Generate Image to Video{creditLabel(i2vModel, i2vOpts, I2V_MODELS.find(m => m.id === i2vModel))}
-            </button></>) : (<>
+            </button>
+            {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            </>) : (<>
             {/* ── NSFW Template Mode ── */}
             <div style={{ marginBottom: 16 }}>
-            {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <span style={{ fontSize: 14, color: '#f472b6', fontWeight: 600 }}>NSFW Templates</span>
                 <span style={{ fontSize: 11, color: '#666', fontStyle: 'italic' }}>(customize prompt for better results)</span>
@@ -3630,10 +3631,10 @@ function App() {
             <button onClick={generateT2V} style={S.btn}>
               🎬 Generate Text to Video{creditLabel(t2vModel, t2vOpts, T2V_MODELS.find(m => m.id === t2vModel))}
             </button>
+            {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
 
 
           </div>
-            {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
         )}
 
         {/* ══ MOTION CONTROL TAB ══ */}
@@ -3879,11 +3880,11 @@ function App() {
             <button onClick={generateAudio} style={{ ...S.btn, marginTop: 12 }}>
               🔊 Generate Audio{creditLabel(audioModel)}
             </button>
+            {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
 
 
           </div>
           );
-            {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
         })()}
 
         {/* ══ VOICE CLONE TAB ══ */}
@@ -3979,12 +3980,12 @@ function App() {
             <button onClick={generateTranscribe} style={S.btn}>
               🎙️ Transcribe Audio{creditLabel(transcribeModel)}
             </button>
+            {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
 
             {/* Transcription result */}
             {transcribeResult && (
               <div style={{ marginTop: 16, padding: 16, background: '#111827', borderRadius: 10, border: '1px solid #1f2937' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
                   <label style={{ ...S.label, margin: 0 }}>Transcription Result</label>
                   <button onClick={() => { navigator.clipboard.writeText(transcribeResult); }} style={{ ...S.btnSm, fontSize: 11 }}>📋 Copy</button>
                 </div>
