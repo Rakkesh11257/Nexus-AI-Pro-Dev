@@ -1385,6 +1385,7 @@ function App() {
   const tabJobs = jobs.filter(j => j.tab === tab && !j.done);
   const loading = tabJobs.length > 0;
   const loadingStatus = tabJobs.length > 0 ? tabJobs.map(j => j.status).join(' | ') : '';
+  const loadingWarning = tabJobs.length > 0 ? tabJobs.map(j => j.warning).filter(Boolean).join(' ') : '';
   // Total active jobs across all tabs (for badge on tab bar)
   const totalActiveJobs = jobs.filter(j => !j.done).length;
   // Job helpers
@@ -2172,7 +2173,7 @@ function App() {
           });
         }
       }
-      updateJob(jobId, { status: 'Submitting to server... First run may take 2-3 mins while the server warms up. Next runs will be much faster.' });
+      updateJob(jobId, { status: 'Submitting to server...', warning: 'First run may take 2-3 mins while the server warms up. Next runs will be much faster.' });
       const position = nsfwSelectedTemplate?.position || 'general_nsfw';
       const res = await fetch(API_BASE + '/api/runpod/generate', {
         method: 'POST',
@@ -3395,6 +3396,7 @@ function App() {
               ✨ Generate Image{creditLabel(model)}
             </button>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
 
           </div>
         )}
@@ -3499,6 +3501,7 @@ function App() {
               🔄 Generate Image to Image{creditLabel(i2iModel, i2iModel.includes('consistent-character') ? { num_outputs: i2iNumOutputs } : {})}
             </button>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
 
 
           </div>
@@ -3551,6 +3554,7 @@ function App() {
               🖼️ Generate Image to Video{creditLabel(i2vModel, i2vOpts, I2V_MODELS.find(m => m.id === i2vModel))}
             </button>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
             </>) : (<>
             {/* ── NSFW Template Mode ── */}
             <div style={{ marginBottom: 16 }}>
@@ -3612,6 +3616,7 @@ function App() {
                 Generate NSFW Video ({NSFW_TEMPLATE_CREDITS} cr)
               </button>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
             </div></>
             )}
 
@@ -3632,6 +3637,7 @@ function App() {
               🎬 Generate Text to Video{creditLabel(t2vModel, t2vOpts, T2V_MODELS.find(m => m.id === t2vModel))}
             </button>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
 
 
           </div>
@@ -3731,6 +3737,7 @@ function App() {
               🎭 Generate Motion Control{creditLabel(motionModel, motionOpts, MOTION_MODELS.find(m => m.id === motionModel))}
             </button>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
 
 
           </div>
@@ -3881,6 +3888,7 @@ function App() {
               🔊 Generate Audio{creditLabel(audioModel)}
             </button>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
 
 
           </div>
@@ -3981,6 +3989,7 @@ function App() {
               🎙️ Transcribe Audio{creditLabel(transcribeModel)}
             </button>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
 
             {/* Transcription result */}
             {transcribeResult && (
@@ -4106,6 +4115,7 @@ function App() {
               </button>
             </div>
             {loading && (<div style={{ marginTop: 10, padding: "12px 16px", background: "rgba(34,212,123,0.08)", border: "1px solid rgba(34,212,123,0.15)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}><div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid #333", borderTopColor: "#22d47b", borderRadius: "50%", flexShrink: 0 }} /><span style={{ color: "#aaa", fontSize: 13 }}>{loadingStatus || "Generating..."}</span></div>)}
+            {loadingWarning && (<div style={{ marginTop: 8, padding: "10px 14px", background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span><span style={{ color: "#d4a937", fontSize: 12, lineHeight: 1.4 }}>{loadingWarning}</span></div>)}
           </div>
           );
         })()}
