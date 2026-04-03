@@ -1453,6 +1453,24 @@ function App() {
       .catch(() => {});
   }, [user, accessToken]);
 
+  // Recover any pending RunPod jobs on app load
+  useEffect(() => {
+    if (!accessToken) return;
+    fetch(API_BASE + '/api/runpod/pending', { headers: { 'x-auth-token': accessToken } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        if (data._remainingCredits != null) setCredits(data._remainingCredits);
+        if (data.results && data.results.length > 0) {
+          const items = data.results.map(r => ({ type: r.type || 'video', url: r.url, prompt: r.prompt || 'Recovered', model: r.model || 'wan-video/wan-2.2-nsfw', ts: Date.now() }));
+          setResults(prev => [...items, ...prev]);
+          setHistory(prev => ({ ...prev, videos: [...items, ...prev.videos].slice(0, 50) }));
+          console.log('[Recovery] Recovered ' + items.length + ' outputs from pending jobs');
+        }
+        if (data.pendingCount > 0) console.log('[Recovery] ' + data.pendingCount + ' jobs still pending');
+      })
+      .catch(() => {});
+  }, [accessToken]);
   useEffect(() => { localStorage.setItem('nexus_history', JSON.stringify(history)); }, [history]);
 
   const handleAuth = (u, t) => {
@@ -2210,8 +2228,11 @@ function App() {
             throw new Error(errMsg);
           }
           let outputUrl = null;
-          if (out && out.video) {
-            // Upload base64 video to S3 for persistent storage
+          // Prefer server-side S3 URL (already uploaded during poll)
+          if (pollData._s3Url) {
+            outputUrl = pollData._s3Url;
+          } else if (out && out.video) {
+            // Fallback: Upload base64 video to S3 from client
             try {
               updateJob(jobId, { status: 'Saving video...' });
               const uploadRes = await fetch(API_BASE + '/api/upload-output', {

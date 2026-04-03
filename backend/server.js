@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const { CognitoIdentityProviderClient, SignUpCommand, ConfirmSignUpCommand, InitiateAuthCommand, GetUserCommand, ResendConfirmationCodeCommand, ForgotPasswordCommand, ConfirmForgotPasswordCommand } = require('@aws-sdk/client-cognito-identity-provider');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, QueryCommand, DeleteCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
@@ -374,6 +374,7 @@ const AWS_REGION = 'ap-south-1';
 const USER_POOL_ID = 'ap-south-1_k3mHGKDKx';
 const CLIENT_ID = '20gh952epf9n1fcgdhehmm9s58';
 const DYNAMO_TABLE = 'nexus-ai-pro-users';
+const JOBS_TABLE = 'nexus-active-jobs';
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: AWS_REGION });
 const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: AWS_REGION }));
@@ -2539,6 +2540,8 @@ app.post('/api/runpod/generate', verifyToken, async (req, res) => {
       return res.status(502).json({ error: runpodData.error || 'Failed to submit RunPod job' });
     }
     console.log('[RunPod] Job submitted: ' + runpodData.id + ' for ' + req.user.sub + ' | position=' + position);
+    // Save active job to tracking table
+    dynamoClient.send(new PutCommand({ TableName: JOBS_TABLE, Item: { jobId: runpodData.id, userId: req.user.sub, prompt: (req.body.prompt || '').slice(0, 200), status: 'IN_QUEUE', createdAt: Date.now(), ttl: Math.floor(Date.now() / 1000) + 3600 } })).catch(e => console.error('[Jobs] Failed to save job:', e.message));
     dynamoClient.send(new UpdateCommand({ TableName: DYNAMO_TABLE, Key: { userId: 'GLOBAL_STATS' }, UpdateExpression: 'SET totalGenerations = if_not_exists(totalGenerations, :zero) + :one', ExpressionAttributeValues: { ':zero': 0, ':one': 1 } })).catch(() => {});
     res.json({ jobId: runpodData.id, status: runpodData.status || 'IN_QUEUE', remainingCredits, creditsDeducted: NSFW_TEMPLATE_CREDITS });
   } catch (err) {
@@ -2560,10 +2563,29 @@ app.get('/api/runpod/status/:jobId', verifyToken, async (req, res) => {
       const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
       data._creditsRefunded = NSFW_TEMPLATE_CREDITS;
       data._remainingCredits = dbResult.Item?.credits || 0;
+      // Clean up job tracking
+      dynamoClient.send(new DeleteCommand({ TableName: JOBS_TABLE, Key: { jobId } })).catch(() => {});
     }
     if (data.status === 'COMPLETED') {
       const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
       data._remainingCredits = dbResult.Item?.credits || 0;
+      // Upload video to S3 server-side for persistence
+      try {
+        const out = data.output;
+        if (out && out.video) {
+          let b64 = out.video.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+          while (b64.length % 4 !== 0) b64 += '=';
+          const buffer = Buffer.from(b64, 'base64');
+          const ts = Date.now();
+          const rand = Math.random().toString(36).slice(2, 8);
+          const key = req.user.sub + '/' + ts + '_' + rand + '.mp4';
+          await s3Client.send(new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, Body: buffer, ContentType: 'video/mp4' }));
+          data._s3Url = CDN_BASE + '/' + key;
+          console.log('[RunPod] Uploaded to S3: ' + key + ' (' + (buffer.length / 1024 / 1024).toFixed(2) + ' MB)');
+        }
+      } catch (s3Err) { console.error('[RunPod] S3 upload in status poll failed:', s3Err.message); }
+      // Clean up job tracking
+      dynamoClient.send(new DeleteCommand({ TableName: JOBS_TABLE, Key: { jobId } })).catch(() => {});
     }
     res.json(data);
   } catch (err) {
@@ -2572,6 +2594,60 @@ app.get('/api/runpod/status/:jobId', verifyToken, async (req, res) => {
   }
 });
 
+
+
+// GET /api/runpod/pending - Recover any pending/completed jobs for this user
+app.get("/api/runpod/pending", verifyToken, async (req, res) => {
+  try {
+    const result = await dynamoClient.send(new QueryCommand({
+      TableName: JOBS_TABLE,
+      IndexName: "userId-index",
+      KeyConditionExpression: "userId = :uid",
+      ExpressionAttributeValues: { ":uid": req.user.sub },
+    }));
+    const jobs = result.Items || [];
+    // For each job, check RunPod status and handle
+    const results = [];
+    for (const job of jobs) {
+      try {
+        const statusRes = await fetch(RUNPOD_BASE_URL + "/status/" + job.jobId, { headers: { "Authorization": "Bearer " + RUNPOD_API_KEY } });
+        const data = await statusRes.json();
+        if (data.status === "COMPLETED") {
+          let s3Url = null;
+          const out = data.output;
+          if (out && out.video) {
+            try {
+              let b64 = out.video.replace(/\s/g, "").replace(/-/g, "+").replace(/_/g, "/");
+              while (b64.length % 4 !== 0) b64 += "=";
+              const buffer = Buffer.from(b64, "base64");
+              const ts = Date.now();
+              const rand = Math.random().toString(36).slice(2, 8);
+              const key = req.user.sub + "/" + ts + "_" + rand + ".mp4";
+              await s3Client.send(new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, Body: buffer, ContentType: "video/mp4" }));
+              s3Url = CDN_BASE + "/" + key;
+              console.log("[Recovery] Uploaded to S3: " + key);
+            } catch (e) { console.error("[Recovery] S3 upload failed:", e.message); }
+          } else if (out && (out.video_url || out.url || out.result)) {
+            s3Url = out.video_url || out.url || out.result;
+          }
+          if (s3Url) results.push({ jobId: job.jobId, url: s3Url, prompt: job.prompt || "", type: "video", model: "wan-video/wan-2.2-nsfw" });
+          dynamoClient.send(new DeleteCommand({ TableName: JOBS_TABLE, Key: { jobId: job.jobId } })).catch(() => {});
+        } else if (data.status === "FAILED") {
+          // Refund credits for failed jobs discovered on recovery
+          await dynamoClient.send(new UpdateCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub }, UpdateExpression: "SET credits = if_not_exists(credits, :zero) + :amount", ExpressionAttributeValues: { ":amount": NSFW_TEMPLATE_CREDITS, ":zero": 0 } }));
+          console.log("[Recovery] Job " + job.jobId + " FAILED - refunded " + NSFW_TEMPLATE_CREDITS + " credits");
+          dynamoClient.send(new DeleteCommand({ TableName: JOBS_TABLE, Key: { jobId: job.jobId } })).catch(() => {});
+        }
+        // IN_QUEUE / IN_PROGRESS jobs stay in table for next check
+      } catch (pollErr) { console.error("[Recovery] Poll error for " + job.jobId + ":", pollErr.message); }
+    }
+    const dbResult = await dynamoClient.send(new GetCommand({ TableName: DYNAMO_TABLE, Key: { userId: req.user.sub } }));
+    res.json({ results, pendingCount: jobs.length - results.length, _remainingCredits: dbResult.Item?.credits || 0 });
+  } catch (err) {
+    console.error("[Recovery] Error:", err.message);
+    res.status(500).json({ error: "Failed to check pending jobs" });
+  }
+});
 
 // POST /api/upload-output - Upload generated output to S3 for persistent storage
 app.post("/api/upload-output", verifyToken, async (req, res) => {
